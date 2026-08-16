@@ -1,10 +1,5 @@
-import { FeaturePage } from "@/components/main-shell/feature-page";
+import { DashboardScreen } from "@/components/dashboard/dashboard-screen";
 
 export default function DashboardPage() {
-  return (
-    <FeaturePage
-      title="Dashboard"
-      description="A clear overview of your property operations."
-    />
-  );
+  return <DashboardScreen />;
 }

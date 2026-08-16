@@ -25,6 +25,10 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: Json;
       };
+      get_home_dashboard: {
+        Args: { p_property_id: string };
+        Returns: Json;
+      };
       save_property_images: {
         Args: { p_property_id: string; p_images: string[] };
         Returns: Json;
