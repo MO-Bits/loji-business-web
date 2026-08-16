@@ -88,7 +88,44 @@ export const theme = createTheme({
       },
     },
     MuiTextField: {
-      defaultProps: { fullWidth: true, variant: "outlined", size: "medium" },
+      defaultProps: {
+        fullWidth: true,
+        variant: "outlined",
+        size: "medium",
+        slotProps: {
+          inputLabel: { shrink: true },
+          input: { notched: false },
+        },
+      },
+      styleOverrides: {
+        root: {
+          "&:has(> .MuiInputLabel-root)": {
+            marginTop: 26,
+          },
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          maxWidth: "100%",
+          overflow: "visible",
+          color: "var(--mui-palette-text-primary)",
+          fontSize: "0.875rem",
+          fontWeight: 700,
+          lineHeight: 1.35,
+          letterSpacing: "-0.01em",
+          pointerEvents: "none",
+          transform: "translate(0, -25px) scale(1)",
+          transformOrigin: "left top",
+          "&.MuiInputLabel-shrink": {
+            transform: "translate(0, -25px) scale(1)",
+          },
+          "&.Mui-focused": {
+            color: "var(--mui-palette-primary-main)",
+          },
+        },
+      },
     },
     MuiPaper: {
       styleOverrides: {
