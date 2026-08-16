@@ -1,10 +1,5 @@
-import { FeaturePage } from "@/components/main-shell/feature-page";
+import { BookingsScreen } from "@/components/bookings/bookings-screen";
 
 export default function BookingsPage() {
-  return (
-    <FeaturePage
-      title="Bookings"
-      description="Review and manage all property reservations."
-    />
-  );
+  return <BookingsScreen />;
 }

@@ -1,10 +1,5 @@
-import { FeaturePage } from "@/components/main-shell/feature-page";
+import { NewBookingScreen } from "@/components/bookings/new-booking-screen";
 
 export default function NewBookingPage() {
-  return (
-    <FeaturePage
-      title="New booking"
-      description="Create a walk-in or direct reservation."
-    />
-  );
+  return <NewBookingScreen />;
 }
