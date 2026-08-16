@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
+import { BrandWordmark } from "@/components/shared/brand-wordmark";
 
 import { GoogleMark } from "./google-mark";
 
@@ -52,13 +53,7 @@ export function LoginScreen() {
           py: { xs: 4, md: 6 },
         }}
       >
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ fontWeight: 800, letterSpacing: "0.08em" }}
-        >
-          LOJI
-        </Typography>
+        <BrandWordmark priority sx={{ width: { xs: 168, sm: 196 } }} />
 
         <Box
           sx={{
@@ -71,20 +66,7 @@ export function LoginScreen() {
           }}
         >
           <Stack spacing={2.5} sx={{ maxWidth: 760 }}>
-            <Typography
-              component="h1"
-              sx={{
-                background: "linear-gradient(110deg, #1E88E5, #7E57C2)",
-                backgroundClip: "text",
-                color: "transparent",
-                fontSize: "clamp(3rem, 8vw, 6.8rem)",
-                fontWeight: 900,
-                letterSpacing: "-0.065em",
-                lineHeight: 0.92,
-              }}
-            >
-              Loji Business
-            </Typography>
+            <BrandWordmark priority sx={{ width: { xs: "min(100%, 430px)", md: "min(100%, 620px)" } }} />
 
             <Typography
               variant="h4"

@@ -10,6 +10,7 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
 import { createClient } from "@/lib/supabase/client";
+import { BrandWordmark } from "@/components/shared/brand-wordmark";
 
 const features = [
   [ApartmentRoundedIcon, "Property Presence", "Define your space with photos and essential amenities."],
@@ -30,9 +31,7 @@ export function PropertySetupIntro() {
       <Container maxWidth="md">
         <Stack spacing={{ xs: 4, md: 6 }}>
           <Stack spacing={2} sx={{ maxWidth: 680 }}>
-            <Typography color="primary" sx={{ fontWeight: 800, letterSpacing: ".08em" }}>
-              LOJI BUSINESS
-            </Typography>
+            <BrandWordmark priority sx={{ width: { xs: 170, sm: 210 } }} />
             <Typography variant="h1" sx={{ fontSize: { xs: "2.7rem", md: "4.5rem" } }}>
               Setup your property.
             </Typography>
