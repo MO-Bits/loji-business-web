@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
@@ -15,9 +18,11 @@ const features = [
 ] as const;
 
 export function PropertySetupIntro() {
+  const router = useRouter();
   const signOut = async () => {
     await createClient().auth.signOut();
-    window.location.replace("/login");
+    router.replace("/login");
+    router.refresh();
   };
 
   return (
@@ -51,7 +56,7 @@ export function PropertySetupIntro() {
           </Stack>
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Button variant="contained" size="large" endIcon={<ArrowForwardRoundedIcon />} onClick={() => window.location.assign("/onboarding/property/basic")}>
+            <Button component={Link} href="/onboarding/property/basic" variant="contained" size="large" endIcon={<ArrowForwardRoundedIcon />}>
               Continue
             </Button>
             <Button variant="text" color="inherit" startIcon={<LogoutRoundedIcon />} onClick={signOut}>

@@ -3,6 +3,7 @@
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import { useRouter } from "next/navigation";
 
 export function FlowPlaceholder({
   eyebrow,
@@ -13,6 +14,7 @@ export function FlowPlaceholder({
   title: string;
   description: string;
 }) {
+  const router = useRouter();
   return (
     <Box
       component="main"
@@ -38,7 +40,7 @@ export function FlowPlaceholder({
           <Button
             variant="outlined"
             startIcon={<ArrowBackRoundedIcon />}
-            onClick={() => window.location.replace("/")}
+            onClick={() => router.replace("/")}
             sx={{ alignSelf: "flex-start" }}
           >
             Recheck session

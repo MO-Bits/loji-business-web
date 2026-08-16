@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LayersRoundedIcon from "@mui/icons-material/LayersRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
@@ -42,6 +43,7 @@ function detailsFromGeocode(data: Record<string, unknown>, position: LatLng): Pl
 }
 
 export function PropertyAddressMap() {
+  const router = useRouter();
   const mapElement = useRef<HTMLDivElement>(null);
   const map = useRef<MapInstance | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -152,7 +154,7 @@ export function PropertyAddressMap() {
     if (!selected) return setMapError("Please select a location.");
     const { data: { user } } = await createClient().auth.getUser();
     if (!user) return setMapError("Your session has expired.");
-    try { await controller.saveAddress(user.id, selected as PropertyAddress); window.location.replace("/"); } catch { /* displayed below */ }
+    try { await controller.saveAddress(user.id, selected as PropertyAddress); router.replace("/"); } catch { /* displayed below */ }
   };
 
   return (
@@ -165,7 +167,7 @@ export function PropertyAddressMap() {
           {predictions.length > 0 && <Paper elevation={8}><List disablePadding>{predictions.map((item) => <ListItemButton key={item.placeId} onClick={() => void choosePrediction(item)}><ListItemText primary={item.primaryText} secondary={item.secondaryText} /></ListItemButton>)}</List></Paper>}
         </Stack>
       </Container>
-      <Stack spacing={1} sx={{ left: 16, position: "absolute", top: 92 }}><IconButton aria-label="Back" onClick={() => window.history.back()} sx={{ bgcolor: "background.paper", boxShadow: 3 }}><ArrowBackRoundedIcon /></IconButton></Stack>
+      <Stack spacing={1} sx={{ left: 16, position: "absolute", top: 92 }}><IconButton aria-label="Back" onClick={() => router.back()} sx={{ bgcolor: "background.paper", boxShadow: 3 }}><ArrowBackRoundedIcon /></IconButton></Stack>
       <Stack spacing={1} sx={{ position: "absolute", right: 16, top: 92 }}><IconButton aria-label="Change map style" onClick={() => { const next = !satellite; setSatellite(next); map.current?.setMapTypeId(next ? "satellite" : "roadmap"); }} sx={{ bgcolor: "background.paper", boxShadow: 3 }}><LayersRoundedIcon /></IconButton><IconButton aria-label="Use current location" onClick={currentLocation} sx={{ bgcolor: "background.paper", boxShadow: 3 }}><MyLocationRoundedIcon /></IconButton></Stack>
       <Paper elevation={12} sx={{ borderRadius: "24px 24px 0 0", bottom: 0, left: 0, p: { xs: 2.5, sm: 3 }, position: "absolute", right: 0 }}>
         <Container maxWidth="sm"><Stack spacing={2}><Box><Typography variant="h6">{loadingAddress ? "Finding this address…" : selected?.name ?? "Choose your property location"}</Typography><Typography color="text.secondary">{selected?.formattedAddress ?? "Search above or move the map so the pin sits on your property."}</Typography></Box>{selected && <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}><Typography variant="body2">{[selected.ward, selected.district, selected.region, selected.country].filter(Boolean).join(" · ")}</Typography></Stack>}<Button fullWidth size="large" variant="contained" disabled={!selected || loadingAddress || controller.loading} onClick={() => void confirm()}>{controller.loading ? "Saving location…" : "Confirm location"}</Button></Stack></Container>

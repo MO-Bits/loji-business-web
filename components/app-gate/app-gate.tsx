@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { AppStatus, AppStep } from "@/features/session/models/app-status";
@@ -36,13 +37,14 @@ function destinationFor(status: AppStatus, step: AppStep): string {
 }
 
 export function AppGate() {
+  const router = useRouter();
   const { session, error, refresh } = useAppSession();
 
   useEffect(() => {
     if (session) {
-      window.location.replace(destinationFor(session.status, session.step));
+      router.replace(destinationFor(session.status, session.step));
     }
-  }, [session]);
+  }, [router, session]);
 
   if (error) {
     return <SessionErrorScreen error={error} onRetry={() => void refresh()} />;

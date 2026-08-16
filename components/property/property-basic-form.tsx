@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import AddPhotoAlternateRoundedIcon from "@mui/icons-material/AddPhotoAlternateRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -17,6 +18,7 @@ const propertyTypes: { value: PropertyType; label: string }[] = [
 ];
 
 export function PropertyBasicForm() {
+  const router = useRouter();
   const controller = usePropertyController();
   const [type, setType] = useState<PropertyType>("hotel");
   const [name, setName] = useState("");
@@ -43,7 +45,7 @@ export function PropertyBasicForm() {
     if (!files.length) return setLocalError("Add at least one property photo.");
     try {
       await controller.createProperty({ name, type, phone, email, amenities: selectedAmenities }, files);
-      window.location.replace("/");
+      router.replace("/");
     } catch { /* controller exposes the message */ }
   };
 
@@ -51,7 +53,7 @@ export function PropertyBasicForm() {
     <Box component="main" sx={{ minHeight: "100dvh", pb: 14, pt: { xs: 2, md: 5 } }}>
       <Container maxWidth="md">
         <Stack spacing={3}>
-          <Button startIcon={<ArrowBackRoundedIcon />} color="inherit" onClick={() => window.history.back()} sx={{ alignSelf: "flex-start" }}>Back</Button>
+          <Button startIcon={<ArrowBackRoundedIcon />} color="inherit" onClick={() => router.back()} sx={{ alignSelf: "flex-start" }}>Back</Button>
           <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
             <Box sx={{ bgcolor: "primary.main", borderRadius: 3, color: "primary.contrastText", display: "grid", height: 56, placeItems: "center", width: 56 }}><HotelRoundedIcon /></Box>
             <Box><Typography variant="h4">Create your property profile</Typography><Typography color="text.secondary">Property details · Step 2 of 3</Typography></Box>

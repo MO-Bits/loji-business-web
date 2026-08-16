@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Badge,
   BottomNavigation,
@@ -42,6 +43,7 @@ function notificationIcon(icon: React.ReactNode, unread: number) {
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { session, loading, error, refresh } = useAppSession();
   const unread = 0;
 
@@ -52,9 +54,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && session && session.status !== AppStatus.Ready) {
-      window.location.replace("/");
+      router.replace("/");
     }
-  }, [loading, session]);
+  }, [loading, router, session]);
 
   if (error) {
     return <SessionErrorScreen error={error} onRetry={() => void refresh()} />;
@@ -102,9 +104,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
             return (
               <ListItemButton
+                component={Link}
+                href={item.path}
                 key={item.path}
                 selected={selected}
-                onClick={() => window.location.assign(item.path)}
                 sx={{
                   borderRadius: 2.5,
                   mb: 0.5,
@@ -138,6 +141,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       <PaperBottomNavigation
         selectedIndex={selectedIndex}
         unread={unread}
+        onNavigate={(path) => router.push(path)}
       />
     </Box>
   );
@@ -146,9 +150,11 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 function PaperBottomNavigation({
   selectedIndex,
   unread,
+  onNavigate,
 }: {
   selectedIndex: number;
   unread: number;
+  onNavigate: (path: string) => void;
 }) {
   return (
     <Box
@@ -169,7 +175,7 @@ function PaperBottomNavigation({
         showLabels
         value={selectedIndex}
         onChange={(_, value: number) => {
-          window.location.assign(mainDestinations[value].path);
+          onNavigate(mainDestinations[value].path);
         }}
         sx={{ height: 68 }}
       >

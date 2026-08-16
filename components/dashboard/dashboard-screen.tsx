@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
@@ -52,7 +53,7 @@ export function DashboardScreen() {
       <Box sx={{ bgcolor: "#14345B", color: "white", py: { xs: 1.5, md: 2 } }}>
         <Container maxWidth="xl"><Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}><Avatar src={propertyImage(property)} sx={{ bgcolor: "rgba(255,255,255,.16)", border: "1px solid rgba(255,255,255,.25)" }}><HotelRoundedIcon /></Avatar><Typography variant="h6" noWrap>{propertyName}</Typography></Stack>
-          <IconButton aria-label="More" onClick={() => window.location.assign("/more")} sx={{ color: "white" }}><MoreHorizRoundedIcon /></IconButton>
+          <IconButton aria-label="More" component={Link} href="/more" sx={{ color: "white" }}><MoreHorizRoundedIcon /></IconButton>
         </Stack></Container>
       </Box>
 
@@ -93,7 +94,7 @@ function SectionHeader({ title, count, color, icon }: { title: string; count?: n
 }
 
 function QuickActions() {
-  return <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 3 } }}><SectionHeader title="Quick Actions" color="#1E88E5" icon={<BoltRoundedIcon fontSize="small" />} /><Divider sx={{ my: 2 }} /><Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}><Button fullWidth variant="contained" startIcon={<AddCircleOutlineRoundedIcon />} onClick={() => window.location.assign("/bookings/new")}>New Booking</Button><Button fullWidth variant="outlined" startIcon={<SearchRoundedIcon />} onClick={() => window.location.assign("/bookings")}>Search Booking</Button></Stack></Paper>;
+  return <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 3 } }}><SectionHeader title="Quick Actions" color="#1E88E5" icon={<BoltRoundedIcon fontSize="small" />} /><Divider sx={{ my: 2 }} /><Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}><Button component={Link} href="/bookings/new" fullWidth variant="contained" startIcon={<AddCircleOutlineRoundedIcon />}>New Booking</Button><Button component={Link} href="/bookings" fullWidth variant="outlined" startIcon={<SearchRoundedIcon />}>Search Booking</Button></Stack></Paper>;
 }
 
 function FinanceCard({ revenue, outstanding }: { revenue: number; outstanding: number }) {
@@ -111,7 +112,7 @@ function BookingSection({ title, color, icon, bookings, empty }: { title: string
 }
 
 function BookingTile({ booking, color }: { booking: DashboardBooking; color: string }) {
-  return <Button color="inherit" onClick={() => window.location.assign("/bookings")} sx={{ borderRadius: 2.5, justifyContent: "flex-start", p: 1.25, textAlign: "left" }}><Avatar sx={{ bgcolor: `${color}18`, color, fontSize: ".82rem", fontWeight: 800, mr: 1.5 }}>{initials(booking.guestName)}</Avatar><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 750 }}>{booking.guestName}</Typography><Typography color="text.secondary" noWrap variant="caption">{booking.roomName}{booking.roomType ? ` · ${booking.roomType}` : ""}</Typography></Box><Chip label={statusLabel(booking.status)} size="small" sx={{ ml: 1 }} /></Button>;
+  return <Button component={Link} href="/bookings" color="inherit" sx={{ borderRadius: 2.5, justifyContent: "flex-start", p: 1.25, textAlign: "left" }}><Avatar sx={{ bgcolor: `${color}18`, color, fontSize: ".82rem", fontWeight: 800, mr: 1.5 }}>{initials(booking.guestName)}</Avatar><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap sx={{ fontWeight: 750 }}>{booking.guestName}</Typography><Typography color="text.secondary" noWrap variant="caption">{booking.roomName}{booking.roomType ? ` · ${booking.roomType}` : ""}</Typography></Box><Chip label={statusLabel(booking.status)} size="small" sx={{ ml: 1 }} /></Button>;
 }
 
 function RoomSection({ rooms }: { rooms: DashboardRoom[] }) {
@@ -119,7 +120,7 @@ function RoomSection({ rooms }: { rooms: DashboardRoom[] }) {
 }
 
 function RoomCard({ room }: { room: DashboardRoom }) {
-  return <Paper variant="outlined" sx={{ cursor: "pointer", overflow: "hidden" }} onClick={() => window.location.assign("/rooms")}><Box sx={{ display: "grid", gridTemplateColumns: room.images[0] ? "96px 1fr" : "1fr" }}>{room.images[0] && <Box component="img" src={room.images[0]} alt={room.name} sx={{ height: "100%", minHeight: 105, objectFit: "cover", width: 96 }} />}<Stack spacing={.8} sx={{ minWidth: 0, p: 1.5 }}><Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}><Typography noWrap sx={{ fontWeight: 750 }}>{room.name}</Typography><Chip label="Active" color="success" size="small" /></Stack><Typography color="text.secondary" variant="caption">{room.roomType} · {room.capacity} guests · {room.bedCount} beds</Typography><Typography color="primary" sx={{ fontWeight: 800 }}>{money.format(room.pricePerNight)} <Typography component="span" color="text.secondary" variant="caption">/ night</Typography></Typography></Stack></Box></Paper>;
+  return <Paper component={Link} href="/rooms" variant="outlined" sx={{ color: "inherit", display: "block", overflow: "hidden", textDecoration: "none" }}><Box sx={{ display: "grid", gridTemplateColumns: room.images[0] ? "96px 1fr" : "1fr" }}>{room.images[0] && <Box component="img" src={room.images[0]} alt={room.name} sx={{ height: "100%", minHeight: 105, objectFit: "cover", width: 96 }} />}<Stack spacing={.8} sx={{ minWidth: 0, p: 1.5 }}><Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}><Typography noWrap sx={{ fontWeight: 750 }}>{room.name}</Typography><Chip label="Active" color="success" size="small" /></Stack><Typography color="text.secondary" variant="caption">{room.roomType} · {room.capacity} guests · {room.bedCount} beds</Typography><Typography color="primary" sx={{ fontWeight: 800 }}>{money.format(room.pricePerNight)} <Typography component="span" color="text.secondary" variant="caption">/ night</Typography></Typography></Stack></Box></Paper>;
 }
 
 function EmptyState({ text }: { text: string }) {

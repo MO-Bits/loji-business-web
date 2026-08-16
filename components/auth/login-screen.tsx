@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import NextLink from "next/link";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
@@ -103,7 +104,7 @@ export function LoginScreen() {
             >
               Manage rooms, reservations, guests, and your team from one
               powerful workspace.{" "}
-              <Link href="/learn-more" underline="hover" sx={{ fontWeight: 800 }}>
+              <Link component={NextLink} href="/learn-more" underline="hover" sx={{ fontWeight: 800 }}>
                 Learn more
               </Link>
             </Typography>
@@ -170,11 +171,11 @@ export function LoginScreen() {
             sx={{ textAlign: "center" }}
           >
             By continuing, you agree to Loji Business{" "}
-            <Link href="/terms" underline="hover" sx={{ fontWeight: 700 }}>
+            <Link component={NextLink} href="/terms" underline="hover" sx={{ fontWeight: 700 }}>
               Terms of Use
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" underline="hover" sx={{ fontWeight: 700 }}>
+            <Link component={NextLink} href="/privacy" underline="hover" sx={{ fontWeight: 700 }}>
               Privacy Policy
             </Link>
             .

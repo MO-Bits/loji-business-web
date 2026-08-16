@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
@@ -16,13 +17,14 @@ import { canDeleteInvitation, canManageStaff, type StaffInvitation, type StaffMe
 import { cancelInvitation, changeStaffRole, deleteInvitation, getInvitations, getStaff, inviteStaff, removeStaff, resendInvitation, updateStaffStatus } from "@/features/more/services/more-service";
 
 export function StaffManagement() {
+  const router = useRouter();
   const { session } = useAppSession(); const supabase = useMemo(() => createClient(), []);
   const propertyId = session?.activePropertyId; const currentRole = session?.activeRole ?? ""; const currentUserId = session?.user?.id ?? "";
   const [tab, setTab] = useState(0); const [staff, setStaff] = useState<StaffMember[]>([]); const [invitations, setInvitations] = useState<StaffInvitation[]>([]); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [message, setMessage] = useState<string | null>(null); const [inviteOpen, setInviteOpen] = useState(false);
   const refresh = useCallback(async () => { if (!propertyId) return; setLoading(true); setError(null); try { const [nextStaff, nextInvitations] = await Promise.all([getStaff(supabase, propertyId), getInvitations(supabase, propertyId)]); setStaff(nextStaff); setInvitations(nextInvitations); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to load staff."); } finally { setLoading(false); } }, [propertyId, supabase]);
   useEffect(() => { const timer = window.setTimeout(() => void refresh(), 0); return () => window.clearTimeout(timer); }, [refresh]);
   const action = async (task: () => Promise<void>, success: string) => { try { await task(); setMessage(success); await refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : "Action failed."); } };
-  return <Container maxWidth="lg" sx={{ py: { xs: 2, md: 5 } }}><Stack spacing={3}><Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}><Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}><Button color="inherit" startIcon={<ArrowBackRoundedIcon />} onClick={() => window.history.back()}>Back</Button><Typography variant="h4">Staff Management</Typography></Stack><Button variant="contained" startIcon={<AddRoundedIcon />} disabled={!propertyId} onClick={() => setInviteOpen(true)}>Invite Staff</Button></Stack>
+  return <Container maxWidth="lg" sx={{ py: { xs: 2, md: 5 } }}><Stack spacing={3}><Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}><Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}><Button color="inherit" startIcon={<ArrowBackRoundedIcon />} onClick={() => router.back()}>Back</Button><Typography variant="h4">Staff Management</Typography></Stack><Button variant="contained" startIcon={<AddRoundedIcon />} disabled={!propertyId} onClick={() => setInviteOpen(true)}>Invite Staff</Button></Stack>
     <Paper variant="outlined"><Tabs value={tab} onChange={(_, value) => setTab(value)}><Tab label={`Current Staff (${staff.length})`} /><Tab label={`Invitations (${invitations.length})`} /></Tabs></Paper>
     {loading ? <Box sx={{ display: "grid", minHeight: 280, placeItems: "center" }}><CircularProgress size={28} /></Box> : error ? <Alert severity="error" action={<Button color="inherit" startIcon={<RefreshRoundedIcon />} onClick={() => void refresh()}>Retry</Button>}>{error}</Alert> : tab === 0 ? <StaffList members={staff} propertyId={propertyId ?? ""} currentRole={currentRole} currentUserId={currentUserId} action={action} /> : <InvitationList invitations={invitations} propertyId={propertyId ?? ""} currentRole={currentRole} action={action} />}
   </Stack><InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} onSubmit={async (email, role) => { if (!propertyId) return; await action(() => inviteStaff(supabase, propertyId, email, role), "Invitation sent successfully"); setInviteOpen(false); }} /><Snackbar open={Boolean(message)} autoHideDuration={4000} onClose={() => setMessage(null)} message={message} /></Container>;

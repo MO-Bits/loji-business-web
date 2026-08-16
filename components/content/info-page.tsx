@@ -2,6 +2,7 @@
 
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { Box, Button, Container, Paper, Stack, Typography } from "@mui/material";
+import Link from "next/link";
 
 export function InfoPage({
   eyebrow,
@@ -18,7 +19,7 @@ export function InfoPage({
         <Paper variant="outlined" sx={{ p: { xs: 3, sm: 5 } }}>
           <Stack spacing={3}>
             <Button
-              component="a"
+              component={Link}
               href="/login"
               startIcon={<ArrowBackRoundedIcon />}
               sx={{ alignSelf: "flex-start" }}
