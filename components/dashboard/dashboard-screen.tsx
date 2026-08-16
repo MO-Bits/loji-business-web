@@ -52,7 +52,7 @@ export function DashboardScreen() {
       <Box sx={{ bgcolor: "#14345B", color: "white", py: { xs: 1.5, md: 2 } }}>
         <Container maxWidth="xl"><Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", minWidth: 0 }}><Avatar src={propertyImage(property)} sx={{ bgcolor: "rgba(255,255,255,.16)", border: "1px solid rgba(255,255,255,.25)" }}><HotelRoundedIcon /></Avatar><Typography variant="h6" noWrap>{propertyName}</Typography></Stack>
-          <IconButton aria-label="More" onClick={() => window.location.assign("/rooms")} sx={{ color: "white" }}><MoreHorizRoundedIcon /></IconButton>
+          <IconButton aria-label="More" onClick={() => window.location.assign("/more")} sx={{ color: "white" }}><MoreHorizRoundedIcon /></IconButton>
         </Stack></Container>
       </Box>
 

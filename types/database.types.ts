@@ -8,7 +8,32 @@ export type Json =
 
 export type Database = {
   public: {
-    Tables: Record<string, never>;
+    Tables: {
+      properties: {
+        Row: { [key: string]: Json | undefined } & { id: string };
+        Insert: { [key: string]: Json | undefined };
+        Update: { [key: string]: Json | undefined };
+        Relationships: [];
+      };
+      property_users: {
+        Row: { id: string; property_id: string; user_id: string; role: string; status: string; created_at: string | null };
+        Insert: { id?: string; property_id: string; user_id: string; role: string; status?: string; created_at?: string | null };
+        Update: { role?: string; status?: string };
+        Relationships: [];
+      };
+      user_profiles: {
+        Row: { user_id: string; display_name: string | null; email: string | null; phone: string | null; avatar_url: string | null; [key: string]: Json | undefined };
+        Insert: { user_id: string; display_name?: string | null; email?: string | null; phone?: string | null; avatar_url?: string | null };
+        Update: { display_name?: string | null; email?: string | null; phone?: string | null; avatar_url?: string | null };
+        Relationships: [];
+      };
+      property_invitations: {
+        Row: { id: string; property_id: string; email: string; role: string; status: string; token: string | null; created_at: string | null };
+        Insert: { id?: string; property_id: string; email: string; role: string; status?: string; token?: string | null; created_at?: string | null };
+        Update: { role?: string; status?: string };
+        Relationships: [];
+      };
+    };
     Views: Record<string, never>;
     Functions: {
       create_property_basic_info: {
@@ -31,6 +56,34 @@ export type Database = {
       };
       save_property_images: {
         Args: { p_property_id: string; p_images: string[] };
+        Returns: Json;
+      };
+      update_staff_status: {
+        Args: { p_property_id: string; p_staff_user_id: string; p_status: string };
+        Returns: Json;
+      };
+      change_staff_role: {
+        Args: { p_property_user_id: string; p_role: string };
+        Returns: Json;
+      };
+      remove_staff: {
+        Args: { p_property_id: string; p_property_user_id: string };
+        Returns: Json;
+      };
+      resend_staff_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: Json;
+      };
+      cancel_staff_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: Json;
+      };
+      delete_property_invitation: {
+        Args: { p_property_id: string; p_invitation_id: string };
+        Returns: Json;
+      };
+      invite_staff: {
+        Args: { p_property_id: string; p_email: string; p_role: string };
         Returns: Json;
       };
       update_property_address: {
