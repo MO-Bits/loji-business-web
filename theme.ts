@@ -90,6 +90,70 @@ export const theme = createTheme({
     MuiTextField: {
       defaultProps: { fullWidth: true, variant: "outlined" },
     },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "color-mix(in srgb, var(--mui-palette-background-paper) 96%, var(--mui-palette-primary-main) 4%)",
+          borderRadius: 12,
+          transition: "background-color 160ms ease, box-shadow 160ms ease",
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "color-mix(in srgb, var(--mui-palette-text-secondary) 32%, transparent)",
+            transition: "border-color 160ms ease, border-width 160ms ease",
+          },
+          "&:hover": {
+            backgroundColor: "var(--mui-palette-background-paper)",
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: "color-mix(in srgb, var(--mui-palette-text-primary) 48%, transparent)",
+            },
+          },
+          "&.Mui-focused": {
+            backgroundColor: "var(--mui-palette-background-paper)",
+            boxShadow: "0 0 0 4px color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)",
+            "& .MuiOutlinedInput-notchedOutline": { borderWidth: 1.5 },
+          },
+          "&.Mui-error.Mui-focused": {
+            boxShadow: "0 0 0 4px color-mix(in srgb, var(--mui-palette-error-main) 12%, transparent)",
+          },
+          "&.Mui-disabled": {
+            backgroundColor: "color-mix(in srgb, var(--mui-palette-action-disabledBackground) 70%, transparent)",
+          },
+          "&.MuiInputBase-multiline": {
+            padding: 14,
+            "& .MuiOutlinedInput-input": { padding: 0 },
+          },
+        },
+        input: {
+          padding: "14px 14px",
+          "&::placeholder": {
+            color: "var(--mui-palette-text-secondary)",
+            opacity: 0.72,
+          },
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          color: "var(--mui-palette-text-secondary)",
+          fontWeight: 560,
+          "&.Mui-focused": { fontWeight: 680 },
+        },
+      },
+    },
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          lineHeight: 1.4,
+          marginLeft: 4,
+          marginTop: 6,
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        icon: { color: "var(--mui-palette-text-secondary)", right: 12 },
+      },
+    },
     MuiPaper: {
       styleOverrides: {
         root: {
@@ -113,6 +177,6 @@ export const theme = createTheme({
     MuiDialogTitle: { styleOverrides: { root: { fontWeight: 750, letterSpacing: "-.02em" } } },
     MuiTabs: { styleOverrides: { indicator: { borderRadius: 4, height: 3 } } },
     MuiTab: { styleOverrides: { root: { fontWeight: 700, textTransform: "none" } } },
-    MuiCssBaseline: { styleOverrides: { ":focus-visible": { outline: "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)", outlineOffset: 2 } } },
+    MuiCssBaseline: { styleOverrides: { "a:focus-visible, button:focus-visible, [role='button']:focus-visible": { outline: "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)", outlineOffset: 2 } } },
   },
 });
