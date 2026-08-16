@@ -15,6 +15,18 @@ export type Database = {
         Update: { [key: string]: Json | undefined };
         Relationships: [];
       };
+      rooms: {
+        Row: { id: string; property_id: string; name: string; room_type: string; capacity: number; bed_count: number; price_per_night: number; amenities: Json; images: Json; room_images?: Json; description?: string | null; is_active: boolean; created_at?: string | null; [key: string]: Json | undefined };
+        Insert: { id?: string; property_id: string; name: string; room_type: string; capacity: number; bed_count: number; price_per_night: number; amenities?: Json; images?: Json; is_active?: boolean };
+        Update: { name?: string; room_type?: string; capacity?: number; bed_count?: number; price_per_night?: number; amenities?: Json; images?: Json; is_active?: boolean };
+        Relationships: [];
+      };
+      bookings: {
+        Row: { id: string; room_id: string; check_in: string; check_out: string; checked_out_at: string | null; status: string; [key: string]: Json | undefined };
+        Insert: { [key: string]: Json | undefined };
+        Update: { [key: string]: Json | undefined };
+        Relationships: [];
+      };
       property_users: {
         Row: { id: string; property_id: string; user_id: string; role: string; status: string; created_at: string | null };
         Insert: { id?: string; property_id: string; user_id: string; role: string; status?: string; created_at?: string | null };
@@ -101,6 +113,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_room_with_images: {
+        Args: { p_room_id: string; p_property_id: string; p_room_name: string; p_room_type: string; p_capacity: number; p_base_price: number; p_bed_count: number; p_amenities: string[]; p_images: string[] };
+        Returns: string;
+      };
+      update_room_basic_info: { Args: { p_room_id: string; p_property_id: string; p_room_name: string; p_room_type: string; p_is_active: boolean }; Returns: Json };
+      update_room_pricing: { Args: { p_room_id: string; p_property_id: string; p_price_per_night: number }; Returns: Json };
+      update_room_capacity: { Args: { p_room_id: string; p_property_id: string; p_capacity: number; p_bed_count: number }; Returns: Json };
+      update_room_amenities: { Args: { p_room_id: string; p_property_id: string; p_amenities: string[] }; Returns: Json };
+      update_room_images: { Args: { p_room_id: string; p_property_id: string; p_images: string[] }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

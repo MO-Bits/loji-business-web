@@ -1,10 +1,5 @@
-import { FeaturePage } from "@/components/main-shell/feature-page";
+import { RoomsScreen } from "@/components/rooms/rooms-screen";
 
 export default function RoomsPage() {
-  return (
-    <FeaturePage
-      title="Rooms"
-      description="Manage inventory, room details, and availability."
-    />
-  );
+  return <RoomsScreen />;
 }
