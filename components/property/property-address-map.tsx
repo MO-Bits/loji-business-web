@@ -18,6 +18,13 @@ declare global { interface Window { google?: { maps: { Map: new (element: HTMLEl
 
 const DEFAULT_POSITION = { lat: -6.163, lng: 35.7516 };
 
+function createSessionToken() {
+  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  globalThis.crypto?.getRandomValues?.(bytes);
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("") || `${Date.now()}-${Math.random()}`;
+}
+
 function parseComponents(items: Array<{ longText?: string; shortText?: string; types?: string[] }> = []) {
   const find = (...types: string[]) => items.find((item) => types.some((type) => item.types?.includes(type)))?.longText ?? "";
   return {
@@ -55,7 +62,7 @@ export function PropertyAddressMap() {
   const [loadingAddress, setLoadingAddress] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [satellite, setSatellite] = useState(false);
-  const [sessionToken, setSessionToken] = useState(() => crypto.randomUUID());
+  const [sessionToken, setSessionToken] = useState(createSessionToken);
   const controller = usePropertyController();
 
   const reverseGeocode = async (next: LatLng) => {
@@ -140,7 +147,7 @@ export function PropertyAddressMap() {
       const response = await fetch(`/api/google/places/details?placeId=${encodeURIComponent(prediction.placeId)}&sessionToken=${encodeURIComponent(sessionToken)}`);
       const data = await response.json() as Record<string, unknown>;
       if (!response.ok) throw new Error(String(data.error ?? "Unable to select this place."));
-      const details = detailsFromGoogle(data); setSelected(details); setPosition({ lat: details.latitude, lng: details.longitude }); map.current?.panTo({ lat: details.latitude, lng: details.longitude }); map.current?.setZoom(17); setSessionToken(crypto.randomUUID());
+      const details = detailsFromGoogle(data); setSelected(details); setPosition({ lat: details.latitude, lng: details.longitude }); map.current?.panTo({ lat: details.latitude, lng: details.longitude }); map.current?.setZoom(17); setSessionToken(createSessionToken());
     } catch (cause) { setMapError(cause instanceof Error ? cause.message : "Unable to select this place."); }
     finally { setLoadingAddress(false); }
   };

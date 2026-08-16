@@ -1,5 +1,5 @@
-import { PropertyAddressMap } from "@/components/property/property-address-map";
+import { PropertyAddressIntro } from "@/components/property/property-address-intro";
 
 export default function PropertyAddressOnboardingPage() {
-  return <PropertyAddressMap />;
+  return <PropertyAddressIntro />;
 }
