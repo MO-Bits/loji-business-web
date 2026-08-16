@@ -1,3 +1,5 @@
+import { parseDatabaseDate } from "@/lib/date-time";
+
 export type DashboardBooking = {
   id: string;
   guestName: string;
@@ -54,7 +56,7 @@ function number(raw: Raw, ...keys: string[]) {
 }
 
 function date(raw: Raw, ...keys: string[]) {
-  const parsed = new Date(text(raw, ...keys));
+  const parsed = parseDatabaseDate(text(raw, ...keys));
   return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
 }
 

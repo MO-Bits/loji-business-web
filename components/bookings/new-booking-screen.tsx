@@ -10,13 +10,14 @@ import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { createClient } from "@/lib/supabase/client";
 import { createWalkInBooking, getAvailableRooms } from "@/features/bookings/services/booking-service";
 import type { AvailableRoom } from "@/features/bookings/models/booking";
+import { localDateKey } from "@/lib/date-time";
 
 const money = new Intl.NumberFormat("en-TZ", { style: "currency", currency: "TZS", maximumFractionDigits: 0 });
-const tomorrow = () => { const value = new Date(); value.setDate(value.getDate() + 1); return value.toISOString().slice(0, 10); };
+const tomorrow = () => { const value = new Date(); value.setDate(value.getDate() + 1); return localDateKey(value); };
 
 export function NewBookingScreen() {
   const router = useRouter(); const searchParams = useSearchParams(); const { session } = useAppSession(); const client = useMemo(() => createClient(), []); const propertyId = session?.activePropertyId;
-  const [checkIn, setCheckIn] = useState(new Date().toISOString().slice(0, 10)); const [checkOut, setCheckOut] = useState(tomorrow()); const [adults, setAdults] = useState(1); const [children, setChildren] = useState(0); const [rooms, setRooms] = useState<AvailableRoom[]>([]); const [selected, setSelected] = useState<AvailableRoom | null>(null); const [searched, setSearched] = useState(false); const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null);
+  const [checkIn, setCheckIn] = useState(localDateKey()); const [checkOut, setCheckOut] = useState(tomorrow()); const [adults, setAdults] = useState(1); const [children, setChildren] = useState(0); const [rooms, setRooms] = useState<AvailableRoom[]>([]); const [selected, setSelected] = useState<AvailableRoom | null>(null); const [searched, setSearched] = useState(false); const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ firstName: "", lastName: "", gender: "", nationality: "Tanzanian", occupation: "", email: "", phone: "", whereFrom: "", whereTo: "", idType: "", idNumber: "", emergencyContactName: "", emergencyContactPhone: "", specialRequests: "", paymentMethod: "cash", transactionRef: "" });
   const field = (name: keyof typeof form) => ({ value: form[name], onChange: (event: React.ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, [name]: event.target.value })) });
   const search = async () => { if (!propertyId) return; if (!checkIn || !checkOut || checkOut <= checkIn) return setError("Checkout must be after check-in."); setLoading(true); setError(null); try { const values = await getAvailableRooms(client, propertyId, checkIn, checkOut, adults + children); setRooms(values); setSearched(true); const requested = searchParams.get("room"); if (requested) setSelected(values.find((item) => item.id === requested) ?? null); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to search rooms."); } finally { setLoading(false); } };

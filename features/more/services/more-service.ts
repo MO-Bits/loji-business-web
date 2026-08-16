@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/types/database.types";
 import type { StaffInvitation, StaffMember } from "../models/staff";
+import { parseDatabaseDate } from "@/lib/date-time";
 
 function rpcMessage(value: Json, fallback: string) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -26,7 +27,7 @@ export async function getStaff(supabase: SupabaseClient<Database>, propertyId: s
 export async function getInvitations(supabase: SupabaseClient<Database>, propertyId: string): Promise<StaffInvitation[]> {
   const { data, error } = await supabase.from("property_invitations").select("id,email,role,status,token,created_at").eq("property_id", propertyId).order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return data.map((item) => ({ id: item.id, email: item.email, role: item.role, status: item.status ?? "pending", token: item.token ?? "", createdAt: item.created_at ? new Date(item.created_at) : null }));
+  return data.map((item) => ({ id: item.id, email: item.email, role: item.role, status: item.status ?? "pending", token: item.token ?? "", createdAt: item.created_at ? parseDatabaseDate(item.created_at) : null }));
 }
 
 async function rpc(supabase: SupabaseClient<Database>, name: "change_staff_role" | "remove_staff" | "resend_staff_invitation" | "cancel_staff_invitation" | "delete_property_invitation" | "invite_staff", args: Record<string, string>, fallback: string) {
