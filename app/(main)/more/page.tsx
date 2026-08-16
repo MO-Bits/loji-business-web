@@ -1,2 +1,3 @@
-import { MoreScreen } from "@/components/more/more-screen";
-export default function MorePage() { return <MoreScreen />; }
+import { redirect } from "next/navigation";
+
+export default function MorePage() { redirect("/more/account"); }

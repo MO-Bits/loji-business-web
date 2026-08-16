@@ -3,216 +3,39 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Avatar,
-  Badge,
-  BottomNavigation,
-  BottomNavigationAction,
-  Box,
-  Divider,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Stack,
-  Toolbar,
-  Typography,
-} from "@mui/material";
-
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import { Avatar, BottomNavigation, BottomNavigationAction, Box, Button, Divider, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Stack, Toolbar, Tooltip, Typography } from "@mui/material";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { AppStatus } from "@/features/session/models/app-status";
+import { createClient } from "@/lib/supabase/client";
+import { accountDestination, managementDestinations, mobileDestinations, type MainDestination, workspaceDestinations } from "./destinations";
 
-import { mainDestinations } from "./destinations";
-
-const drawerWidth = 248;
-
-function notificationIcon(icon: React.ReactNode, unread: number) {
-  return (
-    <Badge
-      badgeContent={unread > 99 ? "99+" : unread}
-      color="error"
-      invisible={unread < 1}
-      max={99}
-    >
-      {icon}
-    </Badge>
-  );
-}
+const drawerWidth = 264;
 
 export function MainShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const { session, loading, error, refresh } = useAppSession();
-  const unread = 0;
-
-  const selectedIndex = Math.max(
-    0,
-    mainDestinations.findIndex((item) => item.match(pathname)),
-  );
-
-  useEffect(() => {
-    if (!loading && session && session.status !== AppStatus.Ready) {
-      router.replace("/");
-    }
-  }, [loading, router, session]);
-
-  if (error) {
-    return <SessionErrorScreen error={error} onRetry={() => void refresh()} />;
-  }
-
-  if (loading || !session || session.status !== AppStatus.Ready) {
-    return <FullPageLoader />;
-  }
-
-  return (
-    <Box sx={{ display: "flex", minHeight: "100dvh" }}>
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: "none", md: "block" },
-          flexShrink: 0,
-          width: drawerWidth,
-          "& .MuiDrawer-paper": {
-            background: "linear-gradient(180deg, var(--mui-palette-background-paper) 0%, color-mix(in srgb, var(--mui-palette-primary-main) 3%, var(--mui-palette-background-paper)) 100%)",
-            borderRightColor: "divider",
-            boxSizing: "border-box",
-            width: drawerWidth,
-          },
-        }}
-      >
-        <Toolbar sx={{ minHeight: 84, px: 2.5 }}>
-          <Stack direction="row" spacing={1.3} sx={{ alignItems: "center" }}>
-            <Avatar variant="rounded" sx={{ bgcolor: "primary.main", boxShadow: "0 8px 20px rgba(23,105,210,.22)", fontSize: ".95rem", fontWeight: 850, height: 40, width: 40 }}>LB</Avatar>
-            <Stack spacing={0.1}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 850, letterSpacing: "-0.04em" }}
-            >
-              Loji Business
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Property workspace
-            </Typography>
-            </Stack>
-          </Stack>
-        </Toolbar>
-
-        <Divider />
-
-        <List sx={{ px: 1.5, py: 2 }}>
-          {mainDestinations.map((item, index) => {
-            const selected = index === selectedIndex;
-            const icon = selected ? item.activeIcon : item.icon;
-
-            return (
-              <ListItemButton
-                component={Link}
-                href={item.path}
-                key={item.path}
-                selected={selected}
-                sx={{
-                  borderRadius: 2.5,
-                  mb: 0.5,
-                  minHeight: 48,
-                  px: 1.5,
-                  "&.Mui-selected": {
-                    bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 11%, transparent)",
-                    color: "primary.main",
-                    "&:hover": { bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 15%, transparent)" },
-                  },
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 42 }}>
-                  {item.showsUnread ? notificationIcon(icon, unread) : icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{ fontWeight: selected ? 750 : 550 }}
-                />
-              </ListItemButton>
-            );
-          })}
-        </List>
-      </Drawer>
-
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          overflowX: "hidden",
-          pb: { xs: "calc(76px + env(safe-area-inset-bottom))", md: 0 },
-        }}
-      >
-        {children}
+  const pathname = usePathname(); const router = useRouter(); const { session, loading, error, refresh } = useAppSession();
+  useEffect(() => { if (!loading && session && session.status !== AppStatus.Ready) router.replace("/"); }, [loading, router, session]);
+  if (error) return <SessionErrorScreen error={error} onRetry={() => void refresh()} />;
+  if (loading || !session || session.status !== AppStatus.Ready) return <FullPageLoader />;
+  const canManage = ["owner", "manager"].includes(session.activeRole?.toLowerCase() ?? "");
+  const name = String(session.user?.user_metadata?.full_name ?? session.user?.user_metadata?.name ?? session.user?.email?.split("@")[0] ?? "Account");
+  const avatar = typeof session.user?.user_metadata?.avatar_url === "string" ? session.user.user_metadata.avatar_url : undefined;
+  const signOut = async () => { await createClient().auth.signOut(); router.replace("/login"); router.refresh(); };
+  return <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+    <Drawer variant="permanent" sx={{ display: { xs: "none", md: "block" }, flexShrink: 0, width: drawerWidth, "& .MuiDrawer-paper": { background: "linear-gradient(180deg, var(--mui-palette-background-paper) 0%, color-mix(in srgb, var(--mui-palette-primary-main) 3%, var(--mui-palette-background-paper)) 100%)", borderRightColor: "divider", boxSizing: "border-box", width: drawerWidth } }}>
+      <Toolbar sx={{ minHeight: 84, px: 2.5 }}><Stack direction="row" spacing={1.3} sx={{ alignItems: "center" }}><Avatar variant="rounded" sx={{ bgcolor: "primary.main", boxShadow: "0 8px 20px rgba(23,105,210,.22)", fontSize: ".95rem", fontWeight: 850, height: 40, width: 40 }}>LB</Avatar><Stack spacing={0.1}><Typography variant="h6" sx={{ fontWeight: 850, letterSpacing: "-0.04em" }}>Loji Business</Typography><Typography variant="caption" color="text.secondary">Property workspace</Typography></Stack></Stack></Toolbar>
+      <Divider />
+      <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0, overflowY: "auto", px: 1.5, py: 2 }}><NavigationSection label="Workspace" items={workspaceDestinations} pathname={pathname} />{canManage && <NavigationSection label="Management" items={managementDestinations} pathname={pathname} sx={{ mt: 2 }} />}<NavigationSection label="Account" items={[accountDestination]} pathname={pathname} sx={{ mt: 2 }} /><Box sx={{ flex: 1 }} />
+        <Divider sx={{ my: 1.5 }} /><Stack direction="row" spacing={1.2} sx={{ alignItems: "center", px: 1, py: 1 }}><Avatar src={avatar} sx={{ bgcolor: "primary.main", height: 38, width: 38 }}>{name[0]?.toUpperCase()}</Avatar><Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap variant="body2" sx={{ fontWeight: 750 }}>{name}</Typography><Typography noWrap color="text.secondary" variant="caption" sx={{ textTransform: "capitalize" }}>{session.activeRole ?? "Member"}</Typography></Box><Tooltip title="Sign out"><Button color="inherit" aria-label="Sign out" onClick={() => void signOut()} sx={{ minWidth: 42, px: 1 }}><LogoutRoundedIcon fontSize="small" /></Button></Tooltip></Stack>
       </Box>
-
-      <PaperBottomNavigation
-        selectedIndex={selectedIndex}
-        unread={unread}
-        onNavigate={(path) => router.push(path)}
-      />
-    </Box>
-  );
+    </Drawer>
+    <Box component="main" sx={{ flex: 1, minWidth: 0, overflowX: "hidden", pb: { xs: "calc(76px + env(safe-area-inset-bottom))", md: 0 } }}>{children}</Box>
+    <MobileNavigation pathname={pathname} onNavigate={(path) => router.push(path)} />
+  </Box>;
 }
 
-function PaperBottomNavigation({
-  selectedIndex,
-  unread,
-  onNavigate,
-}: {
-  selectedIndex: number;
-  unread: number;
-  onNavigate: (path: string) => void;
-}) {
-  return (
-    <Box
-      sx={{
-        bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 94%, transparent)",
-        backdropFilter: "blur(16px)",
-        borderTop: 1,
-        borderColor: "divider",
-        bottom: 0,
-        display: { xs: "block", md: "none" },
-        left: 0,
-        pb: "env(safe-area-inset-bottom)",
-        position: "fixed",
-        right: 0,
-        boxShadow: "0 -10px 30px rgba(16,24,40,.07)",
-        zIndex: (theme) => theme.zIndex.appBar,
-      }}
-    >
-      <BottomNavigation
-        showLabels
-        value={selectedIndex}
-        onChange={(_, value: number) => {
-          onNavigate(mainDestinations[value].path);
-        }}
-        sx={{ height: 68 }}
-      >
-        {mainDestinations.map((item, index) => {
-          const icon = index === selectedIndex ? item.activeIcon : item.icon;
+function NavigationSection({ label, items, pathname, sx }: { label: string; items: MainDestination[]; pathname: string; sx?: object }) { return <Box sx={sx}><Typography color="text.secondary" sx={{ fontSize: ".68rem", fontWeight: 800, letterSpacing: ".11em", mb: .7, px: 1.5 }}>{label.toUpperCase()}</Typography><List disablePadding>{items.map((item) => { const selected = item.match(pathname); return <ListItemButton component={Link} href={item.path} key={item.path} selected={selected} sx={{ borderRadius: 2.5, mb: .4, minHeight: 46, px: 1.5, "&.Mui-selected": { bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 11%, transparent)", color: "primary.main", "&:hover": { bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 15%, transparent)" } } }}><ListItemIcon sx={{ color: selected ? "primary.main" : "text.secondary", minWidth: 40 }}>{selected ? item.activeIcon : item.icon}</ListItemIcon><ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: selected ? 750 : 580 }} /></ListItemButton>; })}</List></Box>; }
 
-          return (
-            <BottomNavigationAction
-              key={item.path}
-              label={item.label}
-              icon={item.showsUnread ? notificationIcon(icon, unread) : icon}
-              sx={{
-                minWidth: 0,
-                px: 0.5,
-                "& .MuiBottomNavigationAction-label": {
-                  fontSize: "0.68rem",
-                  fontWeight: index === selectedIndex ? 750 : 550,
-                },
-              }}
-            />
-          );
-        })}
-      </BottomNavigation>
-    </Box>
-  );
-}
+function MobileNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: (path: string) => void }) { const match = mobileDestinations.findIndex((item) => item.match(pathname)); const selected = pathname.startsWith("/more/") ? mobileDestinations.length - 1 : Math.max(0, match); return <Box sx={{ bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 94%, transparent)", backdropFilter: "blur(16px)", borderTop: 1, borderColor: "divider", bottom: 0, boxShadow: "0 -10px 30px rgba(16,24,40,.07)", display: { xs: "block", md: "none" }, left: 0, pb: "env(safe-area-inset-bottom)", position: "fixed", right: 0, zIndex: (theme) => theme.zIndex.appBar }}><BottomNavigation showLabels value={selected} onChange={(_, value: number) => onNavigate(mobileDestinations[value].path)} sx={{ height: 68 }}>{mobileDestinations.map((item, index) => <BottomNavigationAction key={item.path} label={item.label === "My account" ? "Account" : item.label} icon={index === selected ? item.activeIcon : item.icon} sx={{ minWidth: 0, px: .5, "& .MuiBottomNavigationAction-label": { fontSize: ".66rem", fontWeight: index === selected ? 750 : 550 } }} />)}</BottomNavigation></Box>; }

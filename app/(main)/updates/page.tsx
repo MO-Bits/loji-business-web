@@ -1,10 +1,3 @@
-import { FeaturePage } from "@/components/main-shell/feature-page";
+import { redirect } from "next/navigation";
 
-export default function UpdatesPage() {
-  return (
-    <FeaturePage
-      title="Updates"
-      description="See important booking and property activity."
-    />
-  );
-}
+export default function UpdatesPage() { redirect("/dashboard"); }
