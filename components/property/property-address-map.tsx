@@ -51,10 +51,7 @@ export function PropertyAddressMap() {
   const [position, setPosition] = useState(DEFAULT_POSITION);
   const [searching, setSearching] = useState(false);
   const [loadingAddress, setLoadingAddress] = useState(false);
-  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  const [mapError, setMapError] = useState<string | null>(
-    mapsKey ? null : "Google Maps is not configured yet. Add the web Maps API key to enable location selection.",
-  );
+  const [mapError, setMapError] = useState<string | null>(null);
   const [satellite, setSatellite] = useState(false);
   const [sessionToken, setSessionToken] = useState(() => crypto.randomUUID());
   const controller = usePropertyController();
@@ -71,10 +68,10 @@ export function PropertyAddressMap() {
   };
 
   useEffect(() => {
-    const key = mapsKey;
-    if (!key) return;
+    let cancelled = false;
+
     const start = () => {
-      if (!mapElement.current || !window.google || map.current) return;
+      if (cancelled || !mapElement.current || !window.google || map.current) return;
       map.current = new window.google.maps.Map(mapElement.current, { center: DEFAULT_POSITION, zoom: 14.5, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControl: false });
       map.current.addListener("idle", () => {
         const center = map.current?.getCenter(); if (!center) return;
@@ -83,11 +80,42 @@ export function PropertyAddressMap() {
         idleTimer.current = setTimeout(() => void reverseGeocode(next), 700);
       });
     };
-    if (window.google) start(); else {
-      const script = document.createElement("script"); script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly`; script.async = true; script.onload = start; script.onerror = () => setMapError("Google Maps could not be loaded."); document.head.appendChild(script);
-    }
-    return () => { if (idleTimer.current) clearTimeout(idleTimer.current); };
-  }, [mapsKey]);
+
+    const loadMap = async () => {
+      try {
+        if (window.google) return start();
+
+        const response = await fetch("/api/google/maps-config", { cache: "no-store" });
+        const data = await response.json() as { key?: string; error?: string };
+        if (!response.ok || !data.key) {
+          throw new Error(data.error ?? "Google Maps is not configured.");
+        }
+
+        const existing = document.querySelector<HTMLScriptElement>("script[data-loji-google-maps]");
+        if (existing) {
+          existing.addEventListener("load", start, { once: true });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.dataset.lojiGoogleMaps = "true";
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(data.key)}&v=weekly`;
+        script.async = true;
+        script.onload = start;
+        script.onerror = () => setMapError("Google Maps could not be loaded. Check the API key website restrictions.");
+        document.head.appendChild(script);
+      } catch (cause) {
+        if (!cancelled) setMapError(cause instanceof Error ? cause.message : "Google Maps could not be loaded.");
+      }
+    };
+
+    void loadMap();
+
+    return () => {
+      cancelled = true;
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (query.trim().length < 2) return;
