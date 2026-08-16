@@ -163,7 +163,7 @@ export function PropertyAddressMap() {
       <LocationOnRoundedIcon color="error" sx={{ fontSize: 56, left: "50%", pointerEvents: "none", position: "absolute", top: "50%", transform: "translate(-50%, -100%)" }} />
       <Container maxWidth="sm" sx={{ left: 0, position: "absolute", right: 0, top: 0 }}>
         <Stack spacing={1.2} sx={{ pt: 2 }}>
-          <TextField value={query} onChange={(e) => { setQuery(e.target.value); if (e.target.value.trim().length < 2) setPredictions([]); }} placeholder="Search for your property or area" fullWidth slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRoundedIcon /></InputAdornment>, endAdornment: searching ? <CircularProgress size={20} /> : null } }} sx={{ "& .MuiOutlinedInput-root": { bgcolor: "background.paper", boxShadow: 4 } }} />
+          <Paper elevation={3} sx={{ borderRadius: 1 }}><TextField value={query} onChange={(e) => { setQuery(e.target.value); if (e.target.value.trim().length < 2) setPredictions([]); }} placeholder="Search for your property or area" slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRoundedIcon /></InputAdornment>, endAdornment: searching ? <CircularProgress size={20} /> : null } }} /></Paper>
           {predictions.length > 0 && <Paper elevation={8}><List disablePadding>{predictions.map((item) => <ListItemButton key={item.placeId} onClick={() => void choosePrediction(item)}><ListItemText primary={item.primaryText} secondary={item.secondaryText} /></ListItemButton>)}</List></Paper>}
         </Stack>
       </Container>

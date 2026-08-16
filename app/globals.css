@@ -9,9 +9,23 @@ body {
 }
 
 body {
-  background: var(--mui-palette-background-default, #f2f2f7);
+  background:
+    radial-gradient(circle at 85% -10%, color-mix(in srgb, var(--mui-palette-primary-main, #1769d2) 8%, transparent), transparent 28rem),
+    var(--mui-palette-background-default, #f6f8fb);
   color: var(--mui-palette-text-primary, #17191c);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--mui-palette-primary-main, #1769d2) 22%, transparent);
+}
+
+a {
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
 }
 
 button,

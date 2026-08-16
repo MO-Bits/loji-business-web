@@ -8,27 +8,30 @@ export const theme = createTheme({
     light: {
       palette: {
         primary: {
-          main: "#1E88E5",
+          main: "#1769D2",
+          light: "#4D94E8",
+          dark: "#0D4FA8",
         },
+        secondary: { main: "#6C5CE7" },
         background: {
-          default: "#F2F2F7",
+          default: "#F6F8FB",
           paper: "#FFFFFF",
         },
         text: {
           primary: "#17191C",
           secondary: "#667085",
         },
-        divider: "#E2E5E9",
+        divider: "#E5E9F0",
       },
     },
     dark: {
       palette: {
         primary: {
-          main: "#42A5F5",
+          main: "#64B5F6",
         },
         background: {
-          default: "#161B22",
-          paper: "#21262D",
+          default: "#0D1117",
+          paper: "#161B22",
         },
         text: {
           primary: "#F0F3F6",
@@ -39,7 +42,7 @@ export const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 14,
   },
   typography: {
     fontFamily: "var(--font-inter), Arial, sans-serif",
@@ -50,8 +53,10 @@ export const theme = createTheme({
       lineHeight: 1,
     },
     h4: {
-      fontWeight: 700,
-      letterSpacing: "-0.025em",
+      fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
+      fontWeight: 780,
+      letterSpacing: "-0.035em",
+      lineHeight: 1.15,
     },
     h6: {
       fontWeight: 650,
@@ -64,20 +69,36 @@ export const theme = createTheme({
   },
   components: {
     MuiButton: {
+      defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: 10,
-          minHeight: 44,
+          borderRadius: 12,
+          minHeight: 46,
           paddingInline: 20,
+          transition: "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
+          "&:active": { transform: "scale(.985)" },
         },
+        contained: { boxShadow: "0 8px 22px rgba(23,105,210,.18)" },
       },
+    },
+    MuiTextField: {
+      defaultProps: { fullWidth: true, variant: "outlined" },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
           backgroundImage: "none",
         },
+        outlined: {
+          borderColor: "var(--mui-palette-divider)",
+          boxShadow: "0 1px 2px rgba(16,24,40,.025)",
+        },
       },
     },
+    MuiChip: { styleOverrides: { root: { fontWeight: 650 } } },
+    MuiDialog: { styleOverrides: { paper: { borderRadius: 20 } } },
+    MuiDialogTitle: { styleOverrides: { root: { fontWeight: 750, letterSpacing: "-.02em" } } },
+    MuiTabs: { styleOverrides: { indicator: { borderRadius: 4, height: 3 } } },
+    MuiTab: { styleOverrides: { root: { fontWeight: 700, textTransform: "none" } } },
   },
 });

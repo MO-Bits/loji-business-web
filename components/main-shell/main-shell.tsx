@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Avatar,
   Badge,
   BottomNavigation,
   BottomNavigationAction,
@@ -75,14 +76,17 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flexShrink: 0,
           width: drawerWidth,
           "& .MuiDrawer-paper": {
+            background: "linear-gradient(180deg, var(--mui-palette-background-paper) 0%, color-mix(in srgb, var(--mui-palette-primary-main) 3%, var(--mui-palette-background-paper)) 100%)",
             borderRightColor: "divider",
             boxSizing: "border-box",
             width: drawerWidth,
           },
         }}
       >
-        <Toolbar sx={{ minHeight: 76, px: 3 }}>
-          <Stack spacing={0.1}>
+        <Toolbar sx={{ minHeight: 84, px: 2.5 }}>
+          <Stack direction="row" spacing={1.3} sx={{ alignItems: "center" }}>
+            <Avatar variant="rounded" sx={{ bgcolor: "primary.main", boxShadow: "0 8px 20px rgba(23,105,210,.22)", fontSize: ".95rem", fontWeight: 850, height: 40, width: 40 }}>LB</Avatar>
+            <Stack spacing={0.1}>
             <Typography
               variant="h6"
               sx={{ fontWeight: 850, letterSpacing: "-0.04em" }}
@@ -92,6 +96,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             <Typography variant="caption" color="text.secondary">
               Property workspace
             </Typography>
+            </Stack>
           </Stack>
         </Toolbar>
 
@@ -112,6 +117,12 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                   borderRadius: 2.5,
                   mb: 0.5,
                   minHeight: 48,
+                  px: 1.5,
+                  "&.Mui-selected": {
+                    bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 11%, transparent)",
+                    color: "primary.main",
+                    "&:hover": { bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 15%, transparent)" },
+                  },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 42 }}>
@@ -132,6 +143,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           flex: 1,
           minWidth: 0,
+          overflowX: "hidden",
           pb: { xs: "calc(76px + env(safe-area-inset-bottom))", md: 0 },
         }}
       >
@@ -159,7 +171,8 @@ function PaperBottomNavigation({
   return (
     <Box
       sx={{
-        bgcolor: "background.paper",
+        bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 94%, transparent)",
+        backdropFilter: "blur(16px)",
         borderTop: 1,
         borderColor: "divider",
         bottom: 0,
@@ -168,6 +181,7 @@ function PaperBottomNavigation({
         pb: "env(safe-area-inset-bottom)",
         position: "fixed",
         right: 0,
+        boxShadow: "0 -10px 30px rgba(16,24,40,.07)",
         zIndex: (theme) => theme.zIndex.appBar,
       }}
     >
