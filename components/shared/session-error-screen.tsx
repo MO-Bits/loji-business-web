@@ -24,7 +24,7 @@ export function SessionErrorScreen({
       <Paper variant="outlined" sx={{ maxWidth: 480, p: { xs: 3, sm: 4 } }}>
         <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
           <ErrorOutlineRoundedIcon color="error" sx={{ fontSize: 38 }} />
-          <Typography variant="h5" fontWeight={700}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
             We couldn’t open Loji Business
           </Typography>
           <Typography color="text.secondary">
