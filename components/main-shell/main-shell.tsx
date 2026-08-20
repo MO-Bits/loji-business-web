@@ -403,10 +403,12 @@ function NavigationList({
             onClick={onNavigate}
             selected={selected}
             sx={{
+              alignItems: "center",
               borderRadius: 1,
+              columnGap: 1.25,
               mb: 0.25,
               minHeight: 38,
-              px: 1.1,
+              px: 1.25,
               "&.Mui-selected": {
                 bgcolor: "action.selected",
                 color: "text.primary",
@@ -417,19 +419,27 @@ function NavigationList({
             <ListItemIcon
               sx={{
                 color: selected ? "text.primary" : "text.secondary",
-                minWidth: 32,
+                alignItems: "center",
+                justifyContent: "center",
+                minWidth: 20,
+                width: 20,
                 "& .MuiSvgIcon-root": { fontSize: 19 },
               }}
             >
               {selected ? item.activeIcon : item.icon}
             </ListItemIcon>
-            <ListItemText
-              primary={item.label}
-              primaryTypographyProps={{
-                fontSize: "0.875rem",
-                fontWeight: selected ? 500 : 400,
-              }}
-            />
+           <ListItemText
+  primary={item.label}
+  sx={{ m: 0 }}
+  slotProps={{
+    primary: {
+      sx: {
+        fontSize: "0.875rem",
+        fontWeight: selected ? 500 : 400,
+      },
+    },
+  }}
+/>
           </ListItemButton>
         );
       })}
