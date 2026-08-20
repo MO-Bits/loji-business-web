@@ -1,15 +1,16 @@
 "use client";
 
-import DomainDisabledRoundedIcon from "@mui/icons-material/DomainDisabledRounded";
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
-import CheckCircleOutlineRoundedIcon from "@mui/icons-material/CheckCircleOutlineRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   Container,
   Divider,
@@ -28,155 +29,195 @@ export function InactiveUserScreen() {
     const error = await auth.signOut();
 
     if (!error) {
-      // A full navigation removes the inactive session from the client tree.
       window.location.replace("/login");
     }
   }
 
   return (
-    <Box
-      component="main"
-      sx={{
-        alignItems: "center",
-        background: "radial-gradient(circle at 50% 0%, rgba(30,136,229,.10), transparent 38%), #F7F9FC",
-        display: "flex",
-        minHeight: "100dvh",
-        py: { xs: 2.5, sm: 5, md: 7 },
-      }}
-    >
-      <Container maxWidth="md">
-        <Stack spacing={{ xs: 2.5, sm: 3.5 }}>
-          <BrandWordmark priority sx={{ alignSelf: "center", width: { xs: 154, sm: 176 } }} />
+    <Box component="main" sx={{ bgcolor: "#F4F6F8", minHeight: "100dvh" }}>
+      <Box component="header" sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider" }}>
+        <Container maxWidth="lg">
+          <Stack alignItems="center" direction="row" justifyContent="space-between" sx={{ minHeight: { xs: 64, sm: 72 } }}>
+            <BrandWordmark priority sx={{ width: { xs: 142, sm: 164 } }} />
+            <Stack alignItems="center" direction="row" spacing={0.75}>
+              <LockOutlinedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
+              <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" }, fontWeight: 650 }} variant="caption">
+                Secure account status
+              </Typography>
+            </Stack>
+          </Stack>
+        </Container>
+      </Box>
 
-          <Paper
-            variant="outlined"
+      <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 5, md: 8 } }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            borderColor: "rgba(15,23,42,.09)",
+            borderRadius: 2,
+            boxShadow: "0 22px 65px rgba(15,23,42,.08)",
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "minmax(300px, .82fr) minmax(430px, 1.18fr)" },
+            mx: "auto",
+            overflow: "hidden",
+            width: "100%",
+          }}
+        >
+          <Box
             sx={{
-              borderColor: "rgba(15, 23, 42, .10)",
-              borderRadius: 2,
-              boxShadow: "0 24px 70px rgba(15, 23, 42, .09)",
-              overflow: "hidden",
-              p: { xs: 2.5, sm: 4, md: 5 },
+              background: "linear-gradient(145deg, #102A43 0%, #173F68 100%)",
+              color: "common.white",
+              display: "flex",
+              minHeight: { md: 580 },
+              p: { xs: 3, sm: 4, md: 5 },
             }}
           >
-            <Stack spacing={{ xs: 3, sm: 4 }}>
-              <Stack alignItems="center" spacing={2.25} textAlign="center">
+            <Stack justifyContent="space-between" spacing={{ xs: 5, md: 8 }} sx={{ width: "100%" }}>
+              <Stack spacing={3}>
                 <Box
                   sx={{
                     alignItems: "center",
-                    bgcolor: "#FFF3F2",
-                    border: "8px solid #FFF8F7",
-                    borderRadius: "50%",
+                    bgcolor: "rgba(255,255,255,.10)",
+                    border: "1px solid rgba(255,255,255,.16)",
+                    borderRadius: 2,
                     display: "flex",
-                    height: { xs: 88, sm: 104 },
+                    height: 58,
                     justifyContent: "center",
-                    width: { xs: 88, sm: 104 },
+                    width: 58,
                   }}
                 >
-                  <DomainDisabledRoundedIcon color="error" sx={{ fontSize: { xs: 38, sm: 44 } }} />
+                  <BusinessRoundedIcon sx={{ fontSize: 29 }} />
                 </Box>
 
-                <Chip
-                  color="error"
-                  label="ACCESS INACTIVE"
-                  size="small"
-                  sx={{ fontSize: ".7rem", fontWeight: 850, letterSpacing: ".08em" }}
-                  variant="outlined"
-                />
-
                 <Box>
-                  <Typography component="h1" sx={{ fontSize: { xs: "1.8rem", sm: "2.25rem" }, fontWeight: 850, letterSpacing: "-.04em" }}>
-                    Your workspace access is paused
+                  <Typography sx={{ color: "#9CC8F5", fontSize: ".72rem", fontWeight: 850, letterSpacing: ".12em", mb: 1.5 }}>
+                    WORKSPACE STATUS
                   </Typography>
-                  <Typography color="text.secondary" sx={{ fontSize: { xs: ".96rem", sm: "1.05rem" }, lineHeight: 1.65, mt: 1, mx: "auto", maxWidth: 570 }}>
-                    Your account is secure, but you currently do not have an active role at a Loji Business property.
+                  <Typography component="h1" sx={{ fontSize: { xs: "2rem", sm: "2.45rem" }, fontWeight: 850, letterSpacing: "-.045em", lineHeight: 1.08 }}>
+                    Access temporarily paused
+                  </Typography>
+                  <Typography sx={{ color: "rgba(255,255,255,.72)", lineHeight: 1.7, mt: 2 }}>
+                    Your Loji Business account is safe, but it is not currently connected to an active property membership.
                   </Typography>
                 </Box>
               </Stack>
+
+              <Stack alignItems="center" direction="row" spacing={1.25}>
+                <CheckCircleRoundedIcon sx={{ color: "#79D4AE", fontSize: 21 }} />
+                <Typography sx={{ color: "rgba(255,255,255,.78)", fontSize: ".84rem", fontWeight: 650 }}>
+                  Your property and booking data remain protected
+                </Typography>
+              </Stack>
+            </Stack>
+          </Box>
+
+          <Box sx={{ bgcolor: "background.paper", p: { xs: 3, sm: 4.5, md: 6 } }}>
+            <Stack spacing={{ xs: 3, sm: 4 }}>
+              <Box>
+                <Typography component="h2" sx={{ fontSize: { xs: "1.45rem", sm: "1.7rem" }, fontWeight: 820, letterSpacing: "-.025em" }}>
+                  Restore your workspace access
+                </Typography>
+                <Typography color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
+                  Follow these steps to get back into your property workspace.
+                </Typography>
+              </Box>
 
               {auth.error && <Alert severity="error" variant="outlined">{auth.error}</Alert>}
 
-              <Box
-                sx={{
-                  bgcolor: "#F8FAFC",
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 2,
-                }}
-              >
-                <Stack direction={{ xs: "column", sm: "row" }}>
-                  <InformationSection
-                    icon={<AdminPanelSettingsRoundedIcon color="primary" />}
-                    title="Why access may be paused"
-                  >
-                    A property owner or manager may have deactivated your staff account, removed you from the property, or changed your role.
-                  </InformationSection>
-
-                  <Divider flexItem orientation="vertical" sx={{ display: { xs: "none", sm: "block" } }} />
-                  <Divider sx={{ display: { xs: "block", sm: "none" } }} />
-
-                  <InformationSection
-                    icon={<CheckCircleOutlineRoundedIcon color="primary" />}
-                    title="How to restore access"
-                  >
-                    Ask your property administrator to reactivate your membership. Once they confirm, use the button below to check again.
-                  </InformationSection>
-                </Stack>
-              </Box>
-
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-                <Button
-                  fullWidth
-                  onClick={() => window.location.replace("/")}
-                  size="large"
-                  startIcon={<RefreshRoundedIcon />}
-                  variant="contained"
+              <Stack divider={<Divider flexItem />}>
+                <RecoveryStep
+                  icon={<AdminPanelSettingsRoundedIcon />}
+                  number="01"
+                  title="Contact your administrator"
                 >
-                  Check access again
-                </Button>
-                <Button
-                  color="inherit"
-                  disabled={auth.loading}
-                  fullWidth
-                  onClick={() => void signOut()}
-                  size="large"
-                  startIcon={auth.loading ? <CircularProgress color="inherit" size={18} /> : <LogoutRoundedIcon />}
-                  variant="outlined"
+                  Ask the property owner or manager to confirm your staff role and reactivate your membership.
+                </RecoveryStep>
+                <RecoveryStep
+                  icon={<RefreshRoundedIcon />}
+                  number="02"
+                  title="Check your access again"
                 >
-                  {auth.loading ? "Signing out…" : "Use another account"}
-                </Button>
+                  Once they confirm the change, return here and refresh your workspace status.
+                </RecoveryStep>
               </Stack>
 
-              <Typography color="text.secondary" textAlign="center" variant="caption">
-                No booking or property data has been deleted. Access returns as soon as your membership is reactivated.
-              </Typography>
+              <Button
+                endIcon={<ArrowForwardRoundedIcon />}
+                fullWidth
+                onClick={() => window.location.replace("/")}
+                size="large"
+                sx={{ minHeight: 52 }}
+                variant="contained"
+              >
+                Check access again
+              </Button>
+
+              <Stack alignItems="center" direction="row" spacing={2}>
+                <Divider sx={{ flex: 1 }} />
+                <Typography color="text.secondary" variant="caption">or</Typography>
+                <Divider sx={{ flex: 1 }} />
+              </Stack>
+
+              <Button
+                color="inherit"
+                disabled={auth.loading}
+                fullWidth
+                onClick={() => void signOut()}
+                startIcon={auth.loading ? <CircularProgress color="inherit" size={18} /> : <LogoutRoundedIcon />}
+                variant="text"
+              >
+                {auth.loading ? "Signing out…" : "Sign out and use another account"}
+              </Button>
             </Stack>
-          </Paper>
-        </Stack>
+          </Box>
+        </Paper>
+
+        <Typography color="text.secondary" sx={{ mt: 3, textAlign: "center" }} variant="caption">
+          Loji Business · Secure hospitality operations
+        </Typography>
       </Container>
     </Box>
   );
 }
 
-function InformationSection({
+function RecoveryStep({
   children,
   icon,
+  number,
   title,
 }: {
   children: React.ReactNode;
   icon: React.ReactNode;
+  number: string;
   title: string;
 }) {
   return (
-    <Stack spacing={1.25} sx={{ flex: 1, p: { xs: 2.25, sm: 3 } }}>
-      <Stack alignItems="center" direction="row" spacing={1}>
+    <Stack direction="row" spacing={2} sx={{ py: 2.25 }}>
+      <Box
+        sx={{
+          alignItems: "center",
+          bgcolor: "#EAF3FF",
+          borderRadius: 2,
+          color: "primary.main",
+          display: "flex",
+          flexShrink: 0,
+          height: 44,
+          justifyContent: "center",
+          width: 44,
+          "& svg": { fontSize: 22 },
+        }}
+      >
         {icon}
-        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-          {title}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography color="primary.main" sx={{ fontSize: ".68rem", fontWeight: 850, letterSpacing: ".08em" }}>
+          STEP {number}
         </Typography>
-      </Stack>
-      <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.7 }}>
-        {children}
-      </Typography>
+        <Typography sx={{ fontWeight: 780, mt: .25 }}>{title}</Typography>
+        <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.65, mt: .5 }}>
+          {children}
+        </Typography>
+      </Box>
     </Stack>
   );
 }
