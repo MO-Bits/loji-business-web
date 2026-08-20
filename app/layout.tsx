@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { GoogleAnalytics } from "@next/third-parties/google";
+
 import "@fontsource-variable/inter";
 
 import { AppProviders } from "@/components/providers/app-providers";
@@ -7,6 +9,9 @@ import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
 const baseUrl = "https://business.loji.co.tz";
+
+const googleAnalyticsId =
+  process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID;
 
 const organizationData = {
   "@context": "https://schema.org",
@@ -153,6 +158,10 @@ export default function RootLayout({
 
         <AppProviders>{children}</AppProviders>
       </body>
+
+      {googleAnalyticsId ? (
+        <GoogleAnalytics gaId={googleAnalyticsId} />
+      ) : null}
     </html>
   );
 }
