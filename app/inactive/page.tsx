@@ -1,11 +1,5 @@
-import { FlowPlaceholder } from "@/components/session/flow-placeholder";
+import { InactiveUserScreen } from "@/components/auth/inactive-user-screen";
 
 export default function InactivePage() {
-  return (
-    <FlowPlaceholder
-      eyebrow="Account inactive"
-      title="Your access is currently inactive"
-      description="This route matches the inactive status returned by get_app_session."
-    />
-  );
+  return <InactiveUserScreen />;
 }
