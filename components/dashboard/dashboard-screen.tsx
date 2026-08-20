@@ -45,27 +45,27 @@ export function DashboardScreen() {
   const occupancy = dashboard.totalRooms > 0 ? Math.round(((dashboard.totalRooms - dashboard.availableRooms) / dashboard.totalRooms) * 100) : 0;
 
   return <Box sx={{ minHeight: "100dvh", pb: 6 }}>
-    <Container maxWidth="xl" sx={{ pt: { xs: 2.5, md: 4 } }}><Stack spacing={{ xs: 2.5, md: 3.5 }}>
+    <Container maxWidth="xl" sx={{ pt: { xs: 2.25, sm: 3, lg: 4 } }}><Stack spacing={{ xs: 2.25, sm: 3, lg: 3.5 }}>
       <Paper sx={{ borderRadius: 4, color: "white", minHeight: { xs: 210, md: 230 }, overflow: "hidden", position: "relative", background: cover ? `linear-gradient(90deg, rgba(5,36,78,.94), rgba(5,36,78,.72)), url(${cover}) center/cover` : "linear-gradient(135deg, #073E86 0%, #0B66D4 62%, #2D8BE8 100%)" }}>
-        <Box sx={{ height: "100%", p: { xs: 3, md: 4.5 }, position: "relative" }}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ alignItems: { md: "flex-end" }, justifyContent: "space-between", minHeight: { md: 140 } }}>
+        <Box sx={{ height: "100%", p: { xs: 2.25, sm: 3.25, lg: 4.5 }, position: "relative" }}>
+          <Stack direction={{ xs: "column", lg: "row" }} spacing={{ xs: 2.5, lg: 3 }} sx={{ alignItems: { lg: "flex-end" }, justifyContent: "space-between", minHeight: { lg: 140 } }}>
             <Box><Stack direction="row" spacing={1} alignItems="center"><CalendarTodayRoundedIcon sx={{ fontSize: 17, opacity: .8 }} /><Typography variant="caption" sx={{ fontWeight: 750, letterSpacing: ".08em", opacity: .84 }}>{now.toLocaleDateString("en-TZ", { weekday: "long", day: "numeric", month: "long" }).toUpperCase()}</Typography></Stack><Typography variant="h3" sx={{ color: "white", mt: 2, maxWidth: 680 }}>Good day at {propertyName}</Typography><Typography sx={{ mt: 1, opacity: .78 }}>Everything your team needs for today’s stays, rooms and payments.</Typography></Box>
-            <Stack direction="row" spacing={1.25}><Button component={Link} href="/bookings" variant="outlined" startIcon={<SearchRoundedIcon />} sx={{ bgcolor: "rgba(255,255,255,.08)", borderColor: "rgba(255,255,255,.45)", color: "white", "&:hover": { bgcolor: "rgba(255,255,255,.14)", borderColor: "white" } }}>Find booking</Button><Button component={Link} href="/bookings/new" variant="contained" startIcon={<AddRoundedIcon />} sx={{ bgcolor: "white", color: "#074A9E", "&:hover": { bgcolor: "#F2F7FF" } }}>New booking</Button></Stack>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ width: { xs: "100%", lg: "auto" }, "& .MuiButton-root": { flex: 1, whiteSpace: "nowrap" } }}><Button component={Link} href="/bookings" variant="outlined" startIcon={<SearchRoundedIcon />} sx={{ bgcolor: "rgba(255,255,255,.08)", borderColor: "rgba(255,255,255,.45)", color: "white", "&:hover": { bgcolor: "rgba(255,255,255,.14)", borderColor: "white" } }}>Find booking</Button><Button component={Link} href="/bookings/new" variant="contained" startIcon={<AddRoundedIcon />} sx={{ bgcolor: "white", color: "#074A9E", "&:hover": { bgcolor: "#F2F7FF" } }}>New booking</Button></Stack>
           </Stack>
         </Box>
       </Paper>
 
-      <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "repeat(2, minmax(0,1fr))", lg: "repeat(4, minmax(0,1fr))" } }}>
+      <Box sx={{ display: "grid", gap: { xs: 1.5, sm: 2 }, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0,1fr))", xl: "repeat(4, minmax(0,1fr))" } }}>
         <MetricCard icon={<LoginRoundedIcon />} label="Arrivals today" value={dashboard.arrivals} tone="#0B66D4" detail="Expected check-ins" />
         <MetricCard icon={<LogoutRoundedIcon />} label="Departures today" value={dashboard.departures} tone="#D35454" detail="Expected check-outs" />
         <MetricCard icon={<GroupsRoundedIcon />} label="Guests staying" value={dashboard.stayingGuests} tone="#0E9F6E" detail="Currently in-house" />
         <MetricCard icon={<BedRoundedIcon />} label="Occupancy" value={`${occupancy}%`} tone="#8B5CF6" detail={`${dashboard.availableRooms} rooms available`} />
       </Box>
 
-      <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", xl: "minmax(0,1.55fr) minmax(330px,.75fr)" } }}>
+      <Box sx={{ display: "grid", gap: { xs: 2, sm: 3 }, gridTemplateColumns: { xs: "1fr", xl: "minmax(0,1.55fr) minmax(320px,.75fr)" } }}>
         <Stack spacing={3}>
           <StaySection title="Currently staying" subtitle="Guests your front desk is serving now" icon={<GroupsRoundedIcon />} tone="#0E9F6E" bookings={dashboard.currentGuests} empty="No guests currently staying" />
-          <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", lg: "repeat(2,minmax(0,1fr))" } }}>
+          <Box sx={{ display: "grid", gap: { xs: 2, sm: 3 }, gridTemplateColumns: { xs: "1fr", lg: "repeat(2,minmax(0,1fr))" } }}>
             <StaySection title="Arriving today" subtitle="Prepare rooms and welcome guests" icon={<LoginRoundedIcon />} tone="#0B66D4" bookings={dashboard.todayArrivals} empty="No arrivals scheduled today" compact />
             <StaySection title="Departing today" subtitle="Check balances before checkout" icon={<LogoutRoundedIcon />} tone="#D35454" bookings={dashboard.todayDepartures} empty="No departures scheduled today" compact />
           </Box>
@@ -80,7 +80,7 @@ export function DashboardScreen() {
 }
 
 function MetricCard({ icon, label, value, detail, tone }: { icon: React.ReactNode; label: string; value: string | number; detail: string; tone: string }) {
-  return <Paper variant="outlined" sx={{ borderRadius: 3.5, p: { xs: 2, md: 2.5 } }}><Stack direction="row" spacing={1.7} alignItems="center"><Box sx={{ bgcolor: `${tone}14`, borderRadius: 2.5, color: tone, display: "grid", height: 44, placeItems: "center", width: 44, flexShrink: 0 }}>{icon}</Box><Box sx={{ minWidth: 0 }}><Typography sx={{ fontSize: { xs: "1.45rem", md: "1.7rem" }, fontWeight: 820, letterSpacing: "-.04em", lineHeight: 1 }}>{value}</Typography><Typography variant="body2" sx={{ fontWeight: 700, mt: .6 }}>{label}</Typography><Typography color="text.secondary" variant="caption" sx={{ display: { xs: "none", sm: "block" } }}>{detail}</Typography></Box></Stack></Paper>;
+  return <Paper variant="outlined" sx={{ borderRadius: 3.5, p: { xs: 1.75, sm: 2.25, lg: 2.5 } }}><Stack direction="row" spacing={1.5} alignItems="center"><Box sx={{ bgcolor: `${tone}14`, borderRadius: 2.5, color: tone, display: "grid", height: { xs: 40, sm: 44 }, placeItems: "center", width: { xs: 40, sm: 44 }, flexShrink: 0 }}>{icon}</Box><Box sx={{ minWidth: 0 }}><Typography sx={{ fontSize: { xs: "1.35rem", md: "1.7rem" }, fontWeight: 820, letterSpacing: "-.04em", lineHeight: 1 }}>{value}</Typography><Typography variant="body2" sx={{ fontWeight: 700, mt: .55 }}>{label}</Typography><Typography color="text.secondary" variant="caption">{detail}</Typography></Box></Stack></Paper>;
 }
 
 function SectionHeading({ title, subtitle, icon, tone, count }: { title: string; subtitle: string; icon: React.ReactNode; tone: string; count: number }) {
@@ -103,7 +103,7 @@ function FinanceCard({ revenue, outstanding }: { revenue: number; outstanding: n
 }
 
 function AvailableRooms({ rooms }: { rooms: DashboardRoom[] }) {
-  return <Paper variant="outlined" sx={{ borderRadius: 3.5, p: 3 }}><SectionHeading title="Available rooms" subtitle="Ready to sell tonight" icon={<HotelRoundedIcon />} tone="#0B66D4" count={rooms.length} /><Divider sx={{ my: 2.25 }} />{rooms.length === 0 ? <EmptyState text="No available rooms" /> : <Stack spacing={1.25}>{rooms.slice(0, 5).map((room) => <RoomCard key={room.id} room={room} />)}{rooms.length > 5 && <Button component={Link} href="/rooms">View all rooms</Button>}</Stack>}</Paper>;
+  return <Paper variant="outlined" sx={{ borderRadius: 3.5, p: { xs: 2.25, sm: 3 } }}><SectionHeading title="Available rooms" subtitle="Ready to sell tonight" icon={<HotelRoundedIcon />} tone="#0B66D4" count={rooms.length} /><Divider sx={{ my: 2.25 }} />{rooms.length === 0 ? <EmptyState text="No available rooms" /> : <Stack spacing={1.25}>{rooms.slice(0, 5).map((room) => <RoomCard key={room.id} room={room} />)}{rooms.length > 5 && <Button component={Link} href="/rooms">View all rooms</Button>}</Stack>}</Paper>;
 }
 
 function RoomCard({ room }: { room: DashboardRoom }) {

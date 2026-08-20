@@ -50,7 +50,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   };
 
   return <Box sx={{ display: "flex", minHeight: "100dvh" }}>
-    <Drawer variant="permanent" sx={{ display: { xs: "none", md: "block" }, flexShrink: 0, width: drawerWidth, "& .MuiDrawer-paper": { bgcolor: "background.paper", borderRightColor: "divider", boxSizing: "border-box", width: drawerWidth } }}>
+    <Drawer variant="permanent" sx={{ display: { xs: "none", lg: "block" }, flexShrink: 0, width: drawerWidth, "& .MuiDrawer-paper": { bgcolor: "background.paper", borderRightColor: "divider", boxSizing: "border-box", width: drawerWidth } }}>
       <Toolbar sx={{ minHeight: 76, px: 2.5 }}><BrandWordmark priority sx={{ width: 158 }} /></Toolbar>
       <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0, overflowY: "auto", px: 1.5, pb: 1.5 }}>
         <Button component={Link} href="/bookings/new" variant="contained" startIcon={<AddRoundedIcon />} fullWidth sx={{ mb: 2 }}>New booking</Button>
@@ -66,8 +66,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       </Box>
     </Drawer>
 
-    <Box component="main" sx={{ flex: 1, minWidth: 0, overflowX: "hidden", pb: { xs: "calc(78px + env(safe-area-inset-bottom))", md: 0 } }}>
-      <Box sx={{ alignItems: "center", bgcolor: "rgba(255,255,255,.94)", backdropFilter: "blur(18px)", borderBottom: 1, borderColor: "divider", display: { xs: "flex", md: "none" }, height: 66, justifyContent: "space-between", px: 2, position: "sticky", top: 0, zIndex: (theme) => theme.zIndex.appBar }}>
+    <Box component="main" sx={{ flex: 1, minWidth: 0, overflowX: "hidden", pb: { xs: "calc(78px + env(safe-area-inset-bottom))", lg: 0 } }}>
+      <Box sx={{ alignItems: "center", bgcolor: "rgba(255,255,255,.94)", backdropFilter: "blur(18px)", borderBottom: 1, borderColor: "divider", display: { xs: "flex", lg: "none" }, height: { xs: 62, sm: 68 }, justifyContent: "space-between", px: { xs: 2, sm: 3 }, position: "sticky", top: 0, zIndex: (theme) => theme.zIndex.appBar }}>
         <BrandWordmark priority sx={{ width: 146 }} />
         <Avatar src={propertyImage} sx={{ bgcolor: "primary.main", height: 36, width: 36 }}><ApartmentRoundedIcon fontSize="small" /></Avatar>
       </Box>
@@ -87,5 +87,5 @@ function NavigationList({ items, pathname }: { items: MainDestination[]; pathnam
 function MobileNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: (path: string) => void }) {
   const match = mobileDestinations.findIndex((item) => item.match(pathname));
   const selected = pathname.startsWith("/more/") ? mobileDestinations.length - 1 : Math.max(0, match);
-  return <Box sx={{ bgcolor: "rgba(255,255,255,.96)", backdropFilter: "blur(18px)", borderTop: 1, borderColor: "divider", bottom: 0, boxShadow: "0 -8px 30px rgba(17,24,39,.07)", display: { xs: "block", md: "none" }, left: 0, pb: "env(safe-area-inset-bottom)", position: "fixed", right: 0, zIndex: (theme) => theme.zIndex.appBar }}><BottomNavigation showLabels value={selected} onChange={(_, value: number) => onNavigate(mobileDestinations[value].path)} sx={{ height: 70 }}>{mobileDestinations.map((item, index) => <BottomNavigationAction key={item.path} label={item.label === "My account" ? "Account" : item.label} icon={index === selected ? item.activeIcon : item.icon} sx={{ minWidth: 0, px: .5, color: index === selected ? "primary.main" : "text.secondary", "& .MuiBottomNavigationAction-label": { fontSize: ".65rem", fontWeight: index === selected ? 780 : 570 } }} />)}</BottomNavigation></Box>;
+  return <Box sx={{ bgcolor: "rgba(255,255,255,.96)", backdropFilter: "blur(18px)", borderTop: 1, borderColor: "divider", bottom: 0, boxShadow: "0 -8px 30px rgba(17,24,39,.07)", display: { xs: "block", lg: "none" }, left: 0, pb: "env(safe-area-inset-bottom)", position: "fixed", right: 0, zIndex: (theme) => theme.zIndex.appBar }}><BottomNavigation showLabels value={selected} onChange={(_, value: number) => onNavigate(mobileDestinations[value].path)} sx={{ height: { xs: 68, sm: 72 }, maxWidth: 720, mx: "auto" }}>{mobileDestinations.map((item, index) => <BottomNavigationAction key={item.path} label={item.label === "My account" ? "Account" : item.label} icon={index === selected ? item.activeIcon : item.icon} sx={{ minWidth: 0, px: .5, color: index === selected ? "primary.main" : "text.secondary", "& .MuiBottomNavigationAction-label": { fontSize: { xs: ".64rem", sm: ".72rem" }, fontWeight: index === selected ? 780 : 570 } }} />)}</BottomNavigation></Box>;
 }

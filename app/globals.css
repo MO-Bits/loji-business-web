@@ -6,6 +6,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -27,6 +28,13 @@ img {
   max-width: 100%;
 }
 
+main,
+section,
+article,
+div {
+  min-width: 0;
+}
+
 .surface-hover {
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
@@ -35,6 +43,13 @@ img {
   border-color: color-mix(in srgb, var(--mui-palette-primary-main) 38%, var(--mui-palette-divider));
   box-shadow: 0 16px 44px rgba(17, 24, 39, 0.09);
   transform: translateY(-2px);
+}
+
+@media (max-width: 899px), (hover: none) {
+  .surface-hover:hover {
+    box-shadow: none;
+    transform: none;
+  }
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }

@@ -45,7 +45,7 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         autoHideDuration={4500}
         anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
         onClose={() => setFeedback(null)}
-        sx={{ bottom: { xs: 86, md: 24 } }}
+        sx={{ bottom: { xs: 86, lg: 24 }, maxWidth: { xs: "calc(100vw - 24px)", sm: 560 }, width: { xs: "calc(100vw - 24px)", sm: "auto" } }}
       >
         <Alert
           icon={
@@ -62,7 +62,9 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
             alignItems: "center",
             boxShadow: "0 14px 40px rgba(17, 24, 39, .22)",
             fontWeight: 700,
+            maxWidth: 520,
             minWidth: { sm: 360 },
+            width: { xs: "100%", sm: "auto" },
           }}
         >
           {feedback?.message}

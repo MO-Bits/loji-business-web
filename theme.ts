@@ -52,8 +52,8 @@ export const theme = createTheme({
       letterSpacing: "-0.045em",
       lineHeight: 1,
     },
-    h2: { fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.08 },
-    h3: { fontWeight: 780, letterSpacing: "-0.035em", lineHeight: 1.12 },
+    h2: { fontSize: "clamp(2.15rem, 4vw, 3.75rem)", fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.08 },
+    h3: { fontSize: "clamp(1.8rem, 3vw, 3rem)", fontWeight: 780, letterSpacing: "-0.035em", lineHeight: 1.12 },
     h4: {
       fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
       fontWeight: 780,
@@ -85,6 +85,14 @@ export const theme = createTheme({
           "&:active": { transform: "scale(.985)" },
         },
         contained: { boxShadow: "0 7px 18px rgba(11,102,212,.18)", "&:hover": { boxShadow: "0 10px 24px rgba(11,102,212,.25)", transform: "translateY(-1px)" } },
+      },
+    },
+    MuiContainer: {
+      styleOverrides: {
+        root: {
+          paddingLeft: "clamp(16px, 3vw, 32px) !important",
+          paddingRight: "clamp(16px, 3vw, 32px) !important",
+        },
       },
     },
     MuiTextField: {
@@ -147,6 +155,7 @@ export const theme = createTheme({
     },
     MuiChip: { styleOverrides: { root: { borderRadius: 999, fontWeight: 700 } } },
     MuiIconButton: { styleOverrides: { root: { transition: "background-color 150ms ease, transform 150ms ease", "&:active": { transform: "scale(.94)" } } } },
+    MuiDialogActions: { styleOverrides: { root: { gap: 8, padding: "16px 24px 24px", flexWrap: "wrap" } } },
     MuiAlert: { styleOverrides: { root: { borderRadius: 8 }, message: { lineHeight: 1.55 } } },
     MuiSkeleton: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiDivider: { styleOverrides: { root: { borderColor: "var(--mui-palette-divider)" } } },
