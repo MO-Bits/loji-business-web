@@ -1,9 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import NextLink from "next/link";
-import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import {
   Alert,
@@ -11,9 +8,6 @@ import {
   Button,
   CircularProgress,
   Container,
-  Dialog,
-  DialogContent,
-  IconButton,
   Link,
   Paper,
   Snackbar,
@@ -21,13 +15,12 @@ import {
   Typography,
 } from "@mui/material";
 
-import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 import { BrandWordmark } from "@/components/shared/brand-wordmark";
+import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 
 import { GoogleMark } from "./google-mark";
 
 export function LoginScreen() {
-  const [dialogOpen, setDialogOpen] = useState(false);
   const auth = useAuthController();
 
   async function handleGoogleLogin() {
@@ -38,8 +31,8 @@ export function LoginScreen() {
     <Box
       component="main"
       sx={{
+        bgcolor: "#F7F8FA",
         display: "flex",
-        flexDirection: "column",
         minHeight: "100dvh",
       }}
     >
@@ -49,8 +42,7 @@ export function LoginScreen() {
           display: "flex",
           flex: 1,
           flexDirection: "column",
-          px: { xs: 3, sm: 5 },
-          py: { xs: 4, md: 6 },
+          py: { xs: 3, sm: 4, md: 5 },
         }}
       >
         <BrandWordmark priority sx={{ width: { xs: 168, sm: 196 } }} />
@@ -60,187 +52,92 @@ export function LoginScreen() {
             alignItems: "center",
             display: "grid",
             flex: 1,
-            gap: { xs: 5, md: 8 },
-            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1.25fr) minmax(340px, .75fr)" },
-            py: { xs: 7, md: 5 },
+            gap: { xs: 5, md: 10 },
+            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1.08fr) minmax(360px, .72fr)" },
+            py: { xs: 6, sm: 8, md: 5 },
           }}
         >
-          <Stack spacing={2.5} sx={{ maxWidth: 760 }}>
-            <BrandWordmark priority sx={{ width: { xs: "min(100%, 430px)", md: "min(100%, 620px)" } }} />
-
-            <Typography
-              variant="h4"
-              component="p"
-              sx={{ maxWidth: 650, lineHeight: 1.15 }}
-            >
-              Everything you need to run your{" "}
-              <Box component="span" sx={{ fontWeight: 900 }}>
-                hospitality business.
-              </Box>
+          <Stack spacing={2.25} sx={{ maxWidth: 650 }}>
+            <Typography component="h1" variant="h2">
+              Run your property with clarity.
             </Typography>
-
-            <Typography
-              variant="h6"
-              color="text.secondary"
-              sx={{ maxWidth: 680, fontWeight: 550 }}
-            >
-              Manage rooms, reservations, guests, and your team from one
-              powerful workspace.{" "}
-              <Link component={NextLink} href="/learn-more" underline="hover" sx={{ fontWeight: 800 }}>
-                Learn more
-              </Link>
+            <Typography color="text.secondary" variant="h6" sx={{ fontWeight: 450, maxWidth: 590 }}>
+              Rooms, bookings, guests, and your team—managed from one simple hospitality workspace.
             </Typography>
+            <Link
+              component={NextLink}
+              href="/learn-more"
+              underline="hover"
+              sx={{ alignSelf: "flex-start", fontWeight: 700 }}
+            >
+              See how it works
+            </Link>
           </Stack>
 
           <Paper
             variant="outlined"
             sx={{
-              display: { xs: "none", md: "block" },
-              p: 4,
+              borderColor: "rgba(15,23,42,.10)",
+              boxShadow: "0 22px 65px rgba(15,23,42,.08)",
+              p: { xs: 3, sm: 4 },
             }}
           >
             <Stack spacing={3}>
-              <Box
-                sx={{
-                  alignItems: "center",
-                  bgcolor: "primary.main",
-                  borderRadius: 3,
-                  color: "primary.contrastText",
-                  display: "flex",
-                  height: 58,
-                  justifyContent: "center",
-                  width: 58,
-                }}
-              >
-                <LockOutlinedIcon />
-              </Box>
               <Stack spacing={1}>
-                <Typography variant="h5" sx={{ fontWeight: 750 }}>
-                  Your workspace is ready
+                <Typography component="h2" variant="h5" sx={{ fontWeight: 750, letterSpacing: "-.025em" }}>
+                  Welcome back
                 </Typography>
                 <Typography color="text.secondary">
-                  Sign in securely to continue managing your property.
+                  Sign in to continue to your workspace.
                 </Typography>
               </Stack>
+
               <Button
+                disabled={auth.loading}
                 fullWidth
+                onClick={() => void handleGoogleLogin()}
                 size="large"
-                variant="contained"
-                endIcon={<ArrowForwardRoundedIcon />}
-                onClick={() => setDialogOpen(true)}
+                startIcon={auth.loading ? <CircularProgress color="inherit" size={20} /> : <GoogleMark />}
+                sx={{ bgcolor: "background.paper", borderColor: "divider", color: "text.primary", minHeight: 54, "&:hover": { bgcolor: "action.hover", borderColor: "text.secondary" } }}
+                variant="outlined"
               >
-                Get started
+                {auth.loading ? "Connecting…" : "Continue with Google"}
               </Button>
+
+              <Stack alignItems="center" direction="row" spacing={1}>
+                <LockOutlinedIcon sx={{ color: "text.secondary", fontSize: 16 }} />
+                <Typography color="text.secondary" variant="caption">
+                  Secure sign-in. We never store your Google password.
+                </Typography>
+              </Stack>
+
+              <Typography color="text.secondary" variant="caption" sx={{ lineHeight: 1.65 }}>
+                By continuing, you agree to our{" "}
+                <Link component={NextLink} href="/terms" underline="hover" sx={{ fontWeight: 700 }}>
+                  Terms of Use
+                </Link>{" "}
+                and{" "}
+                <Link component={NextLink} href="/privacy" underline="hover" sx={{ fontWeight: 700 }}>
+                  Privacy Policy
+                </Link>
+                .
+              </Typography>
             </Stack>
           </Paper>
         </Box>
 
-        <Stack spacing={1.5} sx={{ alignItems: "center" }}>
-          <Button
-            fullWidth
-            size="large"
-            variant="contained"
-            endIcon={<ArrowForwardRoundedIcon />}
-            onClick={() => setDialogOpen(true)}
-            sx={{ display: { md: "none" }, maxWidth: 520, minHeight: 56 }}
-          >
-            Get started
-          </Button>
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ textAlign: "center" }}
-          >
-            By continuing, you agree to Loji Business{" "}
-            <Link component={NextLink} href="/terms" underline="hover" sx={{ fontWeight: 700 }}>
-              Terms of Use
-            </Link>{" "}
-            and{" "}
-            <Link component={NextLink} href="/privacy" underline="hover" sx={{ fontWeight: 700 }}>
-              Privacy Policy
-            </Link>
-            .
-          </Typography>
-        </Stack>
+        <Typography color="text.secondary" variant="caption">
+          © {new Date().getFullYear()} Loji. Hospitality operations, simplified.
+        </Typography>
       </Container>
 
-      <Dialog
-        open={dialogOpen}
-        onClose={() => !auth.loading && setDialogOpen(false)}
-        fullWidth
-        maxWidth="xs"
-        slotProps={{
-          paper: {
-            sx: {
-              borderRadius: 4,
-              m: 2,
-            },
-          },
-        }}
-      >
-        <DialogContent sx={{ p: { xs: 3, sm: 4 } }}>
-          <Stack spacing={3}>
-            <Stack
-              direction="row"
-              sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
-            >
-              <Box
-                sx={{
-                  alignItems: "center",
-                  bgcolor: "primary.main",
-                  borderRadius: 3,
-                  color: "primary.contrastText",
-                  display: "flex",
-                  height: 56,
-                  justifyContent: "center",
-                  width: 56,
-                }}
-              >
-                <LockOutlinedIcon />
-              </Box>
-              <IconButton
-                aria-label="Close sign in"
-                disabled={auth.loading}
-                onClick={() => setDialogOpen(false)}
-              >
-                <CloseRoundedIcon />
-              </IconButton>
-            </Stack>
-
-            <Stack spacing={1}>
-              <Typography variant="h5" sx={{ fontWeight: 750 }}>
-                Continue to Loji Business
-              </Typography>
-              <Typography color="text.secondary">
-                Choose your Google account to access your workspace.
-              </Typography>
-            </Stack>
-
-            <Button
-              fullWidth
-              size="large"
-              variant="outlined"
-              disabled={auth.loading}
-              startIcon={
-                auth.loading ? <CircularProgress size={20} /> : <GoogleMark />
-              }
-              onClick={handleGoogleLogin}
-              sx={{ minHeight: 54, color: "text.primary", borderColor: "divider" }}
-            >
-              {auth.loading ? "Opening Google…" : "Continue with Google"}
-            </Button>
-          </Stack>
-        </DialogContent>
-      </Dialog>
-
       <Snackbar
-        open={Boolean(auth.error)}
+        anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
         autoHideDuration={6000}
         onClose={auth.clearError}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        open={Boolean(auth.error)}
       >
-        <Alert severity="error" variant="filled" onClose={auth.clearError}>
+        <Alert onClose={auth.clearError} severity="error" variant="filled">
           {auth.error}
         </Alert>
       </Snackbar>
