@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-import "@fontsource-variable/inter";
+import "@fontsource/roboto/300.css";
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/500.css";
+import "@fontsource/roboto/700.css";
 
 import { AppProviders } from "@/components/providers/app-providers";
 
