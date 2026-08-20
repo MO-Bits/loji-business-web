@@ -38,10 +38,10 @@ export function InactiveUserScreen() {
       <Box component="header" sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider" }}>
         <Container maxWidth="lg">
           <Stack alignItems="center" direction="row" justifyContent="space-between" sx={{ minHeight: { xs: 64, sm: 72 } }}>
-            <BrandWordmark priority sx={{ width: { xs: 142, sm: 164 } }} />
+            <BrandWordmark priority sx={{ width: { xs: 168, sm: 196 } }} />
             <Stack alignItems="center" direction="row" spacing={0.75}>
               <LockOutlinedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
-              <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" }, fontWeight: 650 }} variant="caption">
+              <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }} variant="caption">
                 Secure account status
               </Typography>
             </Stack>
@@ -90,13 +90,13 @@ export function InactiveUserScreen() {
                 </Box>
 
                 <Box>
-                  <Typography sx={{ color: "#9CC8F5", fontSize: ".72rem", fontWeight: 850, letterSpacing: ".12em", mb: 1.5 }}>
+                  <Typography variant="overline" sx={{ color: "#9CC8F5", fontWeight: 700, letterSpacing: ".12em" }}>
                     WORKSPACE STATUS
                   </Typography>
-                  <Typography component="h1" sx={{ fontSize: { xs: "2rem", sm: "2.45rem" }, fontWeight: 850, letterSpacing: "-.045em", lineHeight: 1.08 }}>
+                  <Typography component="h1" variant="h4" sx={{ color: "common.white", mt: 1 }}>
                     Access temporarily paused
                   </Typography>
-                  <Typography sx={{ color: "rgba(255,255,255,.72)", lineHeight: 1.7, mt: 2 }}>
+                  <Typography variant="body1" sx={{ color: "rgba(255,255,255,.72)", mt: 2 }}>
                     Your Loji Business account is safe, but it is not currently connected to an active property membership.
                   </Typography>
                 </Box>
@@ -104,7 +104,7 @@ export function InactiveUserScreen() {
 
               <Stack alignItems="center" direction="row" spacing={1.25}>
                 <CheckCircleRoundedIcon sx={{ color: "#79D4AE", fontSize: 21 }} />
-                <Typography sx={{ color: "rgba(255,255,255,.78)", fontSize: ".84rem", fontWeight: 650 }}>
+                <Typography variant="body2" sx={{ color: "rgba(255,255,255,.78)", fontWeight: 650 }}>
                   Your property and booking data remain protected
                 </Typography>
               </Stack>
@@ -114,7 +114,7 @@ export function InactiveUserScreen() {
           <Box sx={{ bgcolor: "background.paper", p: { xs: 3, sm: 4.5, md: 6 } }}>
             <Stack spacing={{ xs: 3, sm: 4 }}>
               <Box>
-                <Typography component="h2" sx={{ fontSize: { xs: "1.45rem", sm: "1.7rem" }, fontWeight: 820, letterSpacing: "-.025em" }}>
+                <Typography component="h2" variant="h5" sx={{ fontWeight: 750, letterSpacing: "-.025em" }}>
                   Restore your workspace access
                 </Typography>
                 <Typography color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
@@ -210,10 +210,10 @@ function RecoveryStep({
         {icon}
       </Box>
       <Box sx={{ minWidth: 0 }}>
-        <Typography color="primary.main" sx={{ fontSize: ".68rem", fontWeight: 850, letterSpacing: ".08em" }}>
+        <Typography color="primary.main" variant="caption" sx={{ fontWeight: 700, letterSpacing: ".08em" }}>
           STEP {number}
         </Typography>
-        <Typography sx={{ fontWeight: 780, mt: .25 }}>{title}</Typography>
+        <Typography variant="subtitle1" sx={{ mt: .25 }}>{title}</Typography>
         <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.65, mt: .5 }}>
           {children}
         </Typography>
