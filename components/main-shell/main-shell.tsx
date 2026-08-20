@@ -15,7 +15,7 @@ import { AppStatus } from "@/features/session/models/app-status";
 import { createClient } from "@/lib/supabase/client";
 import { accountDestination, managementDestinations, mobileDestinations, type MainDestination, workspaceDestinations } from "./destinations";
 
-const drawerWidth = 282;
+const drawerWidth = 244;
 
 function imageFromProperty(property: Record<string, unknown> | null | undefined) {
   if (!property || !Array.isArray(property.images) || !property.images.length) return undefined;
@@ -39,8 +39,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
   const canManage = ["owner", "manager"].includes(session.activeRole?.toLowerCase() ?? "");
   const property = session.property as Record<string, unknown> | null | undefined;
-  const propertyName = typeof property?.name === "string" ? property.name : "Your property";
-  const propertyType = typeof property?.type === "string" ? property.type : "Hospitality property";
   const propertyImage = imageFromProperty(property);
   const name = String(session.user?.user_metadata?.full_name ?? session.user?.user_metadata?.name ?? session.user?.email?.split("@")[0] ?? "Account");
   const avatar = typeof session.user?.user_metadata?.avatar_url === "string" ? session.user.user_metadata.avatar_url : undefined;
@@ -53,27 +51,17 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
   return <Box sx={{ display: "flex", minHeight: "100dvh" }}>
     <Drawer variant="permanent" sx={{ display: { xs: "none", md: "block" }, flexShrink: 0, width: drawerWidth, "& .MuiDrawer-paper": { bgcolor: "background.paper", borderRightColor: "divider", boxSizing: "border-box", width: drawerWidth } }}>
-      <Toolbar sx={{ minHeight: 82, px: 3 }}><BrandWordmark priority sx={{ width: 172 }} /></Toolbar>
-      <Box sx={{ px: 2, pb: 2 }}>
-        <Box sx={{ bgcolor: "#F2F6FB", border: "1px solid", borderColor: "#DFE8F2", borderRadius: 3, p: 1.5 }}>
-          <Stack direction="row" spacing={1.3} alignItems="center">
-            <Avatar variant="rounded" src={propertyImage} sx={{ bgcolor: "primary.main", borderRadius: 2, height: 44, width: 44 }}><ApartmentRoundedIcon /></Avatar>
-            <Box sx={{ minWidth: 0 }}><Typography noWrap variant="body2" sx={{ fontWeight: 800 }}>{propertyName}</Typography><Typography noWrap color="text.secondary" variant="caption" sx={{ textTransform: "capitalize" }}>{propertyType}</Typography></Box>
-          </Stack>
-        </Box>
-      </Box>
-      <Divider />
-      <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0, overflowY: "auto", px: 1.5, py: 2 }}>
-        <NavigationSection label="Workspace" items={workspaceDestinations} pathname={pathname} />
-        {canManage && <NavigationSection label="Manage" items={managementDestinations} pathname={pathname} sx={{ mt: 2.5 }} />}
-        <NavigationSection label="Profile" items={[accountDestination]} pathname={pathname} sx={{ mt: 2.5 }} />
+      <Toolbar sx={{ minHeight: 76, px: 2.5 }}><BrandWordmark priority sx={{ width: 158 }} /></Toolbar>
+      <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0, overflowY: "auto", px: 1.5, pb: 1.5 }}>
+        <Button component={Link} href="/bookings/new" variant="contained" startIcon={<AddRoundedIcon />} fullWidth sx={{ mb: 2 }}>New booking</Button>
+        <NavigationList items={workspaceDestinations} pathname={pathname} />
+        {canManage && <><Divider sx={{ my: 1.5 }} /><NavigationList items={managementDestinations} pathname={pathname} /></>}
         <Box sx={{ flex: 1 }} />
-        <Box sx={{ px: .5, py: 1.5 }}><Button component={Link} href="/bookings/new" variant="contained" startIcon={<AddRoundedIcon />} fullWidth>New booking</Button></Box>
         <Divider sx={{ my: 1 }} />
-        <Stack direction="row" spacing={1.2} sx={{ alignItems: "center", px: 1, py: 1.25 }}>
+        <Stack component={Link} href={accountDestination.path} direction="row" spacing={1.2} sx={{ alignItems: "center", borderRadius: 1, color: "inherit", px: 1, py: 1, textDecoration: "none", "&:hover": { bgcolor: "action.hover" } }}>
           <Avatar src={avatar} sx={{ bgcolor: "#17202A", height: 40, width: 40 }}>{name[0]?.toUpperCase()}</Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}><Typography noWrap variant="body2" sx={{ fontWeight: 750 }}>{name}</Typography><Typography noWrap color="text.secondary" variant="caption" sx={{ textTransform: "capitalize" }}>{session.activeRole ?? "Member"}</Typography></Box>
-          <Tooltip title="Sign out"><Button color="inherit" aria-label="Sign out" onClick={() => void signOut()} sx={{ minWidth: 40, px: 1 }}><LogoutRoundedIcon fontSize="small" /></Button></Tooltip>
+          <Tooltip title="Sign out"><Button color="inherit" aria-label="Sign out" onClick={(event) => { event.preventDefault(); void signOut(); }} sx={{ minWidth: 36, px: .5 }}><LogoutRoundedIcon fontSize="small" /></Button></Tooltip>
         </Stack>
       </Box>
     </Drawer>
@@ -89,11 +77,11 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   </Box>;
 }
 
-function NavigationSection({ label, items, pathname, sx }: { label: string; items: MainDestination[]; pathname: string; sx?: object }) {
-  return <Box sx={sx}><Typography color="text.secondary" sx={{ fontSize: ".67rem", fontWeight: 800, letterSpacing: ".12em", mb: .7, px: 1.5 }}>{label.toUpperCase()}</Typography><List disablePadding>{items.map((item) => {
+function NavigationList({ items, pathname }: { items: MainDestination[]; pathname: string }) {
+  return <List disablePadding>{items.map((item) => {
     const selected = item.match(pathname);
-    return <ListItemButton component={Link} href={item.path} key={item.path} selected={selected} sx={{ borderRadius: 2.5, mb: .4, minHeight: 46, px: 1.5, "&.Mui-selected": { bgcolor: "#EAF3FF", color: "primary.dark", "&:hover": { bgcolor: "#E1EEFD" } } }}><ListItemIcon sx={{ color: selected ? "primary.main" : "text.secondary", minWidth: 40 }}>{selected ? item.activeIcon : item.icon}</ListItemIcon><ListItemText primary={item.label} primaryTypographyProps={{ fontSize: ".93rem", fontWeight: selected ? 780 : 570 }} /></ListItemButton>;
-  })}</List></Box>;
+    return <ListItemButton component={Link} href={item.path} key={item.path} selected={selected} sx={{ borderRadius: 1, mb: .35, minHeight: 44, px: 1.25, "&.Mui-selected": { bgcolor: "#EAF3FF", color: "primary.dark", "&:hover": { bgcolor: "#E1EEFD" } } }}><ListItemIcon sx={{ color: selected ? "primary.main" : "text.secondary", minWidth: 38 }}>{selected ? item.activeIcon : item.icon}</ListItemIcon><ListItemText primary={item.label} primaryTypographyProps={{ fontSize: ".91rem", fontWeight: selected ? 780 : 570 }} /></ListItemButton>;
+  })}</List>;
 }
 
 function MobileNavigation({ pathname, onNavigate }: { pathname: string; onNavigate: (path: string) => void }) {

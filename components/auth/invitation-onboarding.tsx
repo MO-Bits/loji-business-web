@@ -7,6 +7,7 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import { Alert, Box, Button, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, Paper, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useMemo, useState } from "react";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +17,7 @@ type RpcResponse = { status?: string; message?: string; invitation?: Invitation 
 function resultObject(value: unknown): RpcResponse { return value && typeof value === "object" ? value as RpcResponse : {}; }
 
 export function InvitationOnboarding() {
+  const feedback = useAppFeedback();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const auth = useAuthController();
@@ -46,7 +48,7 @@ export function InvitationOnboarding() {
       const result = resultObject(data);
       if (result.status && result.status !== "success") throw new Error(result.message || "Unable to update the invitation.");
       setInvitation(null);
-      if (action === "accept_property_invitation") { setMessage("Welcome to the team 🎉"); router.replace("/dashboard"); router.refresh(); }
+      if (action === "accept_property_invitation") { feedback.success("Invitation accepted. Welcome to the team!"); router.replace("/dashboard"); router.refresh(); }
       else setMessage(result.message || "Invitation declined.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to update the invitation."); }
     finally { setLoading(false); }

@@ -42,7 +42,7 @@ export const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 8,
   },
   typography: {
     fontFamily: "var(--font-inter), Arial, sans-serif",
@@ -78,7 +78,7 @@ export const theme = createTheme({
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 8,
           minHeight: 44,
           paddingInline: 18,
           transition: "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
@@ -129,8 +129,12 @@ export const theme = createTheme({
     },
     MuiPaper: {
       styleOverrides: {
-        root: {
+        root: ({ ownerState }) => ({
           backgroundImage: "none",
+          borderRadius: ownerState.square ? 0 : 8,
+        }),
+        rounded: {
+          borderRadius: "8px !important",
         },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
@@ -138,15 +142,18 @@ export const theme = createTheme({
         },
       },
     },
+    MuiCard: {
+      styleOverrides: { root: { borderRadius: "8px !important" } },
+    },
     MuiChip: { styleOverrides: { root: { borderRadius: 999, fontWeight: 700 } } },
     MuiIconButton: { styleOverrides: { root: { transition: "background-color 150ms ease, transform 150ms ease", "&:active": { transform: "scale(.94)" } } } },
-    MuiAlert: { styleOverrides: { root: { borderRadius: 14 }, message: { lineHeight: 1.55 } } },
-    MuiSkeleton: { styleOverrides: { root: { borderRadius: 12 } } },
+    MuiAlert: { styleOverrides: { root: { borderRadius: 8 }, message: { lineHeight: 1.55 } } },
+    MuiSkeleton: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiDivider: { styleOverrides: { root: { borderColor: "var(--mui-palette-divider)" } } },
     MuiAppBar: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundImage: "none" } } },
     MuiTooltip: { styleOverrides: { tooltip: { borderRadius: 8, fontSize: ".75rem", padding: "7px 10px" } } },
-    MuiSnackbarContent: { styleOverrides: { root: { borderRadius: 14 } } },
-    MuiDialog: { styleOverrides: { paper: { borderRadius: 24, boxShadow: "0 24px 80px rgba(17,24,39,.18)" } } },
+    MuiSnackbarContent: { styleOverrides: { root: { borderRadius: 8 } } },
+    MuiDialog: { styleOverrides: { paper: { borderRadius: 8, boxShadow: "0 24px 80px rgba(17,24,39,.18)" } } },
     MuiDialogTitle: { styleOverrides: { root: { fontWeight: 750, letterSpacing: "-.02em" } } },
     MuiTabs: { styleOverrides: { indicator: { borderRadius: 4, height: 3 } } },
     MuiTab: { styleOverrides: { root: { fontWeight: 700, textTransform: "none" } } },

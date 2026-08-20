@@ -10,6 +10,7 @@ import { Alert, Box, Button, Chip, Container, FormControl, IconButton, InputLabe
 import { usePropertyController } from "@/features/property/hooks/use-property-controller";
 import type { PropertyType } from "@/features/property/models/property";
 import { MAX_PROPERTY_IMAGE_BYTES, MAX_PROPERTY_IMAGES } from "@/features/property/services/property-service";
+import { useAppFeedback } from "@/components/providers/feedback-provider";
 
 const amenities = ["WiFi", "Parking", "Swimming Pool", "Restaurant", "Bar", "Air Conditioning", "Breakfast", "24/7 Reception", "Laundry", "Security", "Gym", "Conference Room"];
 const propertyTypes: { value: PropertyType; label: string }[] = [
@@ -20,6 +21,7 @@ const propertyTypes: { value: PropertyType; label: string }[] = [
 export function PropertyBasicForm() {
   const router = useRouter();
   const controller = usePropertyController();
+  const feedback = useAppFeedback();
   const [type, setType] = useState<PropertyType>("hotel");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -45,6 +47,7 @@ export function PropertyBasicForm() {
     if (!files.length) return setLocalError("Add at least one property photo.");
     try {
       await controller.createProperty({ name, type, phone, email, amenities: selectedAmenities }, files);
+      feedback.success("Property details saved successfully.");
       router.replace("/");
     } catch { /* controller exposes the message */ }
   };

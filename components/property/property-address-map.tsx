@@ -11,6 +11,7 @@ import { Alert, Box, Button, CircularProgress, Container, IconButton, InputAdorn
 import { usePropertyController } from "@/features/property/hooks/use-property-controller";
 import type { PlaceDetails, PlacePrediction, PropertyAddress } from "@/features/property/models/property";
 import { createClient } from "@/lib/supabase/client";
+import { useAppFeedback } from "@/components/providers/feedback-provider";
 
 type LatLng = { lat: number; lng: number };
 type MapInstance = { getCenter(): { lat(): number; lng(): number } | null; panTo(position: LatLng): void; setZoom(zoom: number): void; setMapTypeId(type: string): void; addListener(event: string, callback: () => void): { remove(): void } };
@@ -51,6 +52,7 @@ function detailsFromGeocode(data: Record<string, unknown>, position: LatLng): Pl
 
 export function PropertyAddressMap() {
   const router = useRouter();
+  const feedback = useAppFeedback();
   const mapElement = useRef<HTMLDivElement>(null);
   const map = useRef<MapInstance | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -161,7 +163,7 @@ export function PropertyAddressMap() {
     if (!selected) return setMapError("Please select a location.");
     const { data: { user } } = await createClient().auth.getUser();
     if (!user) return setMapError("Your session has expired.");
-    try { await controller.saveAddress(user.id, selected as PropertyAddress); router.replace("/"); } catch { /* displayed below */ }
+    try { await controller.saveAddress(user.id, selected as PropertyAddress); feedback.success("Property location saved successfully."); router.replace("/"); } catch { /* displayed below */ }
   };
 
   return (
