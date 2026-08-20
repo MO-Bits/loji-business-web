@@ -17,9 +17,6 @@ export const metadata: Metadata = {
     template: "%s | Loji Business",
   },
   description: "Manage properties, rooms, bookings and guests with Loji Business.",
-  other: {
-    "codex-preview": "development",
-  },
 };
 
 export default function RootLayout({

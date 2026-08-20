@@ -8,20 +8,20 @@ export const theme = createTheme({
     light: {
       palette: {
         primary: {
-          main: "#1769D2",
-          light: "#4D94E8",
-          dark: "#0D4FA8",
+          main: "#0B66D4",
+          light: "#4D93E8",
+          dark: "#074A9E",
         },
-        secondary: { main: "#6C5CE7" },
+        secondary: { main: "#0E9F6E" },
         background: {
-          default: "#F6F8FB",
+          default: "#F7F8FA",
           paper: "#FFFFFF",
         },
         text: {
-          primary: "#17191C",
-          secondary: "#667085",
+          primary: "#17202A",
+          secondary: "#647181",
         },
-        divider: "#E5E9F0",
+        divider: "#E2E7EC",
       },
     },
     dark: {
@@ -42,7 +42,7 @@ export const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 14,
+    borderRadius: 16,
   },
   typography: {
     fontFamily: "var(--font-inter), Arial, sans-serif",
@@ -52,8 +52,8 @@ export const theme = createTheme({
       letterSpacing: "-0.045em",
       lineHeight: 1,
     },
-    h2: { fontWeight: 800, letterSpacing: "-0.045em", lineHeight: 1.08 },
-    h3: { fontWeight: 780, letterSpacing: "-0.04em", lineHeight: 1.12 },
+    h2: { fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.08 },
+    h3: { fontWeight: 780, letterSpacing: "-0.035em", lineHeight: 1.12 },
     h4: {
       fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
       fontWeight: 780,
@@ -79,12 +79,12 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          minHeight: 46,
-          paddingInline: 20,
+          minHeight: 44,
+          paddingInline: 18,
           transition: "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
           "&:active": { transform: "scale(.985)" },
         },
-        contained: { boxShadow: "0 8px 22px rgba(23,105,210,.18)", "&:hover": { boxShadow: "0 12px 28px rgba(23,105,210,.24)", transform: "translateY(-1px)" } },
+        contained: { boxShadow: "0 7px 18px rgba(11,102,212,.18)", "&:hover": { boxShadow: "0 10px 24px rgba(11,102,212,.25)", transform: "translateY(-1px)" } },
       },
     },
     MuiTextField: {
@@ -134,11 +134,11 @@ export const theme = createTheme({
         },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
-          boxShadow: "0 1px 3px rgba(16,24,40,.035)",
+          boxShadow: "0 1px 2px rgba(17,24,39,.025), 0 8px 30px rgba(17,24,39,.025)",
         },
       },
     },
-    MuiChip: { styleOverrides: { root: { borderRadius: 9, fontWeight: 680 } } },
+    MuiChip: { styleOverrides: { root: { borderRadius: 999, fontWeight: 700 } } },
     MuiIconButton: { styleOverrides: { root: { transition: "background-color 150ms ease, transform 150ms ease", "&:active": { transform: "scale(.94)" } } } },
     MuiAlert: { styleOverrides: { root: { borderRadius: 14 }, message: { lineHeight: 1.55 } } },
     MuiSkeleton: { styleOverrides: { root: { borderRadius: 12 } } },
@@ -146,10 +146,11 @@ export const theme = createTheme({
     MuiAppBar: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundImage: "none" } } },
     MuiTooltip: { styleOverrides: { tooltip: { borderRadius: 8, fontSize: ".75rem", padding: "7px 10px" } } },
     MuiSnackbarContent: { styleOverrides: { root: { borderRadius: 14 } } },
-    MuiDialog: { styleOverrides: { paper: { borderRadius: 20 } } },
+    MuiDialog: { styleOverrides: { paper: { borderRadius: 24, boxShadow: "0 24px 80px rgba(17,24,39,.18)" } } },
     MuiDialogTitle: { styleOverrides: { root: { fontWeight: 750, letterSpacing: "-.02em" } } },
     MuiTabs: { styleOverrides: { indicator: { borderRadius: 4, height: 3 } } },
     MuiTab: { styleOverrides: { root: { fontWeight: 700, textTransform: "none" } } },
+    MuiAvatar: { styleOverrides: { root: { fontWeight: 750 } } },
     MuiCssBaseline: { styleOverrides: { "a:focus-visible, button:focus-visible, [role='button']:focus-visible": { outline: "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)", outlineOffset: 2 } } },
   },
 });

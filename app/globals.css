@@ -9,9 +9,7 @@ body {
 }
 
 body {
-  background:
-    radial-gradient(circle at 85% -10%, color-mix(in srgb, var(--mui-palette-primary-main, #1769d2) 8%, transparent), transparent 28rem),
-    var(--mui-palette-background-default, #f6f8fb);
+  background: var(--mui-palette-background-default, #f7f8fa);
   color: var(--mui-palette-text-primary, #17191c);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
@@ -22,6 +20,21 @@ body {
 
 a {
   text-underline-offset: 3px;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.surface-hover {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.surface-hover:hover {
+  border-color: color-mix(in srgb, var(--mui-palette-primary-main) 38%, var(--mui-palette-divider));
+  box-shadow: 0 16px 44px rgba(17, 24, 39, 0.09);
+  transform: translateY(-2px);
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
