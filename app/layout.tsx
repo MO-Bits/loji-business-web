@@ -160,11 +160,11 @@ export default function RootLayout({
         />
 
         <AppProviders>{children}</AppProviders>
-      </body>
 
-      {googleAnalyticsId ? (
-        <GoogleAnalytics gaId={googleAnalyticsId} />
-      ) : null}
+        {googleAnalyticsId ? (
+          <GoogleAnalytics gaId={googleAnalyticsId} />
+        ) : null}
+      </body>
     </html>
   );
 }
