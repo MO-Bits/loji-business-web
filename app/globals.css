@@ -12,7 +12,6 @@ body {
 body {
   background: var(--mui-palette-background-default, #f7f8fa);
   color: var(--mui-palette-text-primary, #17191c);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
 }
 
 ::selection {
