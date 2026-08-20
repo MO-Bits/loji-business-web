@@ -12,11 +12,24 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://business.loji.co.tz"),
   title: {
     default: "Loji Business",
     template: "%s | Loji Business",
   },
   description: "Manage properties, rooms, bookings and guests with Loji Business.",
+  openGraph: {
+    title: "Loji Business",
+    description: "Run your property with confidence.",
+    type: "website",
+    images: [{ url: "/og.png", width: 1792, height: 936, alt: "Loji Business — Run your property with confidence" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Loji Business",
+    description: "Run your property with confidence.",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({
