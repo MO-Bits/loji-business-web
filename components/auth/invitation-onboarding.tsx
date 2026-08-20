@@ -6,7 +6,6 @@ import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import { Alert, Box, Button, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, InputAdornment, Paper, Snackbar, Stack, TextField, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useMemo, useState } from "react";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
@@ -18,7 +17,6 @@ function resultObject(value: unknown): RpcResponse { return value && typeof valu
 
 export function InvitationOnboarding() {
   const feedback = useAppFeedback();
-  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const auth = useAuthController();
   const [token, setToken] = useState("");
@@ -48,13 +46,29 @@ export function InvitationOnboarding() {
       const result = resultObject(data);
       if (result.status && result.status !== "success") throw new Error(result.message || "Unable to update the invitation.");
       setInvitation(null);
-      if (action === "accept_property_invitation") { feedback.success("Invitation accepted. Welcome to the team!"); router.replace("/dashboard"); router.refresh(); }
+      if (action === "accept_property_invitation") {
+        feedback.success("Invitation accepted. Welcome to the team!");
+
+        // Membership changed without an auth-state event. A document navigation
+        // clears stale client state and makes AppGate evaluate get_app_session again.
+        window.setTimeout(() => window.location.replace("/"), 500);
+      }
       else setMessage(result.message || "Invitation declined.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to update the invitation."); }
     finally { setLoading(false); }
   }
 
-  async function signOut() { await auth.signOut(); router.replace("/login"); router.refresh(); }
+  async function signOut() {
+    const error = await auth.signOut();
+
+    if (error) {
+      setMessage(error);
+      return;
+    }
+
+    // Reset the whole authenticated client tree so no onboarding session is kept.
+    window.location.replace("/login");
+  }
 
   return <Box component="main" sx={{ minHeight: "100dvh", display: "grid", placeItems: "center", py: 4 }}><Container maxWidth="sm"><Stack spacing={3}>
     <Box textAlign="center"><Typography variant="h4">Join their team</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>Use the invitation code sent by your property administrator.</Typography></Box>
