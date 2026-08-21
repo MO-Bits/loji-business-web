@@ -18,7 +18,6 @@ import {
   Chip,
   CircularProgress,
   Container,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -56,6 +55,7 @@ import {
 } from "@/features/more/services/more-service";
 import { formatLocalDateTime } from "@/lib/date-time";
 import { PageHeader } from "@/components/shared/page-header";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 
 export function StaffManagement() {
   const router = useRouter();
@@ -504,10 +504,9 @@ function InviteDialog({
   const [loading, setLoading] = useState(false);
   const valid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim());
   return (
-    <Dialog
+    <ResponsiveModal
       open={open}
       onClose={loading ? undefined : onClose}
-      fullWidth
       maxWidth="sm"
     >
       <DialogTitle>Invite Staff Member</DialogTitle>
@@ -563,7 +562,7 @@ function InviteDialog({
           {loading ? "Sending…" : "Send Invitation"}
         </Button>
       </DialogActions>
-    </Dialog>
+    </ResponsiveModal>
   );
 }
 
@@ -583,7 +582,7 @@ function ConfirmDialog({
   onConfirm: () => void;
 }) {
   return (
-    <Dialog open={open} onClose={onClose}>
+    <ResponsiveModal open={open} onClose={onClose} maxWidth="xs">
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         <Typography color="text.secondary">{message}</Typography>
@@ -594,7 +593,7 @@ function ConfirmDialog({
           {action}
         </Button>
       </DialogActions>
-    </Dialog>
+    </ResponsiveModal>
   );
 }
 function Empty({ text }: { text: string }) {

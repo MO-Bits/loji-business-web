@@ -14,7 +14,6 @@ import {
   Chip,
   CircularProgress,
   Container,
-  Dialog,
   DialogContent,
   DialogTitle,
   Divider,
@@ -25,6 +24,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { createClient } from "@/lib/supabase/client";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { getProperty } from "@/features/more/services/more-service";
@@ -200,10 +200,9 @@ export function PropertyDetails() {
           )}
         </Stack>
       </Container>
-      <Dialog
+      <ResponsiveModal
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        fullWidth
         maxWidth="sm"
       >
         <DialogTitle>Edit Property</DialogTitle>
@@ -231,7 +230,7 @@ export function PropertyDetails() {
             </Box>
           ))}
         </DialogContent>
-      </Dialog>
+      </ResponsiveModal>
     </Box>
   );
 }

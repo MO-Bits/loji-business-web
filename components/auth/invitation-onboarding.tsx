@@ -11,7 +11,6 @@ import {
   Button,
   CircularProgress,
   Container,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -22,6 +21,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useMemo, useState } from "react";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
@@ -193,10 +193,9 @@ export function InvitationOnboarding() {
           </Paper>
         </Stack>
       </Container>
-      <Dialog
+      <ResponsiveModal
         open={Boolean(invitation)}
         onClose={loading ? undefined : () => setInvitation(null)}
-        fullWidth
         maxWidth="xs"
       >
         <DialogTitle>Property invitation</DialogTitle>
@@ -252,7 +251,7 @@ export function InvitationOnboarding() {
             )}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveModal>
       <Snackbar
         open={Boolean(message)}
         autoHideDuration={5000}

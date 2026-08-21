@@ -18,7 +18,6 @@ import {
   Chip,
   CircularProgress,
   Container,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -29,6 +28,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -318,10 +318,9 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
           )}
         </Stack>
       </Container>
-      <Dialog
+      <ResponsiveModal
         open={Boolean(action)}
         onClose={() => !working && setAction(null)}
-        fullWidth
         maxWidth="xs"
       >
         <DialogTitle>
@@ -361,7 +360,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
             {working ? "Please wait…" : "Confirm"}
           </Button>
         </DialogActions>
-      </Dialog>
+      </ResponsiveModal>
       <Snackbar
         open={Boolean(message || error)}
         autoHideDuration={5000}
