@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
@@ -11,6 +11,7 @@ import {
   Button,
   Chip,
   Container,
+  Drawer,
   IconButton,
   MenuItem,
   Paper,
@@ -21,6 +22,8 @@ import {
   Stepper,
   TextField,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { createClient } from "@/lib/supabase/client";
@@ -50,12 +53,15 @@ export function NewBookingScreen() {
   const client = useMemo(() => createClient(), []);
   const propertyId = session?.activePropertyId;
   const feedback = useAppFeedback();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [checkIn, setCheckIn] = useState(localDateKey());
   const [checkOut, setCheckOut] = useState(tomorrow());
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [rooms, setRooms] = useState<AvailableRoom[]>([]);
   const [selected, setSelected] = useState<AvailableRoom | null>(null);
+  const [guestSheetOpen, setGuestSheetOpen] = useState(false);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,8 +105,12 @@ export function NewBookingScreen() {
       setRooms(values);
       setSearched(true);
       const requested = searchParams.get("room");
-      if (requested)
-        setSelected(values.find((item) => item.id === requested) ?? null);
+      if (requested) {
+        const requestedRoom =
+          values.find((item) => item.id === requested) ?? null;
+        setSelected(requestedRoom);
+        if (requestedRoom && isMobile) setGuestSheetOpen(true);
+      }
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "Unable to search rooms.",
@@ -264,7 +274,10 @@ export function NewBookingScreen() {
                   <Paper
                     key={room.id}
                     variant="outlined"
-                    onClick={() => setSelected(room)}
+                    onClick={() => {
+                      setSelected(room);
+                      if (isMobile) setGuestSheetOpen(true);
+                    }}
                     sx={{
                       borderColor:
                         selected?.id === room.id ? "primary.main" : "divider",
@@ -329,7 +342,10 @@ export function NewBookingScreen() {
           </Paper>
         )}
         {selected && (
-          <>
+          <ResponsiveBookingContainer
+            open={guestSheetOpen}
+            onClose={() => !loading && setGuestSheetOpen(false)}
+          >
             <Box
               sx={{
                 alignItems: "start",
@@ -522,7 +538,7 @@ export function NewBookingScreen() {
                 </Typography>
               </Stack>
             </Box>
-          </>
+          </ResponsiveBookingContainer>
         )}
         <Snackbar
           open={Boolean(error)}
@@ -535,5 +551,74 @@ export function NewBookingScreen() {
         </Snackbar>
       </Stack>
     </Container>
+  );
+}
+
+function ResponsiveBookingContainer({
+  children,
+  open,
+  onClose,
+}: {
+  children: ReactNode;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  if (!isMobile) return <>{children}</>;
+
+  return (
+    <Drawer
+      anchor="bottom"
+      open={open}
+      onClose={onClose}
+      ModalProps={{ disablePortal: true, keepMounted: true }}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: "16px 16px 0 0",
+            maxHeight: "92dvh",
+            overflow: "hidden",
+          },
+        },
+      }}
+    >
+      <Box
+        aria-hidden="true"
+        sx={{
+          bgcolor: "divider",
+          borderRadius: 99,
+          height: 4,
+          mx: "auto",
+          mt: 1.25,
+          width: 38,
+        }}
+      />
+      <Box
+        sx={{
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          px: 2.5,
+          py: 2,
+        }}
+      >
+        <Typography variant="h6">Guest and payment details</Typography>
+        <Typography color="text.secondary" variant="body2">
+          Complete the information below to confirm the booking.
+        </Typography>
+      </Box>
+      <Box
+        sx={{
+          overflowY: "auto",
+          p: 2,
+          pb: "max(24px, env(safe-area-inset-bottom))",
+          "& > .MuiBox-root": { gap: 2 },
+          "& .MuiPaper-root": { boxShadow: "none" },
+        }}
+      >
+        {children}
+      </Box>
+    </Drawer>
   );
 }
