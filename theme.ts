@@ -95,7 +95,8 @@ export const theme = createTheme({
           borderRadius: 8,
           minHeight: 42,
           paddingInline: 16,
-          transition: "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
+          transition:
+            "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
           "&:active": { transform: "scale(.985)" },
         },
         sizeLarge: { minHeight: 48, paddingInline: 20 },
@@ -137,6 +138,41 @@ export const theme = createTheme({
         },
       },
     },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: "var(--mui-palette-background-paper)",
+          transition: "box-shadow 150ms ease, border-color 150ms ease",
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "var(--mui-palette-divider)",
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: "var(--mui-palette-text-secondary)",
+          },
+          "&.Mui-focused": {
+            boxShadow:
+              "0 0 0 3px color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)",
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderWidth: 1,
+          },
+        },
+        input: {
+          paddingBlock: 13,
+        },
+        multiline: {
+          paddingBlock: 2,
+        },
+      },
+    },
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          marginInline: 0,
+          marginTop: 6,
+        },
+      },
+    },
     MuiInputLabel: {
       styleOverrides: {
         root: {
@@ -173,7 +209,15 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: { root: { borderRadius: "8px !important" } },
     },
-    MuiChip: { styleOverrides: { root: { borderRadius: 999 } } },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 999,
+          fontWeight: 500,
+        },
+        sizeSmall: { height: 24 },
+      },
+    },
     MuiIconButton: {
       styleOverrides: {
         root: {
@@ -184,15 +228,88 @@ export const theme = createTheme({
         },
       },
     },
-    MuiDialogActions: { styleOverrides: { root: { gap: 8, padding: "16px 24px 24px", flexWrap: "wrap" } } },
+    MuiDialogActions: {
+      styleOverrides: {
+        root: {
+          gap: 8,
+          padding: "16px 24px 24px",
+          flexWrap: "wrap",
+        },
+      },
+    },
     MuiAlert: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiSkeleton: { styleOverrides: { root: { borderRadius: 8 } } },
-    MuiDivider: { styleOverrides: { root: { borderColor: "var(--mui-palette-divider)" } } },
-    MuiAppBar: { defaultProps: { elevation: 0 }, styleOverrides: { root: { backgroundImage: "none" } } },
-    MuiTooltip: { styleOverrides: { tooltip: { borderRadius: 8, padding: "7px 10px" } } },
+    MuiDivider: {
+      styleOverrides: { root: { borderColor: "var(--mui-palette-divider)" } },
+    },
+    MuiAppBar: {
+      defaultProps: { elevation: 0 },
+      styleOverrides: { root: { backgroundImage: "none" } },
+    },
+    MuiTooltip: {
+      styleOverrides: { tooltip: { borderRadius: 8, padding: "7px 10px" } },
+    },
     MuiSnackbarContent: { styleOverrides: { root: { borderRadius: 8 } } },
-    MuiDialog: { styleOverrides: { paper: { borderRadius: 8, boxShadow: "0 24px 80px rgba(17,24,39,.18)" } } },
-    MuiTabs: { styleOverrides: { indicator: { borderRadius: 4, height: 3 } } },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          border: "1px solid var(--mui-palette-divider)",
+          borderRadius: 8,
+          boxShadow: "0 24px 80px rgba(17,24,39,.18)",
+        },
+      },
+    },
+    MuiDialogTitle: {
+      styleOverrides: { root: { padding: "24px 24px 12px" } },
+    },
+    MuiDialogContent: {
+      styleOverrides: { root: { paddingInline: 24 } },
+    },
+    MuiTabs: {
+      styleOverrides: {
+        root: { minHeight: 44 },
+        indicator: { borderRadius: 4, height: 2 },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          minHeight: 44,
+          minWidth: 96,
+          paddingInline: 16,
+          textTransform: "none",
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          transition: "background-color 140ms ease, color 140ms ease",
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          border: "1px solid var(--mui-palette-divider)",
+          boxShadow: "0 12px 36px rgba(17,24,39,.12)",
+          marginTop: 6,
+        },
+        list: { padding: 6 },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: { borderRadius: 6, minHeight: 40 },
+      },
+    },
+    MuiBottomNavigationAction: {
+      styleOverrides: {
+        root: { minHeight: 56, minWidth: 56 },
+        label: { marginTop: 3 },
+      },
+    },
     MuiCssBaseline: {
       styleOverrides: {
         body: {
@@ -200,10 +317,12 @@ export const theme = createTheme({
           WebkitFontSmoothing: "antialiased",
           MozOsxFontSmoothing: "grayscale",
         },
-        "a:focus-visible, button:focus-visible, [role='button']:focus-visible": {
-          outline: "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
-          outlineOffset: 2,
-        },
+        "a:focus-visible, button:focus-visible, [role='button']:focus-visible":
+          {
+            outline:
+              "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
+            outlineOffset: 2,
+          },
       },
     },
   },

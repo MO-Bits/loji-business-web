@@ -31,7 +31,7 @@ export function LoginScreen() {
     <Box
       component="main"
       sx={{
-        bgcolor: "#F7F8FA",
+        bgcolor: "background.default",
         display: "flex",
         minHeight: "100dvh",
       }}
@@ -53,7 +53,10 @@ export function LoginScreen() {
             display: "grid",
             flex: 1,
             gap: { xs: 5, md: 10 },
-            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1.08fr) minmax(360px, .72fr)" },
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "minmax(0, 1.08fr) minmax(360px, .72fr)",
+            },
             py: { xs: 6, sm: 8, md: 5 },
           }}
         >
@@ -61,8 +64,13 @@ export function LoginScreen() {
             <Typography component="h1" variant="h2">
               Run your property with clarity.
             </Typography>
-            <Typography color="text.secondary" variant="h6" sx={{ fontWeight: 450, maxWidth: 590 }}>
-              Rooms, bookings, guests, and your team—managed from one simple hospitality workspace.
+            <Typography
+              color="text.secondary"
+              variant="h6"
+              sx={{ fontWeight: 400, lineHeight: 1.55, maxWidth: 590 }}
+            >
+              Rooms, bookings, guests, and your team—managed from one simple
+              hospitality workspace.
             </Typography>
             <Link
               component={NextLink}
@@ -77,14 +85,18 @@ export function LoginScreen() {
           <Paper
             variant="outlined"
             sx={{
-              borderColor: "rgba(15,23,42,.10)",
-              boxShadow: "0 22px 65px rgba(15,23,42,.08)",
+              borderColor: "divider",
+              boxShadow: "0 18px 55px rgba(15,23,42,.07)",
               p: { xs: 3, sm: 4 },
             }}
           >
             <Stack spacing={3}>
               <Stack spacing={1}>
-                <Typography component="h2" variant="h5" sx={{ fontWeight: 700, letterSpacing: "-.025em" }}>
+                <Typography
+                  component="h2"
+                  variant="h5"
+                  sx={{ fontWeight: 700, letterSpacing: "-.025em" }}
+                >
                   Welcome back
                 </Typography>
                 <Typography color="text.secondary">
@@ -97,27 +109,58 @@ export function LoginScreen() {
                 fullWidth
                 onClick={() => void handleGoogleLogin()}
                 size="large"
-                startIcon={auth.loading ? <CircularProgress color="inherit" size={20} /> : <GoogleMark />}
-                sx={{ bgcolor: "background.paper", borderColor: "divider", color: "text.primary", minHeight: 54, "&:hover": { bgcolor: "action.hover", borderColor: "text.secondary" } }}
+                startIcon={
+                  auth.loading ? (
+                    <CircularProgress color="inherit" size={20} />
+                  ) : (
+                    <GoogleMark />
+                  )
+                }
+                sx={{
+                  bgcolor: "background.paper",
+                  borderColor: "divider",
+                  color: "text.primary",
+                  minHeight: 54,
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    borderColor: "text.secondary",
+                  },
+                }}
                 variant="outlined"
               >
                 {auth.loading ? "Connecting…" : "Continue with Google"}
               </Button>
 
               <Stack alignItems="center" direction="row" spacing={1}>
-                <LockOutlinedIcon sx={{ color: "text.secondary", fontSize: 16 }} />
+                <LockOutlinedIcon
+                  sx={{ color: "text.secondary", fontSize: 16 }}
+                />
                 <Typography color="text.secondary" variant="caption">
                   Secure sign-in. We never store your Google password.
                 </Typography>
               </Stack>
 
-              <Typography color="text.secondary" variant="caption" sx={{ lineHeight: 1.65 }}>
+              <Typography
+                color="text.secondary"
+                variant="caption"
+                sx={{ lineHeight: 1.65 }}
+              >
                 By continuing, you agree to our{" "}
-                <Link component={NextLink} href="/terms" underline="hover" sx={{ fontWeight: 700 }}>
+                <Link
+                  component={NextLink}
+                  href="/terms"
+                  underline="hover"
+                  sx={{ fontWeight: 700 }}
+                >
                   Terms of Use
                 </Link>{" "}
                 and{" "}
-                <Link component={NextLink} href="/privacy" underline="hover" sx={{ fontWeight: 700 }}>
+                <Link
+                  component={NextLink}
+                  href="/privacy"
+                  underline="hover"
+                  sx={{ fontWeight: 700 }}
+                >
                   Privacy Policy
                 </Link>
                 .
@@ -127,7 +170,8 @@ export function LoginScreen() {
         </Box>
 
         <Typography color="text.secondary" variant="caption">
-          © {new Date().getFullYear()} Loji. Hospitality operations, simplified.
+          © {new Date().getFullYear()} Loji. Hospitality operations,
+          simplified.
         </Typography>
       </Container>
 

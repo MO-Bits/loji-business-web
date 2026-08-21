@@ -35,13 +35,31 @@ export function InactiveUserScreen() {
 
   return (
     <Box component="main" sx={{ bgcolor: "#F4F6F8", minHeight: "100dvh" }}>
-      <Box component="header" sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider" }}>
+      <Box
+        component="header"
+        sx={{
+          bgcolor: "background.paper",
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
+      >
         <Container maxWidth="lg">
-          <Stack alignItems="center" direction="row" justifyContent="space-between" sx={{ minHeight: { xs: 64, sm: 72 } }}>
+          <Stack
+            alignItems="center"
+            direction="row"
+            justifyContent="space-between"
+            sx={{ minHeight: { xs: 64, sm: 72 } }}
+          >
             <BrandWordmark priority sx={{ width: { xs: 168, sm: 196 } }} />
             <Stack alignItems="center" direction="row" spacing={0.75}>
-              <LockOutlinedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
-              <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }} variant="caption">
+              <LockOutlinedIcon
+                sx={{ color: "text.secondary", fontSize: 17 }}
+              />
+              <Typography
+                color="text.secondary"
+                sx={{ display: { xs: "none", sm: "block" } }}
+                variant="caption"
+              >
                 Secure account status
               </Typography>
             </Stack>
@@ -57,7 +75,10 @@ export function InactiveUserScreen() {
             borderRadius: 1,
             boxShadow: "0 22px 65px rgba(15,23,42,.08)",
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "minmax(300px, .82fr) minmax(430px, 1.18fr)" },
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "minmax(300px, .82fr) minmax(430px, 1.18fr)",
+            },
             mx: "auto",
             overflow: "hidden",
             width: "100%",
@@ -72,7 +93,11 @@ export function InactiveUserScreen() {
               p: { xs: 3, sm: 4, md: 5 },
             }}
           >
-            <Stack justifyContent="space-between" spacing={{ xs: 5, md: 8 }} sx={{ width: "100%" }}>
+            <Stack
+              justifyContent="space-between"
+              spacing={{ xs: 5, md: 8 }}
+              sx={{ width: "100%" }}
+            >
               <Stack spacing={3}>
                 <Box
                   sx={{
@@ -90,39 +115,72 @@ export function InactiveUserScreen() {
                 </Box>
 
                 <Box>
-                  <Typography variant="overline" sx={{ color: "#9CC8F5", fontWeight: 700, letterSpacing: ".12em" }}>
+                  <Typography
+                    variant="overline"
+                    sx={{
+                      color: "#9CC8F5",
+                      fontWeight: 700,
+                      letterSpacing: ".12em",
+                    }}
+                  >
                     WORKSPACE STATUS
                   </Typography>
-                  <Typography component="h1" variant="h4" sx={{ color: "common.white", mt: 1 }}>
+                  <Typography
+                    component="h1"
+                    variant="h4"
+                    sx={{ color: "common.white", mt: 1 }}
+                  >
                     Access temporarily paused
                   </Typography>
-                  <Typography variant="body1" sx={{ color: "rgba(255,255,255,.72)", mt: 2 }}>
-                    Your Loji Business account is safe, but it is not currently connected to an active property membership.
+                  <Typography
+                    variant="body1"
+                    sx={{ color: "rgba(255,255,255,.72)", mt: 2 }}
+                  >
+                    Your Loji Business account is safe, but it is not currently
+                    connected to an active property membership.
                   </Typography>
                 </Box>
               </Stack>
 
               <Stack alignItems="center" direction="row" spacing={1.25}>
-                <CheckCircleRoundedIcon sx={{ color: "#79D4AE", fontSize: 21 }} />
-                <Typography variant="body2" sx={{ color: "rgba(255,255,255,.78)", fontWeight: 650 }}>
+                <CheckCircleRoundedIcon
+                  sx={{ color: "#79D4AE", fontSize: 21 }}
+                />
+                <Typography
+                  variant="body2"
+                  sx={{ color: "rgba(255,255,255,.78)", fontWeight: 650 }}
+                >
                   Your property and booking data remain protected
                 </Typography>
               </Stack>
             </Stack>
           </Box>
 
-          <Box sx={{ bgcolor: "background.paper", p: { xs: 3, sm: 4.5, md: 6 } }}>
+          <Box
+            sx={{ bgcolor: "background.paper", p: { xs: 3, sm: 4.5, md: 6 } }}
+          >
             <Stack spacing={{ xs: 3, sm: 4 }}>
               <Box>
-                <Typography component="h2" variant="h5" sx={{ fontWeight: 700, letterSpacing: "-.025em" }}>
+                <Typography
+                  component="h2"
+                  variant="h5"
+                  sx={{ fontWeight: 700, letterSpacing: "-.025em" }}
+                >
                   Restore your workspace access
                 </Typography>
-                <Typography color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
+                <Typography
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.7, mt: 1 }}
+                >
                   Follow these steps to get back into your property workspace.
                 </Typography>
               </Box>
 
-              {auth.error && <Alert severity="error" variant="outlined">{auth.error}</Alert>}
+              {auth.error && (
+                <Alert severity="error" variant="outlined">
+                  {auth.error}
+                </Alert>
+              )}
 
               <Stack divider={<Divider flexItem />}>
                 <RecoveryStep
@@ -130,14 +188,16 @@ export function InactiveUserScreen() {
                   number="01"
                   title="Contact your administrator"
                 >
-                  Ask the property owner or manager to confirm your staff role and reactivate your membership.
+                  Ask the property owner or manager to confirm your staff role
+                  and reactivate your membership.
                 </RecoveryStep>
                 <RecoveryStep
                   icon={<RefreshRoundedIcon />}
                   number="02"
                   title="Check your access again"
                 >
-                  Once they confirm the change, return here and refresh your workspace status.
+                  Once they confirm the change, return here and refresh your
+                  workspace status.
                 </RecoveryStep>
               </Stack>
 
@@ -154,7 +214,9 @@ export function InactiveUserScreen() {
 
               <Stack alignItems="center" direction="row" spacing={2}>
                 <Divider sx={{ flex: 1 }} />
-                <Typography color="text.secondary" variant="caption">or</Typography>
+                <Typography color="text.secondary" variant="caption">
+                  or
+                </Typography>
                 <Divider sx={{ flex: 1 }} />
               </Stack>
 
@@ -163,16 +225,28 @@ export function InactiveUserScreen() {
                 disabled={auth.loading}
                 fullWidth
                 onClick={() => void signOut()}
-                startIcon={auth.loading ? <CircularProgress color="inherit" size={18} /> : <LogoutRoundedIcon />}
+                startIcon={
+                  auth.loading ? (
+                    <CircularProgress color="inherit" size={18} />
+                  ) : (
+                    <LogoutRoundedIcon />
+                  )
+                }
                 variant="text"
               >
-                {auth.loading ? "Signing out…" : "Sign out and use another account"}
+                {auth.loading
+                  ? "Signing out…"
+                  : "Sign out and use another account"}
               </Button>
             </Stack>
           </Box>
         </Paper>
 
-        <Typography color="text.secondary" sx={{ mt: 3, textAlign: "center" }} variant="caption">
+        <Typography
+          color="text.secondary"
+          sx={{ mt: 3, textAlign: "center" }}
+          variant="caption"
+        >
           Loji Business · Secure hospitality operations
         </Typography>
       </Container>
@@ -210,11 +284,21 @@ function RecoveryStep({
         {icon}
       </Box>
       <Box sx={{ minWidth: 0 }}>
-        <Typography color="primary.main" variant="caption" sx={{ fontWeight: 700, letterSpacing: ".08em" }}>
+        <Typography
+          color="primary.main"
+          variant="caption"
+          sx={{ fontWeight: 700, letterSpacing: ".08em" }}
+        >
           STEP {number}
         </Typography>
-        <Typography variant="subtitle1" sx={{ mt: .25 }}>{title}</Typography>
-        <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.65, mt: .5 }}>
+        <Typography variant="subtitle1" sx={{ mt: 0.25 }}>
+          {title}
+        </Typography>
+        <Typography
+          color="text.secondary"
+          variant="body2"
+          sx={{ lineHeight: 1.65, mt: 0.5 }}
+        >
           {children}
         </Typography>
       </Box>

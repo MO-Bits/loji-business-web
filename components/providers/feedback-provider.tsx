@@ -45,7 +45,11 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
         autoHideDuration={4500}
         anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
         onClose={() => setFeedback(null)}
-        sx={{ bottom: { xs: 86, lg: 24 }, maxWidth: { xs: "calc(100vw - 24px)", sm: 560 }, width: { xs: "calc(100vw - 24px)", sm: "auto" } }}
+        sx={{
+          bottom: { xs: 86, lg: 24 },
+          maxWidth: { xs: "calc(100vw - 24px)", sm: 560 },
+          width: { xs: "calc(100vw - 24px)", sm: "auto" },
+        }}
       >
         <Alert
           icon={

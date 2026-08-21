@@ -228,7 +228,9 @@ function SidebarContent({
   role,
 }: SidebarContentProps) {
   return (
-    <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
+    <Box
+      sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}
+    >
       <Stack
         direction="row"
         sx={{

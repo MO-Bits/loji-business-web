@@ -5,29 +5,535 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import { Alert, Box, Button, Chip, Container, IconButton, MenuItem, Paper, Snackbar, Stack, Step, StepLabel, Stepper, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Container,
+  IconButton,
+  MenuItem,
+  Paper,
+  Snackbar,
+  Stack,
+  Step,
+  StepLabel,
+  Stepper,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { createClient } from "@/lib/supabase/client";
-import { createWalkInBooking, getAvailableRooms } from "@/features/bookings/services/booking-service";
+import {
+  createWalkInBooking,
+  getAvailableRooms,
+} from "@/features/bookings/services/booking-service";
 import type { AvailableRoom } from "@/features/bookings/models/booking";
 import { localDateKey } from "@/lib/date-time";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 
-const money = new Intl.NumberFormat("en-TZ", { style: "currency", currency: "TZS", maximumFractionDigits: 0 });
-const tomorrow = () => { const value = new Date(); value.setDate(value.getDate() + 1); return localDateKey(value); };
+const money = new Intl.NumberFormat("en-TZ", {
+  style: "currency",
+  currency: "TZS",
+  maximumFractionDigits: 0,
+});
+const tomorrow = () => {
+  const value = new Date();
+  value.setDate(value.getDate() + 1);
+  return localDateKey(value);
+};
 
 export function NewBookingScreen() {
-  const router = useRouter(); const searchParams = useSearchParams(); const { session } = useAppSession(); const client = useMemo(() => createClient(), []); const propertyId = session?.activePropertyId;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { session } = useAppSession();
+  const client = useMemo(() => createClient(), []);
+  const propertyId = session?.activePropertyId;
   const feedback = useAppFeedback();
-  const [checkIn, setCheckIn] = useState(localDateKey()); const [checkOut, setCheckOut] = useState(tomorrow()); const [adults, setAdults] = useState(1); const [children, setChildren] = useState(0); const [rooms, setRooms] = useState<AvailableRoom[]>([]); const [selected, setSelected] = useState<AvailableRoom | null>(null); const [searched, setSearched] = useState(false); const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ firstName: "", lastName: "", gender: "", nationality: "Tanzanian", occupation: "", email: "", phone: "", whereFrom: "", whereTo: "", idType: "", idNumber: "", emergencyContactName: "", emergencyContactPhone: "", specialRequests: "", paymentMethod: "cash", transactionRef: "" });
-  const field = (name: keyof typeof form) => ({ value: form[name], onChange: (event: React.ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, [name]: event.target.value })) });
-  const search = async () => { if (!propertyId) return; if (!checkIn || !checkOut || checkOut <= checkIn) return setError("Checkout must be after check-in."); setLoading(true); setError(null); try { const values = await getAvailableRooms(client, propertyId, checkIn, checkOut, adults + children); setRooms(values); setSearched(true); const requested = searchParams.get("room"); if (requested) setSelected(values.find((item) => item.id === requested) ?? null); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to search rooms."); } finally { setLoading(false); } };
-  const submit = async (event: FormEvent) => { event.preventDefault(); if (!propertyId || !selected) return setError("Select an available room first."); if (!form.firstName.trim() || !form.lastName.trim() || !form.phone.trim() || !form.gender || !form.nationality.trim() || !form.occupation.trim()) return setError("Complete all required guest information."); setLoading(true); setError(null); try { const result = await createWalkInBooking(client, propertyId, { ...form, roomId: selected.id, checkIn, checkOut, totalPrice: selected.totalPrice, adults, children }); const booking = result.booking; const id = booking && typeof booking === "object" && !Array.isArray(booking) ? String(booking.id ?? "") : ""; feedback.success("Booking created successfully."); router.replace(id ? `/bookings/${id}` : "/bookings"); router.refresh(); } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to create booking."); } finally { setLoading(false); } };
-  return <Container component="form" onSubmit={submit} maxWidth="lg" sx={{ py: { xs: 2.5, sm: 3.5, lg: 5 } }}><Stack spacing={{ xs: 2.25, sm: 3 }}><Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}><IconButton aria-label="Back" onClick={() => router.back()}><ArrowBackRoundedIcon /></IconButton><Box><Typography variant="h4">New booking</Typography><Typography color="text.secondary" sx={{ fontSize: { xs: ".9rem", sm: "1rem" } }}>Search availability, select a room and enter guest details.</Typography></Box></Stack><Stepper activeStep={selected ? 1 : 0} alternativeLabel sx={{ px: { xs: 0, sm: 2 }, "& .MuiStepLabel-label": { fontSize: { xs: ".72rem", sm: ".875rem" } } }}>{["Stay & room", "Guest & payment"].map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}</Stepper>
-    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}><Stack spacing={2}><Typography variant="h6">Stay dates</Typography><Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))", lg: "repeat(4,minmax(0,1fr))" } }}><TextField required label="Check-in" type="date" value={checkIn} onChange={(e) => setCheckIn(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} /><TextField required label="Check-out" type="date" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} /><TextField label="Adults" type="number" value={adults} onChange={(e) => setAdults(Math.max(1, Number(e.target.value)))} /><TextField label="Children" type="number" value={children} onChange={(e) => setChildren(Math.max(0, Number(e.target.value)))} /></Box><Button variant="outlined" startIcon={<SearchRoundedIcon />} disabled={loading} onClick={() => void search()} sx={{ alignSelf: { sm: "flex-start" }, width: { xs: "100%", sm: "auto" } }}>{loading ? "Searching…" : "Search available rooms"}</Button></Stack></Paper>
-    {searched && <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}><Typography variant="h6" sx={{ mb: 2 }}>Available rooms</Typography>{rooms.length ? <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: "repeat(2, 1fr)" } }}>{rooms.map((room) => <Paper key={room.id} variant="outlined" onClick={() => setSelected(room)} sx={{ borderColor: selected?.id === room.id ? "primary.main" : "divider", borderWidth: selected?.id === room.id ? 2 : 1, cursor: "pointer", overflow: "hidden" }}><Stack direction={{ xs: "column", sm: "row" }}>{room.images[0] ? <Box component="img" src={room.images[0]} alt={room.name} sx={{ aspectRatio: { xs: "16/8", sm: "auto" }, height: { sm: 128 }, objectFit: "cover", width: { xs: "100%", sm: 132 } }} /> : <Box sx={{ display: "grid", height: { xs: 100, sm: 128 }, placeItems: "center", width: { xs: "100%", sm: 132 } }}><BedRoundedIcon /></Box>}<Stack spacing={.7} sx={{ flex: 1, p: 2 }}><Typography sx={{ fontWeight: 700 }}>{room.name}</Typography><Typography color="text.secondary" variant="body2">{room.roomType} · {room.capacity} guests</Typography><Typography color="primary" sx={{ fontWeight: 700 }}>{money.format(room.totalPrice)}</Typography>{selected?.id === room.id && <Chip label="Selected" color="primary" size="small" sx={{ alignSelf: "flex-start" }} />}</Stack></Stack></Paper>)}</Box> : <Alert severity="info">No rooms are available for these dates and guest count.</Alert>}</Paper>}
-    {selected && <><Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}><Stack spacing={2.2}><Typography variant="h6">Guest information</Typography><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField fullWidth required label="First name" {...field("firstName")} /><TextField fullWidth required label="Last name" {...field("lastName")} /></Stack><Stack direction={{ xs: "column", md: "row" }} spacing={2}><TextField fullWidth required select label="Gender" {...field("gender")}><MenuItem value="male">Male</MenuItem><MenuItem value="female">Female</MenuItem><MenuItem value="other">Other</MenuItem></TextField><TextField fullWidth required label="Nationality" {...field("nationality")} /><TextField fullWidth required label="Occupation" {...field("occupation")} /></Stack><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField fullWidth required label="Phone" {...field("phone")} /><TextField fullWidth label="Email" type="email" {...field("email")} /></Stack></Stack></Paper><Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}><Stack spacing={2}><Typography variant="h6">Travel and identification</Typography><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField fullWidth label="Coming from" {...field("whereFrom")} /><TextField fullWidth label="Going to" {...field("whereTo")} /></Stack><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField fullWidth select label="ID type" {...field("idType")}><MenuItem value="">None</MenuItem><MenuItem value="national_id">National ID</MenuItem><MenuItem value="passport">Passport</MenuItem><MenuItem value="driving_license">Driving licence</MenuItem></TextField><TextField fullWidth label="ID number" {...field("idNumber")} /></Stack><Stack direction={{ xs: "column", sm: "row" }} spacing={2}><TextField fullWidth label="Emergency contact name" {...field("emergencyContactName")} /><TextField fullWidth label="Emergency contact phone" {...field("emergencyContactPhone")} /></Stack><TextField multiline minRows={3} label="Special requests" {...field("specialRequests")} /></Stack></Paper><Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}><Stack spacing={2}><Typography variant="h6">Payment</Typography><Typography variant="h4" color="primary">{money.format(selected.totalPrice)}</Typography><TextField required select label="Payment method" {...field("paymentMethod")}><MenuItem value="cash">Cash</MenuItem><MenuItem value="mobile_money">Mobile money</MenuItem><MenuItem value="card">Card</MenuItem><MenuItem value="bank_transfer">Bank transfer</MenuItem></TextField>{form.paymentMethod !== "cash" && <TextField label="Transaction reference" {...field("transactionRef")} />}</Stack></Paper><Button type="submit" size="large" variant="contained" disabled={loading} sx={{ alignSelf: { md: "flex-end" }, minWidth: { md: 240 }, width: { xs: "100%", md: "auto" } }}>{loading ? "Creating booking…" : "Confirm booking"}</Button></>}
-    <Snackbar open={Boolean(error)} autoHideDuration={6500} onClose={() => setError(null)}><Alert severity="error" variant="filled">{error}</Alert></Snackbar>
-  </Stack></Container>;
+  const [checkIn, setCheckIn] = useState(localDateKey());
+  const [checkOut, setCheckOut] = useState(tomorrow());
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [rooms, setRooms] = useState<AvailableRoom[]>([]);
+  const [selected, setSelected] = useState<AvailableRoom | null>(null);
+  const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    gender: "",
+    nationality: "Tanzanian",
+    occupation: "",
+    email: "",
+    phone: "",
+    whereFrom: "",
+    whereTo: "",
+    idType: "",
+    idNumber: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    specialRequests: "",
+    paymentMethod: "cash",
+    transactionRef: "",
+  });
+  const field = (name: keyof typeof form) => ({
+    value: form[name],
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((current) => ({ ...current, [name]: event.target.value })),
+  });
+  const search = async () => {
+    if (!propertyId) return;
+    if (!checkIn || !checkOut || checkOut <= checkIn)
+      return setError("Checkout must be after check-in.");
+    setLoading(true);
+    setError(null);
+    try {
+      const values = await getAvailableRooms(
+        client,
+        propertyId,
+        checkIn,
+        checkOut,
+        adults + children,
+      );
+      setRooms(values);
+      setSearched(true);
+      const requested = searchParams.get("room");
+      if (requested)
+        setSelected(values.find((item) => item.id === requested) ?? null);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Unable to search rooms.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!propertyId || !selected)
+      return setError("Select an available room first.");
+    if (
+      !form.firstName.trim() ||
+      !form.lastName.trim() ||
+      !form.phone.trim() ||
+      !form.gender ||
+      !form.nationality.trim() ||
+      !form.occupation.trim()
+    )
+      return setError("Complete all required guest information.");
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await createWalkInBooking(client, propertyId, {
+        ...form,
+        roomId: selected.id,
+        checkIn,
+        checkOut,
+        totalPrice: selected.totalPrice,
+        adults,
+        children,
+      });
+      const booking = result.booking;
+      const id =
+        booking && typeof booking === "object" && !Array.isArray(booking)
+          ? String(booking.id ?? "")
+          : "";
+      feedback.success("Booking created successfully.");
+      router.replace(id ? `/bookings/${id}` : "/bookings");
+      router.refresh();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Unable to create booking.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <Container
+      component="form"
+      onSubmit={submit}
+      maxWidth="lg"
+      sx={{ py: { xs: 2.5, sm: 3.5, lg: 5 } }}
+    >
+      <Stack spacing={{ xs: 2.25, sm: 3 }}>
+        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+          <IconButton aria-label="Back" onClick={() => router.back()}>
+            <ArrowBackRoundedIcon />
+          </IconButton>
+          <Box>
+            <Typography variant="h4">New booking</Typography>
+            <Typography
+              color="text.secondary"
+              sx={{ fontSize: { xs: ".9rem", sm: "1rem" } }}
+            >
+              Search availability, select a room and enter guest details.
+            </Typography>
+          </Box>
+        </Stack>
+        <Stepper
+          activeStep={selected ? 1 : 0}
+          alternativeLabel
+          sx={{
+            px: { xs: 0, sm: 2 },
+            "& .MuiStepLabel-label": {
+              fontSize: { xs: ".72rem", sm: ".875rem" },
+            },
+          }}
+        >
+          {["Stay & room", "Guest & payment"].map((label) => (
+            <Step key={label}>
+              <StepLabel>{label}</StepLabel>
+            </Step>
+          ))}
+        </Stepper>
+        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
+          <Stack spacing={2}>
+            <Typography variant="h6">Stay dates</Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2,minmax(0,1fr))",
+                  lg: "repeat(4,minmax(0,1fr))",
+                },
+              }}
+            >
+              <TextField
+                required
+                label="Check-in"
+                type="date"
+                value={checkIn}
+                onChange={(e) => setCheckIn(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <TextField
+                required
+                label="Check-out"
+                type="date"
+                value={checkOut}
+                onChange={(e) => setCheckOut(e.target.value)}
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+              <TextField
+                label="Adults"
+                type="number"
+                value={adults}
+                onChange={(e) => setAdults(Math.max(1, Number(e.target.value)))}
+              />
+              <TextField
+                label="Children"
+                type="number"
+                value={children}
+                onChange={(e) =>
+                  setChildren(Math.max(0, Number(e.target.value)))
+                }
+              />
+            </Box>
+            <Button
+              variant="outlined"
+              startIcon={<SearchRoundedIcon />}
+              disabled={loading}
+              onClick={() => void search()}
+              sx={{
+                alignSelf: { sm: "flex-start" },
+                width: { xs: "100%", sm: "auto" },
+              }}
+            >
+              {loading ? "Searching…" : "Search available rooms"}
+            </Button>
+          </Stack>
+        </Paper>
+        {searched && (
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Available rooms
+            </Typography>
+            {rooms.length ? (
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: 2,
+                  gridTemplateColumns: { xs: "1fr", lg: "repeat(2, 1fr)" },
+                }}
+              >
+                {rooms.map((room) => (
+                  <Paper
+                    key={room.id}
+                    variant="outlined"
+                    onClick={() => setSelected(room)}
+                    sx={{
+                      borderColor:
+                        selected?.id === room.id ? "primary.main" : "divider",
+                      borderWidth: selected?.id === room.id ? 2 : 1,
+                      cursor: "pointer",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <Stack direction={{ xs: "column", sm: "row" }}>
+                      {room.images[0] ? (
+                        <Box
+                          component="img"
+                          src={room.images[0]}
+                          alt={room.name}
+                          sx={{
+                            aspectRatio: { xs: "16/8", sm: "auto" },
+                            height: { sm: 128 },
+                            objectFit: "cover",
+                            width: { xs: "100%", sm: 132 },
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            display: "grid",
+                            height: { xs: 100, sm: 128 },
+                            placeItems: "center",
+                            width: { xs: "100%", sm: 132 },
+                          }}
+                        >
+                          <BedRoundedIcon />
+                        </Box>
+                      )}
+                      <Stack spacing={0.7} sx={{ flex: 1, p: 2 }}>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {room.name}
+                        </Typography>
+                        <Typography color="text.secondary" variant="body2">
+                          {room.roomType} · {room.capacity} guests
+                        </Typography>
+                        <Typography color="primary" sx={{ fontWeight: 700 }}>
+                          {money.format(room.totalPrice)}
+                        </Typography>
+                        {selected?.id === room.id && (
+                          <Chip
+                            label="Selected"
+                            color="primary"
+                            size="small"
+                            sx={{ alignSelf: "flex-start" }}
+                          />
+                        )}
+                      </Stack>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Box>
+            ) : (
+              <Alert severity="info">
+                No rooms are available for these dates and guest count.
+              </Alert>
+            )}
+          </Paper>
+        )}
+        {selected && (
+          <>
+            <Box
+              sx={{
+                alignItems: "start",
+                display: "grid",
+                gap: { xs: 2, md: 3 },
+                gridTemplateColumns: {
+                  xs: "minmax(0, 1fr)",
+                  md: "minmax(0, 1fr) minmax(280px, 340px)",
+                },
+              }}
+            >
+              <Stack spacing={{ xs: 2, sm: 3 }}>
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
+                  <Stack spacing={2.2}>
+                    <Typography variant="h6">Guest information</Typography>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        required
+                        label="First name"
+                        {...field("firstName")}
+                      />
+                      <TextField
+                        fullWidth
+                        required
+                        label="Last name"
+                        {...field("lastName")}
+                      />
+                    </Stack>
+                    <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        required
+                        select
+                        label="Gender"
+                        {...field("gender")}
+                      >
+                        <MenuItem value="male">Male</MenuItem>
+                        <MenuItem value="female">Female</MenuItem>
+                        <MenuItem value="other">Other</MenuItem>
+                      </TextField>
+                      <TextField
+                        fullWidth
+                        required
+                        label="Nationality"
+                        {...field("nationality")}
+                      />
+                      <TextField
+                        fullWidth
+                        required
+                        label="Occupation"
+                        {...field("occupation")}
+                      />
+                    </Stack>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        required
+                        label="Phone"
+                        {...field("phone")}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Email"
+                        type="email"
+                        {...field("email")}
+                      />
+                    </Stack>
+                  </Stack>
+                </Paper>
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
+                  <Stack spacing={2}>
+                    <Typography variant="h6">
+                      Travel and identification
+                    </Typography>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Coming from"
+                        {...field("whereFrom")}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Going to"
+                        {...field("whereTo")}
+                      />
+                    </Stack>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        select
+                        label="ID type"
+                        {...field("idType")}
+                      >
+                        <MenuItem value="">None</MenuItem>
+                        <MenuItem value="national_id">National ID</MenuItem>
+                        <MenuItem value="passport">Passport</MenuItem>
+                        <MenuItem value="driving_license">
+                          Driving licence
+                        </MenuItem>
+                      </TextField>
+                      <TextField
+                        fullWidth
+                        label="ID number"
+                        {...field("idNumber")}
+                      />
+                    </Stack>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Emergency contact name"
+                        {...field("emergencyContactName")}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Emergency contact phone"
+                        {...field("emergencyContactPhone")}
+                      />
+                    </Stack>
+                    <TextField
+                      multiline
+                      minRows={3}
+                      label="Special requests"
+                      {...field("specialRequests")}
+                    />
+                  </Stack>
+                </Paper>
+              </Stack>
+
+              <Stack
+                spacing={2}
+                sx={{ position: { md: "sticky" }, top: { md: 24 } }}
+              >
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+                  <Stack spacing={2}>
+                    <Box>
+                      <Typography variant="h6">Booking summary</Typography>
+                      <Typography color="text.secondary" variant="body2">
+                        {selected.name} · {adults + children} guests
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        borderBlock: "1px solid",
+                        borderColor: "divider",
+                        py: 2,
+                      }}
+                    >
+                      <Typography color="text.secondary" variant="caption">
+                        Total stay
+                      </Typography>
+                      <Typography color="primary.main" variant="h4">
+                        {money.format(selected.totalPrice)}
+                      </Typography>
+                    </Box>
+                    <TextField
+                      required
+                      select
+                      label="Payment method"
+                      {...field("paymentMethod")}
+                    >
+                      <MenuItem value="cash">Cash</MenuItem>
+                      <MenuItem value="mobile_money">Mobile money</MenuItem>
+                      <MenuItem value="card">Card</MenuItem>
+                      <MenuItem value="bank_transfer">Bank transfer</MenuItem>
+                    </TextField>
+                    {form.paymentMethod !== "cash" && (
+                      <TextField
+                        label="Transaction reference"
+                        {...field("transactionRef")}
+                      />
+                    )}
+                  </Stack>
+                </Paper>
+                <Button
+                  type="submit"
+                  size="large"
+                  variant="contained"
+                  disabled={loading}
+                  fullWidth
+                >
+                  {loading ? "Creating booking…" : "Confirm booking"}
+                </Button>
+                <Typography
+                  color="text.secondary"
+                  textAlign="center"
+                  variant="caption"
+                >
+                  Review guest and payment details before confirming.
+                </Typography>
+              </Stack>
+            </Box>
+          </>
+        )}
+        <Snackbar
+          open={Boolean(error)}
+          autoHideDuration={6500}
+          onClose={() => setError(null)}
+        >
+          <Alert severity="error" variant="filled">
+            {error}
+          </Alert>
+        </Snackbar>
+      </Stack>
+    </Container>
+  );
 }

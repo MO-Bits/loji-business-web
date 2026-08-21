@@ -26,7 +26,10 @@ export function FlowPlaceholder({
         p: 3,
       }}
     >
-      <Paper variant="outlined" sx={{ maxWidth: 560, p: { xs: 3, sm: 5 }, width: "100%" }}>
+      <Paper
+        variant="outlined"
+        sx={{ maxWidth: 560, p: { xs: 3, sm: 5 }, width: "100%" }}
+      >
         <Stack spacing={2.5}>
           <Chip
             icon={<CheckCircleRoundedIcon />}
