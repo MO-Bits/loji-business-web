@@ -11,6 +11,8 @@ import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import {
@@ -250,6 +252,13 @@ export function DashboardScreen() {
             />
           </Box>
 
+          <RoomStatusBoard
+            occupiedRooms={dashboard.occupiedRoomsList}
+            readyRooms={dashboard.availableRoomsList}
+            currentGuests={dashboard.currentGuests}
+            arrivals={dashboard.todayArrivals}
+          />
+
           <Box
             sx={{
               display: "grid",
@@ -309,6 +318,240 @@ export function DashboardScreen() {
           </Box>
         </Stack>
       </Container>
+    </Box>
+  );
+}
+
+function RoomStatusBoard({
+  occupiedRooms,
+  readyRooms,
+  currentGuests,
+  arrivals,
+}: {
+  occupiedRooms: DashboardRoom[];
+  readyRooms: DashboardRoom[];
+  currentGuests: DashboardBooking[];
+  arrivals: DashboardBooking[];
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const rooms = [
+    ...occupiedRooms.map((room) => ({ room, state: "occupied" as const })),
+    ...readyRooms.map((room) => ({ room, state: "ready" as const })),
+  ];
+  const visible = showAll ? rooms : rooms.slice(0, 12);
+  const bookingsByRoom = new Map<string, DashboardBooking>();
+
+  for (const booking of [...arrivals, ...currentGuests]) {
+    bookingsByRoom.set(booking.roomId, booking);
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        sx={{
+          alignItems: { sm: "center" },
+          justifyContent: "space-between",
+          p: { xs: 2, sm: 2.75 },
+        }}
+      >
+        <Box>
+          <Typography variant="h5">Room overview</Typography>
+          <Typography color="text.secondary" variant="body2" sx={{ mt: 0.4 }}>
+            Live room availability and current guest stays.
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/rooms"
+          endIcon={<ArrowForwardRoundedIcon />}
+        >
+          Manage rooms
+        </Button>
+      </Stack>
+
+      <Divider />
+
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: { xs: 2, sm: 3 },
+          px: { xs: 2, sm: 2.75 },
+          py: 2,
+        }}
+      >
+        <StatusLegend
+          color="#3977F6"
+          label="Occupied"
+          count={occupiedRooms.length}
+        />
+        <StatusLegend color="#2EAD64" label="Ready" count={readyRooms.length} />
+      </Box>
+
+      <Divider />
+
+      {rooms.length === 0 ? (
+        <Box sx={{ p: { xs: 2, sm: 2.75 } }}>
+          <EmptyState text="No active rooms found" />
+        </Box>
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: "grid",
+              gap: { xs: 1.25, sm: 1.5 },
+              gridTemplateColumns: {
+                xs: "repeat(2,minmax(0,1fr))",
+                md: "repeat(3,minmax(0,1fr))",
+                xl: "repeat(4,minmax(0,1fr))",
+              },
+              p: { xs: 1.5, sm: 2.75 },
+              pt: { xs: 1.5, sm: 2 },
+            }}
+          >
+            {visible.map(({ room, state }) => (
+              <OperationalRoomCard
+                key={room.id}
+                room={room}
+                state={state}
+                booking={bookingsByRoom.get(room.id)}
+              />
+            ))}
+          </Box>
+          {rooms.length > 12 && (
+            <Box sx={{ px: { xs: 1.5, sm: 2.75 }, pb: 2.5 }}>
+              <Button onClick={() => setShowAll((current) => !current)}>
+                {showAll
+                  ? "Show fewer rooms"
+                  : `Show all ${rooms.length} rooms`}
+              </Button>
+            </Box>
+          )}
+        </>
+      )}
+    </Paper>
+  );
+}
+
+function StatusLegend({
+  color,
+  label,
+  count,
+}: {
+  color: string;
+  label: string;
+  count: number;
+}) {
+  return (
+    <Stack direction="row" spacing={0.8} sx={{ alignItems: "center" }}>
+      <Box
+        sx={{ bgcolor: color, borderRadius: "50%", height: 10, width: 10 }}
+      />
+      <Typography color="text.secondary" variant="body2">
+        {label} ({count})
+      </Typography>
+    </Stack>
+  );
+}
+
+function OperationalRoomCard({
+  room,
+  state,
+  booking,
+}: {
+  room: DashboardRoom;
+  state: "occupied" | "ready";
+  booking?: DashboardBooking;
+}) {
+  const occupied = state === "occupied";
+  const daysLeft = booking
+    ? Math.max(
+        0,
+        Math.ceil(
+          (booking.checkOut.getTime() - new Date().getTime()) /
+            (1000 * 60 * 60 * 24),
+        ),
+      )
+    : null;
+  const tone = occupied ? "#3977F6" : "#2EAD64";
+
+  return (
+    <Box
+      component={Link}
+      href={`/rooms/${room.id}`}
+      sx={{
+        bgcolor: occupied ? "rgba(57,119,246,.10)" : "rgba(46,173,100,.10)",
+        border: "1px solid",
+        borderColor: tone,
+        borderRadius: 1,
+        color: "text.primary",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: { xs: 142, sm: 150 },
+        p: { xs: 1.4, sm: 1.75 },
+        textDecoration: "none",
+        transition: "transform 160ms ease, box-shadow 160ms ease",
+        "&:hover": {
+          boxShadow: `0 8px 24px ${tone}20`,
+          transform: "translateY(-1px)",
+        },
+      }}
+    >
+      <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+        <Typography
+          sx={{
+            flex: 1,
+            fontSize: { xs: ".95rem", sm: "1rem" },
+            fontWeight: 700,
+            lineHeight: 1.25,
+          }}
+        >
+          {room.name}
+        </Typography>
+        <Chip
+          label={occupied ? "Occupied" : "Ready"}
+          size="small"
+          sx={{
+            bgcolor: "rgba(255,255,255,.72)",
+            color: "text.primary",
+            fontSize: { xs: ".66rem", sm: ".72rem" },
+            height: 24,
+          }}
+        />
+      </Stack>
+
+      <Box sx={{ flex: 1 }} />
+
+      {occupied ? (
+        <Stack spacing={0.25}>
+          <Stack
+            direction="row"
+            spacing={0.65}
+            sx={{ alignItems: "center", minWidth: 0 }}
+          >
+            <PersonRoundedIcon sx={{ color: tone, fontSize: 18 }} />
+            <Typography noWrap variant="body2" sx={{ fontWeight: 600 }}>
+              {booking?.guestName || "Reserved guest"}
+            </Typography>
+          </Stack>
+          <Typography color="text.secondary" variant="caption">
+            {daysLeft === null
+              ? "Current stay"
+              : daysLeft === 0
+                ? "Checking out today"
+                : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+          </Typography>
+        </Stack>
+      ) : (
+        <Stack direction="row" spacing={0.65} sx={{ alignItems: "center" }}>
+          <CheckCircleRoundedIcon sx={{ color: tone, fontSize: 18 }} />
+          <Typography variant="body2" sx={{ color: tone, fontWeight: 700 }}>
+            Available now
+          </Typography>
+        </Stack>
+      )}
     </Box>
   );
 }
