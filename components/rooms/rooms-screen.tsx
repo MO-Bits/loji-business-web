@@ -35,7 +35,7 @@ export function RoomsScreen() {
 }
 
 function RoomCard({ room }: { room: Room }) {
-  return <Paper component={Link} href={`/rooms/${room.id}`} variant="outlined" className="surface-hover" sx={{ borderRadius: 3.5, color: "inherit", display: "block", overflow: "hidden", textDecoration: "none" }}>
+  return <Paper component={Link} href={`/rooms/${room.id}`} variant="outlined" className="surface-hover" sx={{ borderRadius: 1, color: "inherit", display: "block", overflow: "hidden", textDecoration: "none" }}>
     <Box sx={{ aspectRatio: "16/10", bgcolor: "#EEF2F6", overflow: "hidden", position: "relative" }}>
       {room.images[0] ? <Box component="img" src={room.images[0]} alt={room.name} sx={{ height: "100%", objectFit: "cover", transition: "transform 300ms ease", width: "100%", ".surface-hover:hover &": { transform: "scale(1.035)" } }} /> : <Box sx={{ display: "grid", height: "100%", placeItems: "center" }}><BedRoundedIcon sx={{ color: "#A8B3BF", fontSize: 46 }} /></Box>}
       <Chip label={room.isActive ? "Available to sell" : "Inactive"} color={room.isActive ? "success" : "default"} size="small" sx={{ bgcolor: room.isActive ? "#EAF8F2" : "rgba(255,255,255,.92)", color: room.isActive ? "#087A54" : "text.primary", left: 14, position: "absolute", top: 14 }} />
@@ -45,9 +45,9 @@ function RoomCard({ room }: { room: Room }) {
       <Box><Typography variant="h6" noWrap>{room.name}</Typography><Typography color="text.secondary" variant="body2" sx={{ textTransform: "capitalize" }}>{room.roomType}</Typography></Box>
       <Stack direction="row" spacing={2}><Typography color="text.secondary" variant="body2"><GroupRoundedIcon sx={{ fontSize: 17, mr: .5, verticalAlign: "text-bottom" }} />{room.capacity} guests</Typography><Typography color="text.secondary" variant="body2"><BedRoundedIcon sx={{ fontSize: 17, mr: .5, verticalAlign: "text-bottom" }} />{room.bedCount} beds</Typography></Stack>
       {room.amenities.length > 0 && <Typography color="text.secondary" noWrap variant="caption">{room.amenities.slice(0, 3).join(" · ")}{room.amenities.length > 3 ? ` · +${room.amenities.length - 3}` : ""}</Typography>}
-      <Box sx={{ pt: .75 }}><Typography color="primary.dark" sx={{ fontSize: "1.12rem", fontWeight: 850 }}>{money.format(room.pricePerNight)} <Typography component="span" color="text.secondary" variant="caption">/ night</Typography></Typography></Box>
+      <Box sx={{ pt: .75 }}><Typography color="primary.dark" sx={{ fontSize: "1.12rem", fontWeight: 700 }}>{money.format(room.pricePerNight)} <Typography component="span" color="text.secondary" variant="caption">/ night</Typography></Typography></Box>
     </Stack>
   </Paper>;
 }
 
-function EmptyRooms({ canManage }: { canManage: boolean }) { return <Paper variant="outlined" sx={{ borderRadius: 3.5, py: 9, textAlign: "center" }}><Box sx={{ bgcolor: "#EAF3FF", borderRadius: "50%", color: "primary.main", display: "grid", height: 72, mx: "auto", placeItems: "center", width: 72 }}><BedRoundedIcon sx={{ fontSize: 34 }} /></Box><Typography variant="h6" sx={{ mt: 2 }}>Start building your room inventory</Typography><Typography color="text.secondary" sx={{ mb: 2, mt: .5 }}>Rooms, prices, photos and amenities will appear here.</Typography>{canManage && <Button component={Link} href="/rooms/new" variant="contained">Add your first room</Button>}</Paper>; }
+function EmptyRooms({ canManage }: { canManage: boolean }) { return <Paper variant="outlined" sx={{ borderRadius: 1, py: 9, textAlign: "center" }}><Box sx={{ bgcolor: "#EAF3FF", borderRadius: "50%", color: "primary.main", display: "grid", height: 72, mx: "auto", placeItems: "center", width: 72 }}><BedRoundedIcon sx={{ fontSize: 34 }} /></Box><Typography variant="h6" sx={{ mt: 2 }}>Start building your room inventory</Typography><Typography color="text.secondary" sx={{ mb: 2, mt: .5 }}>Rooms, prices, photos and amenities will appear here.</Typography>{canManage && <Button component={Link} href="/rooms/new" variant="contained">Add your first room</Button>}</Paper>; }

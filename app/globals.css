@@ -35,13 +35,13 @@ div {
 }
 
 .surface-hover {
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .surface-hover:hover {
   border-color: color-mix(in srgb, var(--mui-palette-primary-main) 38%, var(--mui-palette-divider));
-  box-shadow: 0 16px 44px rgba(17, 24, 39, 0.09);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.07);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 899px), (hover: none) {
@@ -68,6 +68,17 @@ div {
 
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 button,

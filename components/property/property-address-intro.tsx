@@ -47,7 +47,7 @@ export function PropertyAddressIntro() {
                 sx={{
                   alignItems: "center",
                   bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)",
-                  borderRadius: 3,
+                  borderRadius: 1,
                   color: "primary.main",
                   display: "flex",
                   height: 58,
@@ -59,7 +59,7 @@ export function PropertyAddressIntro() {
               </Box>
 
               <Box>
-                <Typography color="primary" sx={{ fontSize: ".75rem", fontWeight: 850, letterSpacing: ".12em", mb: 1 }}>
+                <Typography color="primary" sx={{ fontSize: ".75rem", fontWeight: 700, letterSpacing: ".12em", mb: 1 }}>
                   PROPERTY LOCATION · STEP 3 OF 3
                 </Typography>
                 <Typography component="h1" variant="h2" sx={{ fontSize: { xs: "2.6rem", sm: "3.7rem" }, letterSpacing: "-.055em", lineHeight: 1.02 }}>
@@ -87,11 +87,11 @@ export function PropertyAddressIntro() {
               <Stack spacing={1}>
                 {steps.map(({ icon: Icon, title, description }, index) => (
                   <Stack key={title} direction="row" spacing={2} sx={{ alignItems: "flex-start", borderBottom: index < steps.length - 1 ? 1 : 0, borderColor: "divider", py: 2 }}>
-                    <Box sx={{ bgcolor: "primary.main", borderRadius: 2.5, color: "primary.contrastText", display: "grid", flexShrink: 0, height: 44, placeItems: "center", width: 44 }}>
+                    <Box sx={{ bgcolor: "primary.main", borderRadius: 1, color: "primary.contrastText", display: "grid", flexShrink: 0, height: 44, placeItems: "center", width: 44 }}>
                       <Icon fontSize="small" />
                     </Box>
                     <Box>
-                      <Typography sx={{ fontWeight: 800 }}>{title}</Typography>
+                      <Typography sx={{ fontWeight: 700 }}>{title}</Typography>
                       <Typography color="text.secondary" variant="body2" sx={{ lineHeight: 1.55, mt: .35 }}>{description}</Typography>
                     </Box>
                   </Stack>

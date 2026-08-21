@@ -78,7 +78,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const canManage = ["owner", "manager"].includes(
     session.activeRole?.toLowerCase() ?? "",
   );
-  const property = session.property as Record<string, unknown> | null | undefined;
+  const property = session.property as
+    | Record<string, unknown>
+    | null
+    | undefined;
   const propertyImage = imageFromProperty(property);
   const propertyName = String(property?.name ?? "Your property");
   const name = String(
@@ -159,7 +162,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         <Box
           sx={{
             alignItems: "center",
-            bgcolor: "rgba(255,255,255,.92)",
+            bgcolor: "background.paper",
             backdropFilter: "blur(16px)",
             borderBottom: 1,
             borderColor: "divider",
@@ -295,7 +298,11 @@ function SidebarContent({
           onClick={onClose}
           startIcon={<AddRoundedIcon />}
           variant="outlined"
-          sx={{ justifyContent: "flex-start", mb: 1.5 }}
+          sx={{
+            justifyContent: "flex-start",
+            mb: 1.5,
+            "& .MuiButton-startIcon": { mr: 1.25 },
+          }}
         >
           New booking
         </Button>
@@ -428,18 +435,18 @@ function NavigationList({
             >
               {selected ? item.activeIcon : item.icon}
             </ListItemIcon>
-           <ListItemText
-  primary={item.label}
-  sx={{ m: 0 }}
-  slotProps={{
-    primary: {
-      sx: {
-        fontSize: "0.875rem",
-        fontWeight: selected ? 500 : 400,
-      },
-    },
-  }}
-/>
+            <ListItemText
+              primary={item.label}
+              sx={{ m: 0 }}
+              slotProps={{
+                primary: {
+                  sx: {
+                    fontSize: "0.875rem",
+                    fontWeight: selected ? 500 : 400,
+                  },
+                },
+              }}
+            />
           </ListItemButton>
         );
       })}
@@ -462,7 +469,7 @@ function MobileNavigation({
   return (
     <Box
       sx={{
-        bgcolor: "rgba(255,255,255,.96)",
+        bgcolor: "background.paper",
         backdropFilter: "blur(18px)",
         borderTop: 1,
         borderColor: "divider",

@@ -84,7 +84,7 @@ export function LoginScreen() {
           >
             <Stack spacing={3}>
               <Stack spacing={1}>
-                <Typography component="h2" variant="h5" sx={{ fontWeight: 750, letterSpacing: "-.025em" }}>
+                <Typography component="h2" variant="h5" sx={{ fontWeight: 700, letterSpacing: "-.025em" }}>
                   Welcome back
                 </Typography>
                 <Typography color="text.secondary">

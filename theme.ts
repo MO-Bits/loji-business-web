@@ -44,25 +44,75 @@ export const theme = createTheme({
   shape: {
     borderRadius: 8,
   },
+  typography: {
+    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    h1: {
+      fontSize: "clamp(2.35rem, 5vw, 4.25rem)",
+      fontWeight: 700,
+      letterSpacing: "-0.045em",
+      lineHeight: 1.04,
+    },
+    h2: {
+      fontSize: "clamp(2rem, 3.8vw, 3.25rem)",
+      fontWeight: 700,
+      letterSpacing: "-0.038em",
+      lineHeight: 1.08,
+    },
+    h3: {
+      fontSize: "clamp(1.65rem, 2.7vw, 2.35rem)",
+      fontWeight: 700,
+      letterSpacing: "-0.03em",
+      lineHeight: 1.14,
+    },
+    h4: {
+      fontSize: "clamp(1.45rem, 2.2vw, 2rem)",
+      fontWeight: 700,
+      letterSpacing: "-0.025em",
+      lineHeight: 1.2,
+    },
+    h5: {
+      fontWeight: 700,
+      letterSpacing: "-0.018em",
+      lineHeight: 1.25,
+    },
+    h6: {
+      fontWeight: 600,
+      letterSpacing: "-0.01em",
+      lineHeight: 1.35,
+    },
+    body1: { lineHeight: 1.6 },
+    body2: { lineHeight: 1.5 },
+    button: {
+      fontWeight: 600,
+      textTransform: "none",
+    },
+  },
   components: {
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
           borderRadius: 8,
-          minHeight: 44,
-          paddingInline: 18,
+          minHeight: 42,
+          paddingInline: 16,
           transition: "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
           "&:active": { transform: "scale(.985)" },
         },
-        contained: { boxShadow: "0 7px 18px rgba(11,102,212,.18)", "&:hover": { boxShadow: "0 10px 24px rgba(11,102,212,.25)", transform: "translateY(-1px)" } },
+        sizeLarge: { minHeight: 48, paddingInline: 20 },
+        contained: {
+          boxShadow: "0 1px 2px rgba(11,102,212,.18)",
+          "&:hover": {
+            boxShadow: "0 4px 12px rgba(11,102,212,.2)",
+            transform: "translateY(-1px)",
+          },
+        },
       },
     },
     MuiContainer: {
       styleOverrides: {
         root: {
-          paddingLeft: "clamp(16px, 3vw, 32px) !important",
-          paddingRight: "clamp(16px, 3vw, 32px) !important",
+          paddingLeft: "clamp(16px, 2.6vw, 32px) !important",
+          paddingRight: "clamp(16px, 2.6vw, 32px) !important",
         },
       },
     },
@@ -79,7 +129,10 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           "&:has(> .MuiInputLabel-root)": {
-            marginTop: 26,
+            marginTop: 24,
+          },
+          "& .MuiOutlinedInput-root": {
+            minHeight: 48,
           },
         },
       },
@@ -91,10 +144,10 @@ export const theme = createTheme({
           overflow: "visible",
           color: "var(--mui-palette-text-primary)",
           pointerEvents: "none",
-          transform: "translate(0, -25px) scale(1)",
+          transform: "translate(0, -23px) scale(1)",
           transformOrigin: "left top",
           "&.MuiInputLabel-shrink": {
-            transform: "translate(0, -25px) scale(1)",
+            transform: "translate(0, -23px) scale(1)",
           },
           "&.Mui-focused": {
             color: "var(--mui-palette-primary-main)",
@@ -113,7 +166,7 @@ export const theme = createTheme({
         },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
-          boxShadow: "0 1px 2px rgba(17,24,39,.025), 0 8px 30px rgba(17,24,39,.025)",
+          boxShadow: "0 1px 2px rgba(17,24,39,.025)",
         },
       },
     },
@@ -121,7 +174,16 @@ export const theme = createTheme({
       styleOverrides: { root: { borderRadius: "8px !important" } },
     },
     MuiChip: { styleOverrides: { root: { borderRadius: 999 } } },
-    MuiIconButton: { styleOverrides: { root: { transition: "background-color 150ms ease, transform 150ms ease", "&:active": { transform: "scale(.94)" } } } },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          minHeight: 40,
+          minWidth: 40,
+          transition: "background-color 150ms ease, transform 150ms ease",
+          "&:active": { transform: "scale(.94)" },
+        },
+      },
+    },
     MuiDialogActions: { styleOverrides: { root: { gap: 8, padding: "16px 24px 24px", flexWrap: "wrap" } } },
     MuiAlert: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiSkeleton: { styleOverrides: { root: { borderRadius: 8 } } },
@@ -131,6 +193,18 @@ export const theme = createTheme({
     MuiSnackbarContent: { styleOverrides: { root: { borderRadius: 8 } } },
     MuiDialog: { styleOverrides: { paper: { borderRadius: 8, boxShadow: "0 24px 80px rgba(17,24,39,.18)" } } },
     MuiTabs: { styleOverrides: { indicator: { borderRadius: 4, height: 3 } } },
-    MuiCssBaseline: { styleOverrides: { "a:focus-visible, button:focus-visible, [role='button']:focus-visible": { outline: "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)", outlineOffset: 2 } } },
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          textRendering: "optimizeLegibility",
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
+        },
+        "a:focus-visible, button:focus-visible, [role='button']:focus-visible": {
+          outline: "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
+          outlineOffset: 2,
+        },
+      },
+    },
   },
 });

@@ -58,7 +58,7 @@ export function PropertyBasicForm() {
         <Stack spacing={3}>
           <Button startIcon={<ArrowBackRoundedIcon />} color="inherit" onClick={() => router.back()} sx={{ alignSelf: "flex-start" }}>Back</Button>
           <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-            <Box sx={{ bgcolor: "primary.main", borderRadius: 3, color: "primary.contrastText", display: "grid", height: 56, placeItems: "center", width: 56 }}><HotelRoundedIcon /></Box>
+            <Box sx={{ bgcolor: "primary.main", borderRadius: 1, color: "primary.contrastText", display: "grid", height: 56, placeItems: "center", width: 56 }}><HotelRoundedIcon /></Box>
             <Box><Typography variant="h4">Create your property profile</Typography><Typography color="text.secondary">Property details · Step 2 of 3</Typography></Box>
           </Stack>
 
@@ -81,7 +81,7 @@ export function PropertyBasicForm() {
           <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
             <Stack spacing={2}><Box><Typography variant="h6">Property photos</Typography><Typography color="text.secondary">Add 1–3 photos. The first photo is your cover.</Typography></Box>
               <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" } }}>
-                {previews.map((url, index) => <Box key={url} sx={{ aspectRatio: "4 / 3", borderRadius: 2, overflow: "hidden", position: "relative" }}><Box component="img" alt={`Property photo ${index + 1}`} src={url} sx={{ height: "100%", objectFit: "cover", width: "100%" }} />{index === 0 && <Chip label="Cover" color="primary" size="small" sx={{ left: 8, position: "absolute", top: 8 }} />}<IconButton aria-label="Remove photo" onClick={() => setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} sx={{ bgcolor: "rgba(0,0,0,.65)", color: "white", position: "absolute", right: 8, top: 8, "&:hover": { bgcolor: "rgba(0,0,0,.8)" } }}><CloseRoundedIcon /></IconButton></Box>)}
+                {previews.map((url, index) => <Box key={url} sx={{ aspectRatio: "4 / 3", borderRadius: 1, overflow: "hidden", position: "relative" }}><Box component="img" alt={`Property photo ${index + 1}`} src={url} sx={{ height: "100%", objectFit: "cover", width: "100%" }} />{index === 0 && <Chip label="Cover" color="primary" size="small" sx={{ left: 8, position: "absolute", top: 8 }} />}<IconButton aria-label="Remove photo" onClick={() => setFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))} sx={{ bgcolor: "rgba(0,0,0,.65)", color: "white", position: "absolute", right: 8, top: 8, "&:hover": { bgcolor: "rgba(0,0,0,.8)" } }}><CloseRoundedIcon /></IconButton></Box>)}
                 {files.length < 3 && <Button component="label" variant="outlined" startIcon={<AddPhotoAlternateRoundedIcon />} sx={{ aspectRatio: "4 / 3", borderStyle: "dashed" }}>Add photos<input hidden multiple accept="image/*" type="file" onChange={pickFiles} /></Button>}
               </Box>
             </Stack>

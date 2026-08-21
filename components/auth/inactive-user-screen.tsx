@@ -54,7 +54,7 @@ export function InactiveUserScreen() {
           variant="outlined"
           sx={{
             borderColor: "rgba(15,23,42,.09)",
-            borderRadius: 2,
+            borderRadius: 1,
             boxShadow: "0 22px 65px rgba(15,23,42,.08)",
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "minmax(300px, .82fr) minmax(430px, 1.18fr)" },
@@ -79,7 +79,7 @@ export function InactiveUserScreen() {
                     alignItems: "center",
                     bgcolor: "rgba(255,255,255,.10)",
                     border: "1px solid rgba(255,255,255,.16)",
-                    borderRadius: 2,
+                    borderRadius: 1,
                     display: "flex",
                     height: 58,
                     justifyContent: "center",
@@ -114,7 +114,7 @@ export function InactiveUserScreen() {
           <Box sx={{ bgcolor: "background.paper", p: { xs: 3, sm: 4.5, md: 6 } }}>
             <Stack spacing={{ xs: 3, sm: 4 }}>
               <Box>
-                <Typography component="h2" variant="h5" sx={{ fontWeight: 750, letterSpacing: "-.025em" }}>
+                <Typography component="h2" variant="h5" sx={{ fontWeight: 700, letterSpacing: "-.025em" }}>
                   Restore your workspace access
                 </Typography>
                 <Typography color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
@@ -197,7 +197,7 @@ function RecoveryStep({
         sx={{
           alignItems: "center",
           bgcolor: "#EAF3FF",
-          borderRadius: 2,
+          borderRadius: 1,
           color: "primary.main",
           display: "flex",
           flexShrink: 0,

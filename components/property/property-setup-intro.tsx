@@ -44,7 +44,7 @@ export function PropertySetupIntro() {
             {features.map(([Icon, title, description]) => (
               <Paper key={title} variant="outlined" sx={{ flex: 1, p: 3 }}>
                 <Stack spacing={2}>
-                  <Box sx={{ bgcolor: "primary.main", borderRadius: 3, color: "primary.contrastText", display: "grid", height: 52, placeItems: "center", width: 52 }}>
+                  <Box sx={{ bgcolor: "primary.main", borderRadius: 1, color: "primary.contrastText", display: "grid", height: 52, placeItems: "center", width: 52 }}>
                     <Icon />
                   </Box>
                   <Typography variant="h6">{title}</Typography>
