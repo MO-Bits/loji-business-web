@@ -13,6 +13,7 @@ import {
   Container,
   Drawer,
   IconButton,
+  LinearProgress,
   MenuItem,
   Paper,
   Snackbar,
@@ -62,6 +63,7 @@ export function NewBookingScreen() {
   const [rooms, setRooms] = useState<AvailableRoom[]>([]);
   const [selected, setSelected] = useState<AvailableRoom | null>(null);
   const [guestSheetOpen, setGuestSheetOpen] = useState(false);
+  const [guestStep, setGuestStep] = useState(0);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,11 +85,67 @@ export function NewBookingScreen() {
     paymentMethod: "cash",
     transactionRef: "",
   });
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof typeof form, string>>
+  >({});
   const field = (name: keyof typeof form) => ({
     value: form[name],
-    onChange: (event: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((current) => ({ ...current, [name]: event.target.value })),
+    error: Boolean(fieldErrors[name]),
+    helperText: fieldErrors[name],
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+      setForm((current) => ({ ...current, [name]: event.target.value }));
+      setFieldErrors((current) => ({ ...current, [name]: undefined }));
+    },
   });
+
+  const validateGuestInformation = () => {
+    const next: Partial<Record<keyof typeof form, string>> = {};
+    const required: Array<keyof typeof form> = [
+      "firstName",
+      "lastName",
+      "gender",
+      "nationality",
+      "occupation",
+      "phone",
+    ];
+
+    for (const name of required) {
+      if (!form[name].trim()) next[name] = "This field is required.";
+    }
+
+    const phone = form.phone.replace(/[\s()-]/g, "");
+    const isTanzanian = form.nationality.trim().toLowerCase() === "tanzanian";
+    const validPhone = isTanzanian
+      ? /^(?:\+?255|0)?[67]\d{8}$/.test(phone)
+      : /^\+?\d{7,15}$/.test(phone);
+    if (form.phone.trim() && !validPhone) {
+      next.phone = isTanzanian
+        ? "Enter a valid Tanzanian mobile number."
+        : "Enter a valid phone number.";
+    }
+
+    if (
+      form.email.trim() &&
+      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())
+    ) {
+      next.email = "Enter a valid email address.";
+    }
+
+    setFieldErrors(next);
+    if (Object.keys(next).length) {
+      setError("Check the highlighted guest information.");
+      window.setTimeout(() => {
+        document.querySelector<HTMLElement>("[aria-invalid='true']")?.focus();
+      }, 80);
+      return false;
+    }
+    return true;
+  };
+
+  const continueGuestFlow = () => {
+    if (guestStep === 0 && !validateGuestInformation()) return;
+    setGuestStep((current) => Math.min(current + 1, 2));
+  };
   const search = async () => {
     if (!propertyId) return;
     if (!checkIn || !checkOut || checkOut <= checkIn)
@@ -109,7 +167,10 @@ export function NewBookingScreen() {
         const requestedRoom =
           values.find((item) => item.id === requested) ?? null;
         setSelected(requestedRoom);
-        if (requestedRoom && isMobile) setGuestSheetOpen(true);
+        if (requestedRoom && isMobile) {
+          setGuestStep(0);
+          setGuestSheetOpen(true);
+        }
       }
     } catch (cause) {
       setError(
@@ -123,15 +184,11 @@ export function NewBookingScreen() {
     event.preventDefault();
     if (!propertyId || !selected)
       return setError("Select an available room first.");
-    if (
-      !form.firstName.trim() ||
-      !form.lastName.trim() ||
-      !form.phone.trim() ||
-      !form.gender ||
-      !form.nationality.trim() ||
-      !form.occupation.trim()
-    )
-      return setError("Complete all required guest information.");
+    if (!validateGuestInformation()) {
+      setGuestStep(0);
+      if (isMobile) setGuestSheetOpen(true);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -276,7 +333,10 @@ export function NewBookingScreen() {
                     variant="outlined"
                     onClick={() => {
                       setSelected(room);
-                      if (isMobile) setGuestSheetOpen(true);
+                      if (isMobile) {
+                        setGuestStep(0);
+                        setGuestSheetOpen(true);
+                      }
                     }}
                     sx={{
                       borderColor:
@@ -345,6 +405,9 @@ export function NewBookingScreen() {
           <ResponsiveBookingContainer
             open={guestSheetOpen}
             onClose={() => !loading && setGuestSheetOpen(false)}
+            step={guestStep}
+            onBack={() => setGuestStep((current) => Math.max(current - 1, 0))}
+            onContinue={continueGuestFlow}
           >
             <Box
               sx={{
@@ -358,7 +421,11 @@ export function NewBookingScreen() {
               }}
             >
               <Stack spacing={{ xs: 2, sm: 3 }}>
-                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
+                <Paper
+                  data-booking-step="guest"
+                  variant="outlined"
+                  sx={{ p: { xs: 2, sm: 3, lg: 4 } }}
+                >
                   <Stack spacing={2.2}>
                     <Typography variant="h6">Guest information</Typography>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
@@ -416,7 +483,11 @@ export function NewBookingScreen() {
                     </Stack>
                   </Stack>
                 </Paper>
-                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3, lg: 4 } }}>
+                <Paper
+                  data-booking-step="travel"
+                  variant="outlined"
+                  sx={{ p: { xs: 2, sm: 3, lg: 4 } }}
+                >
                   <Stack spacing={2}>
                     <Typography variant="h6">
                       Travel and identification
@@ -476,6 +547,7 @@ export function NewBookingScreen() {
               </Stack>
 
               <Stack
+                data-booking-step="payment"
                 spacing={2}
                 sx={{ position: { md: "sticky" }, top: { md: 24 } }}
               >
@@ -558,15 +630,28 @@ function ResponsiveBookingContainer({
   children,
   open,
   onClose,
+  step,
+  onBack,
+  onContinue,
 }: {
   children: ReactNode;
   open: boolean;
   onClose: () => void;
+  step: number;
+  onBack: () => void;
+  onContinue: () => void;
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   if (!isMobile) return <>{children}</>;
+
+  const steps = [
+    { key: "guest", title: "Guest information" },
+    { key: "travel", title: "Travel and identification" },
+    { key: "payment", title: "Payment and review" },
+  ];
+  const currentStep = steps[step] ?? steps[0];
 
   return (
     <Drawer
@@ -603,10 +688,25 @@ function ResponsiveBookingContainer({
           py: 2,
         }}
       >
-        <Typography variant="h6">Guest and payment details</Typography>
-        <Typography color="text.secondary" variant="body2">
-          Complete the information below to confirm the booking.
-        </Typography>
+        <Stack
+          direction="row"
+          sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
+        >
+          <Box>
+            <Typography variant="h6">{currentStep.title}</Typography>
+            <Typography color="text.secondary" variant="body2">
+              Step {step + 1} of {steps.length}
+            </Typography>
+          </Box>
+          <Typography color="text.secondary" variant="caption" sx={{ pt: 0.5 }}>
+            {Math.round(((step + 1) / steps.length) * 100)}%
+          </Typography>
+        </Stack>
+        <LinearProgress
+          variant="determinate"
+          value={((step + 1) / steps.length) * 100}
+          sx={{ borderRadius: 99, height: 4, mt: 1.5 }}
+        />
       </Box>
       <Box
         sx={{
@@ -615,10 +715,36 @@ function ResponsiveBookingContainer({
           pb: "max(24px, env(safe-area-inset-bottom))",
           "& > .MuiBox-root": { gap: 2 },
           "& .MuiPaper-root": { boxShadow: "none" },
+          [`& [data-booking-step]:not([data-booking-step="${currentStep.key}"])`]:
+            {
+              display: "none",
+            },
         }}
       >
         {children}
       </Box>
+      <Stack
+        direction="row"
+        spacing={1.5}
+        sx={{
+          bgcolor: "background.paper",
+          borderTop: "1px solid",
+          borderColor: "divider",
+          p: 2,
+          pb: "max(16px, env(safe-area-inset-bottom))",
+        }}
+      >
+        {step > 0 && (
+          <Button color="inherit" onClick={onBack} sx={{ minWidth: 96 }}>
+            Back
+          </Button>
+        )}
+        {step < steps.length - 1 && (
+          <Button fullWidth variant="contained" onClick={onContinue}>
+            Continue
+          </Button>
+        )}
+      </Stack>
     </Drawer>
   );
 }
