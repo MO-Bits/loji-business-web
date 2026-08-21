@@ -10,8 +10,6 @@ import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import {
   Avatar,
-  BottomNavigation,
-  BottomNavigationAction,
   Box,
   Button,
   Divider,
@@ -34,7 +32,6 @@ import { createClient } from "@/lib/supabase/client";
 import {
   accountDestination,
   managementDestinations,
-  mobileDestinations,
   type MainDestination,
   workspaceDestinations,
 } from "./destinations";
@@ -156,7 +153,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flex: 1,
           minWidth: 0,
           overflowX: "hidden",
-          pb: { xs: "calc(78px + env(safe-area-inset-bottom))", lg: 0 },
+          pb: 0,
         }}
       >
         <Box
@@ -195,11 +192,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
         {children}
       </Box>
-
-      <MobileNavigation
-        pathname={pathname}
-        onNavigate={(path) => router.push(path)}
-      />
     </Box>
   );
 }
@@ -453,58 +445,5 @@ function NavigationList({
         );
       })}
     </List>
-  );
-}
-
-function MobileNavigation({
-  pathname,
-  onNavigate,
-}: {
-  pathname: string;
-  onNavigate: (path: string) => void;
-}) {
-  const match = mobileDestinations.findIndex((item) => item.match(pathname));
-  const selected = pathname.startsWith("/more/")
-    ? mobileDestinations.length - 1
-    : Math.max(0, match);
-
-  return (
-    <Box
-      sx={{
-        bgcolor: "background.paper",
-        backdropFilter: "blur(18px)",
-        borderTop: 1,
-        borderColor: "divider",
-        bottom: 0,
-        display: { xs: "block", lg: "none" },
-        left: 0,
-        pb: "env(safe-area-inset-bottom)",
-        position: "fixed",
-        right: 0,
-        zIndex: (theme) => theme.zIndex.appBar,
-      }}
-    >
-      <BottomNavigation
-        showLabels
-        value={selected}
-        onChange={(_, value: number) =>
-          onNavigate(mobileDestinations[value].path)
-        }
-        sx={{ height: 68, maxWidth: 720, mx: "auto" }}
-      >
-        {mobileDestinations.map((item, index) => (
-          <BottomNavigationAction
-            key={item.path}
-            label={item.label === "My account" ? "Account" : item.label}
-            icon={index === selected ? item.activeIcon : item.icon}
-            sx={{
-              minWidth: 0,
-              px: 0.5,
-              color: index === selected ? "primary.main" : "text.secondary",
-            }}
-          />
-        ))}
-      </BottomNavigation>
-    </Box>
   );
 }

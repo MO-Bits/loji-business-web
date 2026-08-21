@@ -16,6 +16,7 @@ import {
   Button,
   Chip,
   Container,
+  Fab,
   InputAdornment,
   MenuItem,
   Paper,
@@ -59,6 +60,23 @@ export function BookingsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
+  const [todayView, setTodayView] = useState<"checkins" | "checkouts" | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      const view = params.get("view");
+      const date = params.get("date");
+      setTodayView(
+        date === "today" && (view === "checkins" || view === "checkouts")
+          ? view
+          : null,
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!propertyId) return;
@@ -94,9 +112,15 @@ export function BookingsScreen() {
     .reduce((sum, item) => sum + item.totalGuests, 0);
   const visible = bookings.filter((item) => {
     const matchesFilter = filter === "all" || item.status === filter;
+    const matchesTodayView =
+      !todayView ||
+      (todayView === "checkins"
+        ? localDateKey(item.checkIn) === today
+        : localDateKey(item.checkOut) === today);
     const needle = query.toLowerCase();
     return (
       matchesFilter &&
+      matchesTodayView &&
       (!needle ||
         item.guestName.toLowerCase().includes(needle) ||
         item.bookingNumber.toLowerCase().includes(needle) ||
@@ -112,14 +136,16 @@ export function BookingsScreen() {
           title="Bookings"
           description="See every stay, arrival and guest in one organized workspace."
           action={
-            <Button
+            <Fab
               component={Link}
               href="/bookings/new"
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
+              color="primary"
+              variant="extended"
+              size="medium"
             >
+              <AddRoundedIcon sx={{ mr: 1 }} />
               New booking
-            </Button>
+            </Fab>
           }
         />
 
@@ -193,6 +219,30 @@ export function BookingsScreen() {
               ))}
             </TextField>
           </Stack>
+          {todayView && (
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: "center", mt: 1.5 }}
+            >
+              <Chip
+                color="primary"
+                label={
+                  todayView === "checkins"
+                    ? "Check-ins today"
+                    : "Check-outs today"
+                }
+                onDelete={() => {
+                  setTodayView(null);
+                  window.history.replaceState({}, "", "/bookings");
+                }}
+              />
+              <Typography color="text.secondary" variant="caption">
+                Showing today’s{" "}
+                {todayView === "checkins" ? "arrivals" : "departures"}.
+              </Typography>
+            </Stack>
+          )}
         </Paper>
 
         {loading ? (

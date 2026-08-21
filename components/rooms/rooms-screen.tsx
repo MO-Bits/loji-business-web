@@ -12,6 +12,7 @@ import {
   Button,
   Chip,
   Container,
+  Fab,
   Paper,
   Skeleton,
   Stack,
@@ -68,14 +69,16 @@ export function RoomsScreen() {
           description="Present, price and manage every room in your property."
           action={
             canManage ? (
-              <Button
+              <Fab
                 component={Link}
                 href="/rooms/new"
-                variant="contained"
-                startIcon={<AddRoundedIcon />}
+                color="primary"
+                variant="extended"
+                size="medium"
               >
+                <AddRoundedIcon sx={{ mr: 1 }} />
                 Add room
-              </Button>
+              </Fab>
             ) : undefined
           }
         />

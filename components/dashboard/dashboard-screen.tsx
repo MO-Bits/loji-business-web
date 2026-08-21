@@ -15,6 +15,10 @@ import {
   Chip,
   Container,
   Divider,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Fab,
   IconButton,
   Paper,
   Skeleton,
@@ -28,6 +32,7 @@ import type {
   DashboardRoom,
 } from "@/features/dashboard/models/dashboard";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -87,7 +92,10 @@ export function DashboardScreen() {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+              gridTemplateColumns: {
+                xs: "repeat(2,minmax(0,1fr))",
+                md: "repeat(4,minmax(0,1fr))",
+              },
             }}
           >
             <Metric label="Occupancy rate" value={`${occupancy}%`} />
@@ -95,7 +103,13 @@ export function DashboardScreen() {
               label="Check-ins today"
               value={String(dashboard.arrivals)}
               suffix={dashboard.arrivals === 1 ? "room" : "rooms"}
-              bordered
+              href="/bookings?view=checkins&date=today"
+            />
+            <Metric
+              label="Check-outs today"
+              value={String(dashboard.departures)}
+              suffix={dashboard.departures === 1 ? "room" : "rooms"}
+              href="/bookings?view=checkouts&date=today"
             />
             <Metric
               label="Today’s revenue"
@@ -110,8 +124,25 @@ export function DashboardScreen() {
             currentGuests={dashboard.currentGuests}
             arrivals={dashboard.todayArrivals}
           />
+          <TodayCheckouts bookings={dashboard.todayDepartures} />
         </Paper>
       </Container>
+      <Fab
+        component={Link}
+        href="/bookings/new"
+        color="primary"
+        variant="extended"
+        sx={{
+          bottom: { xs: 20, sm: 28 },
+          boxShadow: 4,
+          position: "fixed",
+          right: { xs: 18, sm: 28 },
+          zIndex: (theme) => theme.zIndex.speedDial,
+        }}
+      >
+        <AddRoundedIcon sx={{ mr: 1 }} />
+        New booking
+      </Fab>
     </Box>
   );
 }
@@ -156,14 +187,6 @@ function DashboardHeader({
             <RefreshRoundedIcon />
           </IconButton>
         </Tooltip>
-        <Button
-          component={Link}
-          href="/bookings/new"
-          variant="contained"
-          startIcon={<AddRoundedIcon />}
-        >
-          New booking
-        </Button>
       </Stack>
     </Stack>
   );
@@ -173,24 +196,34 @@ function Metric({
   label,
   value,
   suffix,
-  bordered = false,
   positive = false,
+  href,
 }: {
   label: string;
   value: string;
   suffix?: string;
-  bordered?: boolean;
   positive?: boolean;
+  href?: string;
 }) {
   return (
     <Box
+      component={href ? Link : "div"}
+      href={href}
       sx={{
-        borderInline: bordered ? "1px solid" : "none",
+        borderBottom: "1px solid",
+        borderRight: "1px solid",
         borderColor: "divider",
+        color: "inherit",
         minWidth: 0,
         px: { xs: 1, sm: 2.5 },
         py: { xs: 2, sm: 2.75 },
         textAlign: "center",
+        textDecoration: "none",
+        transition: "background-color 150ms ease",
+        ...(href && {
+          cursor: "pointer",
+          "&:hover": { bgcolor: "action.hover" },
+        }),
       }}
     >
       <Typography
@@ -245,6 +278,7 @@ function RoomBoard({
   arrivals: DashboardBooking[];
 }) {
   const [showAll, setShowAll] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<DashboardRoom | null>(null);
   const rooms = useMemo(
     () => [
       ...occupiedRooms.map((room) => ({ room, state: "occupied" as const })),
@@ -324,6 +358,7 @@ function RoomBoard({
                 room={room}
                 state={state}
                 booking={bookingsByRoom.get(room.id)}
+                onSelect={() => setSelectedRoom(room)}
               />
             ))}
           </Box>
@@ -336,6 +371,52 @@ function RoomBoard({
           )}
         </>
       )}
+      <ResponsiveModal
+        open={Boolean(selectedRoom)}
+        onClose={() => setSelectedRoom(null)}
+        maxWidth="xs"
+      >
+        <DialogTitle>{selectedRoom?.name}</DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary">
+            What would you like to do with this room?
+          </Typography>
+          {selectedRoom && (
+            <Stack spacing={0.5} sx={{ mt: 2 }}>
+              <Typography sx={{ fontWeight: 700 }}>
+                {selectedRoom.roomType}
+              </Typography>
+              <Typography color="text.secondary" variant="body2">
+                {selectedRoom.capacity} guests ·{" "}
+                {money.format(selectedRoom.pricePerNight)} per night
+              </Typography>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ flexWrap: "wrap", gap: 1 }}>
+          <Button onClick={() => setSelectedRoom(null)} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            component={Link}
+            href={selectedRoom ? `/rooms/${selectedRoom.id}` : "/rooms"}
+            variant="outlined"
+          >
+            Room details
+          </Button>
+          <Button
+            component={Link}
+            href={
+              selectedRoom
+                ? `/bookings/new?room=${selectedRoom.id}`
+                : "/bookings/new"
+            }
+            variant="contained"
+          >
+            Create booking
+          </Button>
+        </DialogActions>
+      </ResponsiveModal>
     </Box>
   );
 }
@@ -365,10 +446,12 @@ function RoomTile({
   room,
   state,
   booking,
+  onSelect,
 }: {
   room: DashboardRoom;
   state: "occupied" | "ready";
   booking?: DashboardBooking;
+  onSelect: () => void;
 }) {
   const occupied = state === "occupied";
   const tone = occupied ? "#3977F6" : "#35A95F";
@@ -382,8 +465,9 @@ function RoomTile({
     : null;
   return (
     <Box
-      component={Link}
-      href={`/rooms/${room.id}`}
+      component="button"
+      type="button"
+      onClick={onSelect}
       sx={{
         bgcolor: occupied ? "rgba(57,119,246,.11)" : "rgba(53,169,95,.11)",
         border: "1.5px solid",
@@ -395,6 +479,8 @@ function RoomTile({
         minHeight: { xs: 148, sm: 160 },
         p: { xs: 1.4, sm: 1.75 },
         textDecoration: "none",
+        textAlign: "left",
+        font: "inherit",
         transition: "transform 150ms ease, box-shadow 150ms ease",
         "&:hover": {
           boxShadow: `0 8px 24px ${tone}24`,
@@ -425,6 +511,18 @@ function RoomTile({
           }}
         />
       </Stack>
+      <Typography
+        color="text.secondary"
+        variant="caption"
+        sx={{ mt: 0.65, textTransform: "capitalize" }}
+      >
+        {room.roomType} · {room.capacity} guests
+      </Typography>
+      <Typography
+        sx={{ color: tone, fontSize: ".78rem", fontWeight: 700, mt: 0.25 }}
+      >
+        {money.format(room.pricePerNight)} / night
+      </Typography>
       <Box sx={{ flex: 1 }} />
       {occupied ? (
         <Stack spacing={0.25}>
@@ -449,6 +547,79 @@ function RoomTile({
             Available now
           </Typography>
         </Stack>
+      )}
+    </Box>
+  );
+}
+
+function TodayCheckouts({ bookings }: { bookings: DashboardBooking[] }) {
+  return (
+    <Box
+      sx={{
+        borderTop: "1px solid",
+        borderColor: "divider",
+        p: { xs: 2, sm: 3 },
+      }}
+    >
+      <Stack
+        direction="row"
+        sx={{ alignItems: "center", justifyContent: "space-between", mb: 1.5 }}
+      >
+        <Box>
+          <Typography variant="h6">Today’s check-outs</Typography>
+          <Typography color="text.secondary" variant="body2">
+            Guests expected to depart today.
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/bookings?view=checkouts&date=today"
+          endIcon={<ArrowForwardRoundedIcon />}
+          sx={{ display: { xs: "none", sm: "inline-flex" } }}
+        >
+          View all
+        </Button>
+      </Stack>
+      {bookings.length === 0 ? (
+        <Typography color="text.secondary" variant="body2" sx={{ py: 1 }}>
+          No check-outs scheduled today.
+        </Typography>
+      ) : (
+        <Box
+          sx={{
+            display: "grid",
+            gap: 1,
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2,minmax(0,1fr))",
+              lg: "repeat(3,minmax(0,1fr))",
+            },
+          }}
+        >
+          {bookings.slice(0, 6).map((booking) => (
+            <Box
+              key={booking.id}
+              component={Link}
+              href={`/bookings/${booking.id}`}
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                color: "inherit",
+                p: 1.5,
+                textDecoration: "none",
+                "&:hover": { bgcolor: "action.hover" },
+              }}
+            >
+              <Typography noWrap sx={{ fontWeight: 700 }}>
+                {booking.guestName}
+              </Typography>
+              <Typography color="text.secondary" noWrap variant="caption">
+                {booking.roomName} · {money.format(booking.balanceDue)} due
+              </Typography>
+            </Box>
+          ))}
+        </Box>
       )}
     </Box>
   );

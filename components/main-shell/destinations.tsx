@@ -23,7 +23,7 @@ export type MainDestination = {
 
 export const workspaceDestinations: MainDestination[] = [
   {
-    label: "Dashboard",
+    label: "Home",
     path: "/dashboard",
     icon: <DashboardOutlinedIcon />,
     activeIcon: <DashboardRoundedIcon />,

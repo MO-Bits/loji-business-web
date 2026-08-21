@@ -23,6 +23,7 @@ import {
   DialogTitle,
   Divider,
   FormControl,
+  Fab,
   IconButton,
   InputLabel,
   Menu,
@@ -119,14 +120,16 @@ export function StaffManagement() {
           title="Staff"
           description="Manage access, roles, and invitations for your property team."
           action={
-            <Button
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
+            <Fab
+              color="primary"
+              variant="extended"
+              size="medium"
               disabled={!propertyId}
               onClick={() => setInviteOpen(true)}
             >
+              <AddRoundedIcon sx={{ mr: 1 }} />
               Invite staff
-            </Button>
+            </Fab>
           }
         />
         <Paper variant="outlined">
