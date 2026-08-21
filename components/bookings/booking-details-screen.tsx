@@ -10,7 +10,11 @@ import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Avatar,
   Box,
@@ -27,6 +31,8 @@ import {
   Snackbar,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
@@ -393,6 +399,54 @@ function Section({
   title: string;
   children: React.ReactNode;
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const sectionId = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  if (isMobile) {
+    return (
+      <Accordion
+        disableGutters
+        elevation={0}
+        sx={{
+          border: "1px solid",
+          borderColor: "divider",
+          borderRadius: "8px!important",
+          overflow: "hidden",
+          "&::before": { display: "none" },
+        }}
+      >
+        <AccordionSummary
+          expandIcon={<ExpandMoreRoundedIcon />}
+          aria-controls={`${sectionId}-content`}
+          id={`${sectionId}-header`}
+          sx={{
+            minHeight: 58,
+            px: 2,
+            "& .MuiAccordionSummary-content": { my: 1.5 },
+          }}
+        >
+          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+            {title}
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails
+          id={`${sectionId}-content`}
+          sx={{
+            borderTop: "1px solid",
+            borderColor: "divider",
+            px: 2,
+            py: 0.75,
+          }}
+        >
+          <Stack divider={<Divider flexItem />} spacing={0}>
+            {children}
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
+    );
+  }
+
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 } }}>
       <Typography variant="h6" sx={{ mb: 1.5 }}>
