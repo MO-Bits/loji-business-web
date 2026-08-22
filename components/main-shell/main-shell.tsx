@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
@@ -12,6 +13,7 @@ import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
   Box,
+  Collapse,
   Divider,
   Drawer,
   IconButton,
@@ -117,6 +119,17 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
   return (
     <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+      <Box
+        component="a"
+        href="#main-content"
+        sx={{
+          bgcolor: "primary.main", color: "primary.contrastText", left: 12,
+          px: 2, py: 1, position: "fixed", top: -80, zIndex: 9999,
+          "&:focus": { top: 12 },
+        }}
+      >
+        {t("Skip to content", "Ruka hadi maudhui")}
+      </Box>
       <Drawer
         variant="permanent"
         sx={{
@@ -152,6 +165,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
       <Box
         component="main"
+        id="main-content"
+        tabIndex={-1}
         sx={{
           flex: 1,
           minWidth: 0,
@@ -245,6 +260,7 @@ function SidebarContent({
   role,
 }: SidebarContentProps) {
   const { language, setLanguage, t } = useLanguage();
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   return (
     <Box
       sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}
@@ -313,16 +329,23 @@ function SidebarContent({
         ) : null}
 
         <Box sx={{ mt: 2 }}>
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ alignItems: "center", px: 1.25, pb: .75 }}
+          <ListItemButton
+            aria-expanded={preferencesOpen}
+            onClick={() => setPreferencesOpen((open) => !open)}
+            sx={{ borderRadius: 1, minHeight: 36, px: 1.25 }}
           >
-            <TuneRoundedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
-            <Typography color="text.secondary" component="p" variant="caption">
-              {t("Preferences", "Mapendeleo")}
-            </Typography>
-          </Stack>
+            <ListItemIcon sx={{ minWidth: 26 }}>
+              <TuneRoundedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
+            </ListItemIcon>
+            <ListItemText
+              primary={t("Preferences", "Mapendeleo")}
+              slotProps={{ primary: { variant: "caption", color: "text.secondary" } }}
+            />
+            <ExpandMoreRoundedIcon
+              sx={{ color: "text.secondary", fontSize: 18, transform: preferencesOpen ? "rotate(180deg)" : "none", transition: "transform 160ms ease" }}
+            />
+          </ListItemButton>
+          <Collapse in={preferencesOpen} timeout="auto" unmountOnExit>
           <Stack
             spacing={1.25}
             sx={{
@@ -330,6 +353,7 @@ function SidebarContent({
               border: "1px solid",
               borderColor: "divider",
               borderRadius: 1,
+              mt: .5,
               p: 1.25,
             }}
           >
@@ -369,6 +393,7 @@ function SidebarContent({
               </Select>
             </Box>
           </Stack>
+          </Collapse>
         </Box>
 
         <Box sx={{ flex: 1, minHeight: 24 }} />
