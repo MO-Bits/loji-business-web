@@ -119,22 +119,27 @@ export function PropertySwitcher({
         onClick={(event) => canSwitch && setAnchorEl(event.currentTarget)}
         sx={{
           borderRadius: 1,
-          maxWidth: { xs: "calc(100vw - 78px)", sm: 420 },
+          maxWidth: { xs: "100%", sm: 420 },
           minWidth: 0,
-          p: 0.5,
-          pr: canSwitch ? 0.75 : 0.5,
-          textAlign: "left",
+          px: { xs: 0.25, sm: 0.5 },
+          py: 0.5,
+          textAlign: { xs: "center", sm: "left" },
           "&:hover": canSwitch ? { bgcolor: "action.hover" } : undefined,
         }}
       >
-        <Stack direction="row" spacing={1.1} sx={{ alignItems: "center", minWidth: 0 }}>
+        <Stack
+          direction="row"
+          spacing={{ xs: 0.4, sm: 1.1 }}
+          sx={{ alignItems: "center", justifyContent: { xs: "center", sm: "flex-start" }, minWidth: 0 }}
+        >
           <Avatar
             src={propertyImage}
             variant="rounded"
             sx={{
               bgcolor: "primary.main",
-              height: { xs: 30, sm: 34, lg: 36 },
-              width: { xs: 30, sm: 34, lg: 36 },
+              display: { xs: "none", sm: "flex" },
+              height: { sm: 34, lg: 36 },
+              width: { sm: 34, lg: 36 },
             }}
           >
             <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
@@ -143,22 +148,34 @@ export function PropertySwitcher({
             <Typography
               noWrap
               sx={{
-                fontSize: { xs: ".88rem", sm: "1rem", lg: "1.08rem" },
-                fontWeight: 700,
+                fontSize: { xs: ".9rem", sm: "1rem", lg: "1.08rem" },
+                fontWeight: { xs: 700, sm: 700 },
                 letterSpacing: "-.015em",
                 lineHeight: 1.2,
+                maxWidth: { xs: "min(46vw, 180px)", sm: "none" },
               }}
             >
               {propertyName}
             </Typography>
-            <Typography noWrap color="text.secondary" variant="caption">
+            <Typography
+              noWrap
+              color="text.secondary"
+              variant="caption"
+              sx={{ display: { xs: "none", sm: "block" } }}
+            >
               {canSwitch
                 ? t("Switch property", "Badili jengo")
                 : t("Property workspace", "Eneo la biashara")}
             </Typography>
           </Box>
           {canSwitch && (
-            <ExpandMoreRoundedIcon sx={{ color: "text.secondary", fontSize: 18, flexShrink: 0 }} />
+            <ExpandMoreRoundedIcon
+              sx={{
+                color: "text.secondary",
+                fontSize: { xs: 16, sm: 18 },
+                flexShrink: 0,
+              }}
+            />
           )}
         </Stack>
       </ButtonBase>
@@ -167,7 +184,15 @@ export function PropertySwitcher({
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={() => setAnchorEl(null)}
-        slotProps={{ paper: { sx: { mt: 0.75, minWidth: 260, maxWidth: 340 } } }}
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 0.75,
+              minWidth: { xs: "min(88vw, 280px)", sm: 260 },
+              maxWidth: 340,
+            },
+          },
+        }}
       >
         <Box sx={{ px: 1.5, pb: 0.75, pt: 0.5 }}>
           <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700 }}>
