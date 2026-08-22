@@ -22,7 +22,7 @@ import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { createClient } from "@/lib/supabase/client";
 import { getRooms } from "@/features/rooms/services/room-service";
 import type { Room } from "@/features/rooms/models/room";
-import { PageHeader } from "@/components/shared/page-header";
+import { useLanguage } from "@/components/providers/language-provider";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -31,6 +31,7 @@ const money = new Intl.NumberFormat("en-TZ", {
 });
 
 export function RoomsScreen() {
+  const { t } = useLanguage();
   const { session } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -58,104 +59,90 @@ export function RoomsScreen() {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
   }, [refresh]);
-  const active = rooms.filter((room) => room.isActive).length;
-
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 2.5, sm: 3.25, lg: 4.5 } }}>
-      <Stack spacing={{ xs: 2.25, sm: 3, lg: 3.5 }}>
-        <PageHeader
-          eyebrow="Inventory"
-          title="Rooms"
-          description="Present, price and manage every room in your property."
-          action={
-            canManage ? (
-              <Fab
-                component={Link}
-                href="/rooms/new"
-                color="primary"
-                variant="extended"
-                size="medium"
-              >
-                <AddRoundedIcon sx={{ mr: 1 }} />
-                Add room
-              </Fab>
-            ) : undefined
-          }
-        />
-        {!loading && rooms.length > 0 && (
-          <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
-            <Chip label={`${rooms.length} total rooms`} variant="outlined" />
-            <Chip
-              label={`${active} active`}
-              color="success"
-              variant="outlined"
-            />
-            {rooms.length - active > 0 && (
-              <Chip
-                label={`${rooms.length - active} inactive`}
-                variant="outlined"
-              />
-            )}
-          </Stack>
-        )}
-        {loading ? (
-          <Box
-            sx={{
-              display: "grid",
-              gap: { xs: 1.5, sm: 2.25 },
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2,1fr)",
-                lg: "repeat(3,1fr)",
-                xl: "repeat(4,1fr)",
-              },
-            }}
-          >
-            {[0, 1, 2, 3, 4, 5].map((item) => (
-              <Skeleton key={item} height={350} variant="rounded" />
-            ))}
-          </Box>
-        ) : error ? (
-          <Alert
-            severity="error"
-            action={
-              <Button
-                color="inherit"
-                startIcon={<RefreshRoundedIcon />}
-                onClick={() => void refresh()}
-              >
-                Retry
-              </Button>
-            }
-          >
-            {error}
-          </Alert>
-        ) : rooms.length === 0 ? (
-          <EmptyRooms canManage={canManage} />
-        ) : (
-          <Box
-            sx={{
-              display: "grid",
-              gap: { xs: 1.5, sm: 2.25 },
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2,minmax(0,1fr))",
-                lg: "repeat(3,minmax(0,1fr))",
-                xl: "repeat(4,minmax(0,1fr))",
-              },
-            }}
-          >
-            {rooms.map((room) => (
-              <RoomCard key={room.id} room={room} />
-            ))}
-          </Box>
-        )}
-      </Stack>
-    </Container>
+    <>
+      <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Typography component="h1" variant="h4">
+            {t("Rooms", "Vyumba")}
+          </Typography>
+          {loading ? (
+            <Box
+              sx={{
+                display: "grid",
+                gap: { xs: 1, sm: 1.5 },
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2,1fr)",
+                  lg: "repeat(3,1fr)",
+                  xl: "repeat(4,1fr)",
+                },
+              }}
+            >
+              {[0, 1, 2, 3, 4, 5].map((item) => (
+                <Skeleton key={item} height={260} variant="rounded" />
+              ))}
+            </Box>
+          ) : error ? (
+            <Alert
+              severity="error"
+              action={
+                <Button
+                  color="inherit"
+                  startIcon={<RefreshRoundedIcon />}
+                  onClick={() => void refresh()}
+                >
+                  {t("Retry", "Jaribu tena")}
+                </Button>
+              }
+            >
+              {error}
+            </Alert>
+          ) : rooms.length === 0 ? (
+            <EmptyRooms canManage={canManage} />
+          ) : (
+            <Box
+              sx={{
+                display: "grid",
+                gap: { xs: 1, sm: 1.5 },
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2,minmax(0,1fr))",
+                  lg: "repeat(3,minmax(0,1fr))",
+                  xl: "repeat(4,minmax(0,1fr))",
+                },
+              }}
+            >
+              {rooms.map((room) => (
+                <RoomCard key={room.id} room={room} />
+              ))}
+            </Box>
+          )}
+        </Stack>
+      </Container>
+      {canManage && (
+        <Fab
+          component={Link}
+          href="/rooms/new"
+          color="primary"
+          variant="extended"
+          sx={{
+            bottom: { xs: 20, sm: 28 },
+            position: "fixed",
+            right: { xs: 18, sm: 28 },
+            zIndex: (theme) => theme.zIndex.speedDial,
+          }}
+        >
+          <AddRoundedIcon sx={{ mr: 1 }} />
+          {t("Add room", "Ongeza chumba")}
+        </Fab>
+      )}
+    </>
   );
 }
 
 function RoomCard({ room }: { room: Room }) {
+  const { t } = useLanguage();
   return (
     <Paper
       component={Link}
@@ -172,7 +159,7 @@ function RoomCard({ room }: { room: Room }) {
     >
       <Box
         sx={{
-          aspectRatio: "16/10",
+          aspectRatio: "16/8",
           bgcolor: "#EEF2F6",
           overflow: "hidden",
           position: "relative",
@@ -197,7 +184,11 @@ function RoomCard({ room }: { room: Room }) {
           </Box>
         )}
         <Chip
-          label={room.isActive ? "Available to sell" : "Inactive"}
+          label={
+            room.isActive
+              ? t("Available", "Kinapatikana")
+              : t("Inactive", "Kimezimwa")
+          }
           color={room.isActive ? "success" : "default"}
           size="small"
           sx={{
@@ -222,7 +213,7 @@ function RoomCard({ room }: { room: Room }) {
           />
         )}
       </Box>
-      <Stack spacing={1.1} sx={{ p: { xs: 2, sm: 2.25 } }}>
+      <Stack spacing={0.8} sx={{ p: { xs: 1.5, sm: 1.75 } }}>
         <Box>
           <Typography variant="h6" noWrap>
             {room.name}
@@ -240,13 +231,13 @@ function RoomCard({ room }: { room: Room }) {
             <GroupRoundedIcon
               sx={{ fontSize: 17, mr: 0.5, verticalAlign: "text-bottom" }}
             />
-            {room.capacity} guests
+            {room.capacity} {t("guests", "wageni")}
           </Typography>
           <Typography color="text.secondary" variant="body2">
             <BedRoundedIcon
               sx={{ fontSize: 17, mr: 0.5, verticalAlign: "text-bottom" }}
             />
-            {room.bedCount} beds
+            {room.bedCount} {t("beds", "vitanda")}
           </Typography>
         </Stack>
         {room.amenities.length > 0 && (
@@ -268,7 +259,7 @@ function RoomCard({ room }: { room: Room }) {
               color="text.secondary"
               variant="caption"
             >
-              / night
+              / {t("night", "usiku")}
             </Typography>
           </Typography>
         </Box>
@@ -278,6 +269,7 @@ function RoomCard({ room }: { room: Room }) {
 }
 
 function EmptyRooms({ canManage }: { canManage: boolean }) {
+  const { t } = useLanguage();
   return (
     <Paper
       variant="outlined"
@@ -298,14 +290,20 @@ function EmptyRooms({ canManage }: { canManage: boolean }) {
         <BedRoundedIcon sx={{ fontSize: 34 }} />
       </Box>
       <Typography variant="h6" sx={{ mt: 2 }}>
-        Start building your room inventory
+        {t(
+          "Start building your room inventory",
+          "Anza kuweka orodha ya vyumba",
+        )}
       </Typography>
       <Typography color="text.secondary" sx={{ mb: 2, mt: 0.5 }}>
-        Rooms, prices, photos and amenities will appear here.
+        {t(
+          "Rooms, prices, photos and amenities will appear here.",
+          "Vyumba, bei, picha na huduma vitaonekana hapa.",
+        )}
       </Typography>
       {canManage && (
         <Button component={Link} href="/rooms/new" variant="contained">
-          Add your first room
+          {t("Add your first room", "Ongeza chumba cha kwanza")}
         </Button>
       )}
     </Paper>

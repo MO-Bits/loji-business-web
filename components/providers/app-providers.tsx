@@ -6,13 +6,16 @@ import { ThemeProvider } from "@mui/material/styles";
 
 import { theme } from "@/theme";
 import { FeedbackProvider } from "@/components/providers/feedback-provider";
+import { LanguageProvider } from "@/components/providers/language-provider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
       <ThemeProvider theme={theme} defaultMode="system">
         <CssBaseline />
-        <FeedbackProvider>{children}</FeedbackProvider>
+        <LanguageProvider>
+          <FeedbackProvider>{children}</FeedbackProvider>
+        </LanguageProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>
   );

@@ -1,9 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
@@ -55,11 +53,11 @@ import {
   updateStaffStatus,
 } from "@/features/more/services/more-service";
 import { formatLocalDateTime } from "@/lib/date-time";
-import { PageHeader } from "@/components/shared/page-header";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export function StaffManagement() {
-  const router = useRouter();
+  const { t } = useLanguage();
   const { session } = useAppSession();
   const supabase = useMemo(() => createClient(), []);
   const propertyId = session?.activePropertyId;
@@ -105,33 +103,11 @@ export function StaffManagement() {
     }
   };
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2.5, sm: 3.5, lg: 5 } }}>
-      <Stack spacing={{ xs: 2.25, sm: 3 }}>
-        <Button
-          color="inherit"
-          startIcon={<ArrowBackRoundedIcon />}
-          onClick={() => router.back()}
-          sx={{ alignSelf: "flex-start" }}
-        >
-          Back
-        </Button>
-        <PageHeader
-          eyebrow="Management"
-          title="Staff"
-          description="Manage access, roles, and invitations for your property team."
-          action={
-            <Fab
-              color="primary"
-              variant="extended"
-              size="medium"
-              disabled={!propertyId}
-              onClick={() => setInviteOpen(true)}
-            >
-              <AddRoundedIcon sx={{ mr: 1 }} />
-              Invite staff
-            </Fab>
-          }
-        />
+    <Container maxWidth="lg" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
+      <Stack spacing={{ xs: 1.5, sm: 2 }}>
+        <Typography component="h1" variant="h4">
+          {t("Staff", "Wafanyakazi")}
+        </Typography>
         <Paper variant="outlined">
           <Tabs
             value={tab}
@@ -139,8 +115,10 @@ export function StaffManagement() {
             variant="scrollable"
             scrollButtons="auto"
           >
-            <Tab label={`Current Staff (${staff.length})`} />
-            <Tab label={`Invitations (${invitations.length})`} />
+            <Tab label={`${t("Staff", "Wafanyakazi")} (${staff.length})`} />
+            <Tab
+              label={`${t("Invitations", "Mialiko")} (${invitations.length})`}
+            />
           </Tabs>
         </Paper>
         {loading ? (
@@ -206,6 +184,21 @@ export function StaffManagement() {
           {message}
         </Alert>
       </Snackbar>
+      <Fab
+        color="primary"
+        variant="extended"
+        disabled={!propertyId}
+        onClick={() => setInviteOpen(true)}
+        sx={{
+          bottom: { xs: 20, sm: 28 },
+          position: "fixed",
+          right: { xs: 18, sm: 28 },
+          zIndex: (theme) => theme.zIndex.speedDial,
+        }}
+      >
+        <AddRoundedIcon sx={{ mr: 1 }} />
+        {t("Invite staff", "Alika mfanyakazi")}
+      </Fab>
     </Container>
   );
 }
@@ -502,6 +495,7 @@ function InviteDialog({
   onClose: () => void;
   onSubmit: (email: string, role: string) => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("receptionist");
   const [loading, setLoading] = useState(false);
@@ -512,38 +506,46 @@ function InviteDialog({
       onClose={loading ? undefined : onClose}
       maxWidth="sm"
     >
-      <DialogTitle>Invite Staff Member</DialogTitle>
+      <DialogTitle>{t("Invite staff member", "Alika mfanyakazi")}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
           <Typography color="text.secondary">
-            Invite someone to join your property team. They will receive an
-            invitation to accept.
+            {t(
+              "Invite someone to join your property team. They will receive an invitation to accept.",
+              "Alika mtu ajiunge na timu ya jengo lako. Atapokea mwaliko wa kukubali.",
+            )}
           </Typography>
           <TextField
-            label="Staff email address"
+            label={t("Staff email address", "Barua pepe ya mfanyakazi")}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             type="email"
             required
             error={Boolean(email) && !valid}
-            helperText={Boolean(email) && !valid ? "Enter a valid email" : " "}
+            helperText={
+              Boolean(email) && !valid
+                ? t("Enter a valid email", "Weka barua pepe sahihi")
+                : " "
+            }
           />
           <FormControl fullWidth>
-            <InputLabel>Property role</InputLabel>
+            <InputLabel>{t("Property role", "Jukumu")}</InputLabel>
             <Select
               value={role}
-              label="Property role"
+              label={t("Property role", "Jukumu")}
               onChange={(event) => setRole(event.target.value)}
             >
-              <MenuItem value="manager">Manager</MenuItem>
-              <MenuItem value="receptionist">Receptionist</MenuItem>
+              <MenuItem value="manager">{t("Manager", "Meneja")}</MenuItem>
+              <MenuItem value="receptionist">
+                {t("Receptionist", "Mapokezi")}
+              </MenuItem>
             </Select>
           </FormControl>
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={loading}>
-          Cancel
+          {t("Cancel", "Ghairi")}
         </Button>
         <Button
           variant="contained"
@@ -562,7 +564,9 @@ function InviteDialog({
             }
           }}
         >
-          {loading ? "Sending…" : "Send Invitation"}
+          {loading
+            ? t("Sending…", "Inatuma…")
+            : t("Send invitation", "Tuma mwaliko")}
         </Button>
       </DialogActions>
     </ResponsiveModal>

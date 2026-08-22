@@ -30,6 +30,7 @@ import {
   type Booking,
 } from "@/features/bookings/models/booking";
 import { formatLocalDate, localDateKey } from "@/lib/date-time";
+import { useLanguage } from "@/components/providers/language-provider";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -48,6 +49,7 @@ const statusColor = (
         : "default";
 
 export function BookingsScreen() {
+  const { t } = useLanguage();
   const { session } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const propertyId = session?.activePropertyId;
@@ -118,7 +120,7 @@ export function BookingsScreen() {
       <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <Typography component="h1" variant="h4">
-            Bookings
+            {t("Bookings", "Uhifadhi")}
           </Typography>
 
           <Paper
@@ -127,7 +129,10 @@ export function BookingsScreen() {
           >
             <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
               <TextField
-                placeholder="Search guest, booking number or phone"
+                placeholder={t(
+                  "Search guest, booking number or phone",
+                  "Tafuta mgeni, namba ya uhifadhi au simu",
+                )}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 slotProps={{
@@ -156,7 +161,7 @@ export function BookingsScreen() {
                 ].map((item) => (
                   <MenuItem key={item} value={item}>
                     {item === "all"
-                      ? "All booking statuses"
+                      ? t("All booking statuses", "Hali zote za uhifadhi")
                       : bookingStatusLabel(item)}
                   </MenuItem>
                 ))}
@@ -172,8 +177,8 @@ export function BookingsScreen() {
                   color="primary"
                   label={
                     todayView === "checkins"
-                      ? "Check-ins today"
-                      : "Check-outs today"
+                      ? t("Check-ins today", "Wanaoingia leo")
+                      : t("Check-outs today", "Wanaotoka leo")
                   }
                   onDelete={() => {
                     setTodayView(null);
@@ -181,8 +186,15 @@ export function BookingsScreen() {
                   }}
                 />
                 <Typography color="text.secondary" variant="caption">
-                  Showing today’s{" "}
-                  {todayView === "checkins" ? "arrivals" : "departures"}.
+                  {todayView === "checkins"
+                    ? t(
+                        "Showing today’s arrivals.",
+                        "Inaonyesha wanaoingia leo.",
+                      )
+                    : t(
+                        "Showing today’s departures.",
+                        "Inaonyesha wanaotoka leo.",
+                      )}
                 </Typography>
               </Stack>
             )}
@@ -229,7 +241,7 @@ export function BookingsScreen() {
         }}
       >
         <AddRoundedIcon sx={{ mr: 1 }} />
-        New booking
+        {t("New booking", "Uhifadhi mpya")}
       </Fab>
     </>
   );

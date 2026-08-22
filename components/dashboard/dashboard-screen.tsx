@@ -33,6 +33,7 @@ import type {
 } from "@/features/dashboard/models/dashboard";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
+import { useLanguage } from "@/components/providers/language-provider";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -42,6 +43,7 @@ const money = new Intl.NumberFormat("en-TZ", {
 const dashboardReferenceTime = new Date().getTime();
 
 export function DashboardScreen() {
+  const { t } = useLanguage();
   const sessionState = useAppSession();
   const { dashboard, loading, error, refresh } = useHomeDashboard(
     sessionState.session?.activePropertyId,
@@ -88,21 +90,24 @@ export function DashboardScreen() {
               },
             }}
           >
-            <Metric label="Occupancy rate" value={`${occupancy}%`} />
             <Metric
-              label="Check-ins today"
+              label={t("Occupancy rate", "Kiwango cha matumizi")}
+              value={`${occupancy}%`}
+            />
+            <Metric
+              label={t("Check-ins today", "Wanaoingia leo")}
               value={String(dashboard.arrivals)}
               suffix={dashboard.arrivals === 1 ? "room" : "rooms"}
               href="/bookings?view=checkins&date=today"
             />
             <Metric
-              label="Check-outs today"
+              label={t("Check-outs today", "Wanaotoka leo")}
               value={String(dashboard.departures)}
               suffix={dashboard.departures === 1 ? "room" : "rooms"}
               href="/bookings?view=checkouts&date=today"
             />
             <Metric
-              label="Today’s revenue"
+              label={t("Today’s revenue", "Mapato ya leo")}
               value={money.format(dashboard.todayRevenue)}
               positive
             />
@@ -131,13 +136,14 @@ export function DashboardScreen() {
         }}
       >
         <AddRoundedIcon sx={{ mr: 1 }} />
-        New booking
+        {t("New booking", "Uhifadhi mpya")}
       </Fab>
     </Box>
   );
 }
 
 function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
+  const { t, language } = useLanguage();
   return (
     <Stack
       direction={{ xs: "column", sm: "row" }}
@@ -154,15 +160,18 @@ function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
           variant="h4"
           sx={{ overflowWrap: "anywhere" }}
         >
-          Home
+          {t("Home", "Nyumbani")}
         </Typography>
         <Typography color="text.secondary" sx={{ mt: 0.45 }}>
-          {new Date().toLocaleDateString("en-TZ", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
+          {new Date().toLocaleDateString(
+            language === "sw" ? "sw-TZ" : "en-TZ",
+            {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            },
+          )}
         </Typography>
       </Box>
       <Stack direction="row" spacing={1}>
@@ -261,6 +270,7 @@ function RoomBoard({
   currentGuests: DashboardBooking[];
   arrivals: DashboardBooking[];
 }) {
+  const { t } = useLanguage();
   const [showAll, setShowAll] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState<DashboardRoom | null>(null);
   const rooms = useMemo(
@@ -298,9 +308,13 @@ function RoomBoard({
           <Legend
             color="#3977F6"
             count={occupiedRooms.length}
-            label="Occupied"
+            label={t("Occupied", "Vimetumika")}
           />
-          <Legend color="#35A95F" count={readyRooms.length} label="Ready" />
+          <Legend
+            color="#35A95F"
+            count={readyRooms.length}
+            label={t("Ready", "Tayari")}
+          />
         </Stack>
         <Button
           component={Link}
@@ -309,16 +323,18 @@ function RoomBoard({
           endIcon={<ArrowForwardRoundedIcon />}
           sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}
         >
-          Manage rooms
+          {t("Manage rooms", "Simamia vyumba")}
         </Button>
       </Stack>
       <Divider />
       {rooms.length === 0 ? (
         <Stack spacing={1.5} sx={{ alignItems: "center", p: 6 }}>
           <HotelRoundedIcon color="disabled" sx={{ fontSize: 42 }} />
-          <Typography color="text.secondary">No active rooms found.</Typography>
+          <Typography color="text.secondary">
+            {t("No active rooms found.", "Hakuna vyumba vinavyotumika.")}
+          </Typography>
           <Button component={Link} href="/rooms/new" variant="contained">
-            Add a room
+            {t("Add a room", "Ongeza chumba")}
           </Button>
         </Stack>
       ) : (
@@ -363,7 +379,10 @@ function RoomBoard({
         <DialogTitle>{selectedRoom?.name}</DialogTitle>
         <DialogContent>
           <Typography color="text.secondary">
-            What would you like to do with this room?
+            {t(
+              "What would you like to do with this room?",
+              "Ungependa kufanya nini na chumba hiki?",
+            )}
           </Typography>
           {selectedRoom && (
             <Stack spacing={0.5} sx={{ mt: 2 }}>
@@ -379,14 +398,14 @@ function RoomBoard({
         </DialogContent>
         <DialogActions sx={{ flexWrap: "wrap", gap: 1 }}>
           <Button onClick={() => setSelectedRoom(null)} color="inherit">
-            Cancel
+            {t("Cancel", "Ghairi")}
           </Button>
           <Button
             component={Link}
             href={selectedRoom ? `/rooms/${selectedRoom.id}` : "/rooms"}
             variant="outlined"
           >
-            Room details
+            {t("Room details", "Maelezo ya chumba")}
           </Button>
           <Button
             component={Link}
@@ -397,7 +416,7 @@ function RoomBoard({
             }
             variant="contained"
           >
-            Create booking
+            {t("Create booking", "Tengeneza uhifadhi")}
           </Button>
         </DialogActions>
       </ResponsiveModal>
@@ -437,6 +456,7 @@ function RoomTile({
   booking?: DashboardBooking;
   onSelect: () => void;
 }) {
+  const { t } = useLanguage();
   const occupied = state === "occupied";
   const tone = occupied ? "#3977F6" : "#35A95F";
   const daysLeft = booking
@@ -485,7 +505,7 @@ function RoomTile({
           {room.name}
         </Typography>
         <Chip
-          label={occupied ? "Occupied" : "Ready"}
+          label={occupied ? t("Occupied", "Kimetumika") : t("Ready", "Tayari")}
           size="small"
           sx={{
             bgcolor: "rgba(255,255,255,.78)",
@@ -500,12 +520,12 @@ function RoomTile({
         variant="caption"
         sx={{ mt: 0.65, textTransform: "capitalize" }}
       >
-        {room.roomType} · {room.capacity} guests
+        {room.roomType} · {room.capacity} {t("guests", "wageni")}
       </Typography>
       <Typography
         sx={{ color: tone, fontSize: ".78rem", fontWeight: 700, mt: 0.25 }}
       >
-        {money.format(room.pricePerNight)} / night
+        {money.format(room.pricePerNight)} / {t("night", "usiku")}
       </Typography>
       <Box sx={{ flex: 1 }} />
       {occupied ? (
@@ -513,22 +533,22 @@ function RoomTile({
           <Stack direction="row" spacing={0.55} sx={{ alignItems: "center" }}>
             <PersonRoundedIcon sx={{ color: tone, fontSize: 18 }} />
             <Typography noWrap variant="body2" sx={{ fontWeight: 600 }}>
-              {booking?.guestName || "Reserved guest"}
+              {booking?.guestName || t("Reserved guest", "Mgeni aliyehifadhi")}
             </Typography>
           </Stack>
           <Typography color="text.secondary" variant="caption">
             {daysLeft === null
-              ? "Current stay"
+              ? t("Current stay", "Anaendelea kukaa")
               : daysLeft === 0
-                ? "Checking out today"
-                : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+                ? t("Checking out today", "Anaondoka leo")
+                : `${daysLeft} ${t(daysLeft === 1 ? "day left" : "days left", daysLeft === 1 ? "siku imebaki" : "siku zimebaki")}`}
           </Typography>
         </Stack>
       ) : (
         <Stack direction="row" spacing={0.55} sx={{ alignItems: "center" }}>
           <CheckCircleRoundedIcon sx={{ color: tone, fontSize: 18 }} />
           <Typography variant="body2" sx={{ color: tone, fontWeight: 700 }}>
-            Available now
+            {t("Available now", "Kinapatikana sasa")}
           </Typography>
         </Stack>
       )}
@@ -537,6 +557,7 @@ function RoomTile({
 }
 
 function TodayCheckouts({ bookings }: { bookings: DashboardBooking[] }) {
+  const { t } = useLanguage();
   return (
     <Box
       sx={{
@@ -550,9 +571,14 @@ function TodayCheckouts({ bookings }: { bookings: DashboardBooking[] }) {
         sx={{ alignItems: "center", justifyContent: "space-between", mb: 1.5 }}
       >
         <Box>
-          <Typography variant="h6">Today’s check-outs</Typography>
+          <Typography variant="h6">
+            {t("Today’s check-outs", "Wanaotoka leo")}
+          </Typography>
           <Typography color="text.secondary" variant="body2">
-            Guests expected to depart today.
+            {t(
+              "Guests expected to depart today.",
+              "Wageni wanaotarajiwa kuondoka leo.",
+            )}
           </Typography>
         </Box>
         <Button
@@ -561,12 +587,15 @@ function TodayCheckouts({ bookings }: { bookings: DashboardBooking[] }) {
           endIcon={<ArrowForwardRoundedIcon />}
           sx={{ display: { xs: "none", sm: "inline-flex" } }}
         >
-          View all
+          {t("View all", "Tazama wote")}
         </Button>
       </Stack>
       {bookings.length === 0 ? (
         <Typography color="text.secondary" variant="body2" sx={{ py: 1 }}>
-          No check-outs scheduled today.
+          {t(
+            "No check-outs scheduled today.",
+            "Hakuna wanaotarajiwa kuondoka leo.",
+          )}
         </Typography>
       ) : (
         <Box

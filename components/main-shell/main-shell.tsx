@@ -7,6 +7,7 @@ import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
 import {
   Avatar,
   Box,
@@ -17,6 +18,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  MenuItem,
+  Select,
   Stack,
   Tooltip,
   Typography,
@@ -26,6 +29,7 @@ import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { AppStatus } from "@/features/session/models/app-status";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/components/providers/language-provider";
 import {
   accountDestination,
   managementDestinations,
@@ -54,6 +58,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { session, loading, error, refresh } = useAppSession();
+  const { language, setLanguage, t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -159,7 +164,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             borderBottom: 1,
             borderColor: "divider",
             display: "flex",
-            height: 56,
+            height: { xs: 56, lg: 64 },
             justifyContent: "space-between",
             px: { xs: 1.5, sm: 2.5 },
             position: "sticky",
@@ -183,29 +188,57 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             <Avatar
               src={propertyImage}
               variant="rounded"
-              sx={{ bgcolor: "primary.main", height: 30, width: 30 }}
+              sx={{
+                bgcolor: "primary.main",
+                height: { xs: 30, sm: 34, lg: 36 },
+                width: { xs: 30, sm: 34, lg: 36 },
+              }}
             >
               <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
             </Avatar>
             <Box sx={{ minWidth: 0 }}>
-              <Typography noWrap variant="body2" sx={{ fontWeight: 700 }}>
+              <Typography
+                noWrap
+                sx={{
+                  fontSize: { xs: ".88rem", sm: "1rem", lg: "1.08rem" },
+                  fontWeight: 700,
+                  letterSpacing: "-.015em",
+                  lineHeight: 1.2,
+                }}
+              >
                 {propertyName}
               </Typography>
               <Typography noWrap color="text.secondary" variant="caption">
-                Property workspace
+                {t("Property workspace", "Eneo la biashara")}
               </Typography>
             </Box>
           </Stack>
-          <Typography
-            color="text.secondary"
-            variant="caption"
-            sx={{
-              display: { xs: "none", sm: "block" },
-              textTransform: "capitalize",
-            }}
-          >
-            {session.activeRole ?? "Member"}
-          </Typography>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <TranslateRoundedIcon
+              sx={{
+                color: "text.secondary",
+                display: { xs: "none", sm: "block" },
+                fontSize: 18,
+              }}
+            />
+            <Select
+              value={language}
+              onChange={(event) =>
+                setLanguage(event.target.value as "en" | "sw")
+              }
+              size="small"
+              inputProps={{ "aria-label": t("Language", "Lugha") }}
+              sx={{
+                fontSize: ".78rem",
+                fontWeight: 700,
+                minWidth: { xs: 66, sm: 92 },
+                "& .MuiSelect-select": { py: 0.75 },
+              }}
+            >
+              <MenuItem value="en">EN</MenuItem>
+              <MenuItem value="sw">SW</MenuItem>
+            </Select>
+          </Stack>
         </Box>
 
         {children}
@@ -233,6 +266,7 @@ function SidebarContent({
   pathname,
   role,
 }: SidebarContentProps) {
+  const { t } = useLanguage();
   return (
     <Box
       sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}
@@ -281,7 +315,7 @@ function SidebarContent({
               variant="caption"
               sx={{ px: 1.25, pb: 0.75 }}
             >
-              Manage
+              {t("Manage", "Usimamizi")}
             </Typography>
             <NavigationList
               items={managementDestinations}
@@ -358,6 +392,14 @@ function NavigationList({
   onNavigate: () => void;
   pathname: string;
 }) {
+  const { t } = useLanguage();
+  const labels: Record<string, [string, string]> = {
+    "/dashboard": ["Home", "Nyumbani"],
+    "/bookings": ["Bookings", "Uhifadhi"],
+    "/rooms": ["Rooms", "Vyumba"],
+    "/more/property": ["Property", "Jengo"],
+    "/more/staff": ["Staff", "Wafanyakazi"],
+  };
   return (
     <List disablePadding>
       {items.map((item) => {
@@ -396,7 +438,7 @@ function NavigationList({
               {selected ? item.activeIcon : item.icon}
             </ListItemIcon>
             <ListItemText
-              primary={item.label}
+              primary={labels[item.path] ? t(...labels[item.path]) : item.label}
               sx={{ m: 0 }}
               slotProps={{
                 primary: {
