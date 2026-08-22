@@ -6,12 +6,18 @@ import { createClient } from "@/lib/supabase/client";
 
 import type { AppSession } from "../models/app-session";
 import { evaluateAppSession } from "../services/app-session-service";
+import {
+  loadPropertyForMembership,
+  readPreferredPropertyId,
+  savePreferredPropertyId,
+} from "../services/property-switch-service";
 
 type AppSessionState = {
   session: AppSession | null;
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
+  switchProperty: (propertyId: string) => Promise<void>;
 };
 
 export function useAppSession(): AppSessionState {
@@ -20,12 +26,31 @@ export function useAppSession(): AppSessionState {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  const applyPreferredProperty = useCallback(async (nextSession: AppSession) => {
+    const preferredId = readPreferredPropertyId();
+    if (!preferredId || preferredId === nextSession.activePropertyId) return nextSession;
+
+    const membership = nextSession.memberships.find(
+      (item) => item.property_id === preferredId,
+    );
+    if (!membership) return nextSession;
+
+    const property = await loadPropertyForMembership(supabase, membership);
+    return {
+      ...nextSession,
+      activePropertyId: preferredId,
+      activeRole: membership.role ?? nextSession.activeRole,
+      property,
+    };
+  }, [supabase]);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const nextSession = await evaluateAppSession(supabase);
+      const evaluated = await evaluateAppSession(supabase);
+      const nextSession = await applyPreferredProperty(evaluated);
       setSession(nextSession);
     } catch (caughtError) {
       setError(
@@ -36,7 +61,36 @@ export function useAppSession(): AppSessionState {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [applyPreferredProperty, supabase]);
+
+  const switchProperty = useCallback(async (propertyId: string) => {
+    if (!session || propertyId === session.activePropertyId) return;
+    const membership = session.memberships.find(
+      (item) => item.property_id === propertyId,
+    );
+    if (!membership) throw new Error("You do not have access to this property.");
+
+    setLoading(true);
+    setError(null);
+    try {
+      const property = await loadPropertyForMembership(supabase, membership);
+      savePreferredPropertyId(propertyId);
+      setSession({
+        ...session,
+        activePropertyId: propertyId,
+        activeRole: membership.role ?? session.activeRole,
+        property,
+      });
+    } catch (caughtError) {
+      const nextError = caughtError instanceof Error
+        ? caughtError
+        : new Error("Unable to switch property.");
+      setError(nextError);
+      throw nextError;
+    } finally {
+      setLoading(false);
+    }
+  }, [session, supabase]);
 
   useEffect(() => {
     const initialRefresh = window.setTimeout(() => {
@@ -46,8 +100,6 @@ export function useAppSession(): AppSessionState {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(() => {
-      // Run after the auth callback finishes to avoid making another Supabase
-      // request while the auth client is still processing the event.
       window.setTimeout(() => {
         void refresh();
       }, 0);
@@ -59,5 +111,5 @@ export function useAppSession(): AppSessionState {
     };
   }, [refresh, supabase]);
 
-  return { session, loading, error, refresh };
+  return { session, loading, error, refresh, switchProperty };
 }
