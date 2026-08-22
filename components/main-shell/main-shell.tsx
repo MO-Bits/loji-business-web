@@ -75,7 +75,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     typeof session.user?.user_metadata?.avatar_url === "string"
       ? session.user.user_metadata.avatar_url
       : undefined;
-  const canSwitchProperty = session.memberships.filter((item) => item.property_id).length > 1;
 
   const signOut = async () => {
     await createClient().auth.signOut();
@@ -178,31 +177,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               px: { xs: 2.25, sm: 3, lg: 2.5 },
             }}
           >
-            <Box
-              component={Link}
-              href="/dashboard"
-              aria-label="Loji Business home"
-              sx={{
-                alignItems: "center",
-                display: { xs: "inline-flex", lg: "none" },
-                minWidth: 0,
-                textDecoration: "none",
-              }}
-            >
-              <BrandLockup
-                priority
-                symbolSize={36}
-                textSize={{ xs: "1.05rem", sm: "1.12rem" }}
-              />
-            </Box>
-
-            <Box
-              sx={{
-                display: { xs: "none", lg: "flex" },
-                flex: 1,
-                minWidth: 0,
-              }}
-            >
+            <Box sx={{ display: "flex", flex: 1, minWidth: 0, overflow: "hidden" }}>
               <PropertySwitcher
                 activePropertyId={session.activePropertyId}
                 memberships={session.memberships}
@@ -213,8 +188,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
             <Stack
               direction="row"
-              spacing={{ xs: 0.5, sm: 1, lg: 1 }}
-              sx={{ alignItems: "center", flexShrink: 0 }}
+              spacing={{ xs: 0.5, sm: 1 }}
+              sx={{ alignItems: "center", flexShrink: 0, ml: 1 }}
             >
               <TopBarLanguageSwitch />
               <IconButton
@@ -225,35 +200,13 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                   display: { xs: "inline-flex", lg: "none" },
                   height: 48,
                   width: 48,
-                  "& .MuiSvgIcon-root": {
-                    fontSize: 32,
-                  },
+                  "& .MuiSvgIcon-root": { fontSize: 32 },
                 }}
               >
                 <MenuRoundedIcon />
               </IconButton>
             </Stack>
           </Box>
-
-          {canSwitchProperty ? (
-            <Box
-              sx={{
-                alignItems: "center",
-                borderTop: 1,
-                borderColor: "divider",
-                display: { xs: "flex", lg: "none" },
-                minHeight: 42,
-                px: { xs: 1.75, sm: 2.5 },
-              }}
-            >
-              <PropertySwitcher
-                activePropertyId={session.activePropertyId}
-                memberships={session.memberships}
-                property={session.property}
-                onSwitch={switchActiveProperty}
-              />
-            </Box>
-          ) : null}
         </Box>
 
         {children}
