@@ -152,7 +152,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           flex: 1,
           minWidth: 0,
-          overflowX: "hidden",
+          overflowX: "clip",
           pb: 0,
         }}
       >
@@ -161,14 +161,17 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             alignItems: "center",
             bgcolor: "background.paper",
             backdropFilter: "blur(16px)",
-            borderBottom: 1,
+            border: 1,
             borderColor: "divider",
+            borderRadius: 1,
+            boxShadow: "0 8px 28px rgba(15,23,42,.08)",
             display: "flex",
             height: { xs: 56, lg: 64 },
             justifyContent: "space-between",
+            mx: { xs: 1, sm: 1.5, lg: 2 },
             px: { xs: 1.5, sm: 2.5 },
             position: "sticky",
-            top: 0,
+            top: { xs: 8, lg: 12 },
             zIndex: (theme) => theme.zIndex.appBar,
           }}
         >
