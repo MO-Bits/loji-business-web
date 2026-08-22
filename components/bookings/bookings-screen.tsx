@@ -4,9 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
-import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import {
@@ -32,7 +29,6 @@ import {
   bookingStatusLabel,
   type Booking,
 } from "@/features/bookings/models/booking";
-import { PageHeader } from "@/components/shared/page-header";
 import { formatLocalDate, localDateKey } from "@/lib/date-time";
 
 const money = new Intl.NumberFormat("en-TZ", {
@@ -99,17 +95,6 @@ export function BookingsScreen() {
   }, [refresh]);
 
   const today = localDateKey();
-  const arrivals = bookings.filter(
-    (item) =>
-      localDateKey(item.checkIn) === today && item.status !== "cancelled",
-  ).length;
-  const departures = bookings.filter(
-    (item) =>
-      localDateKey(item.checkOut) === today && item.status !== "cancelled",
-  ).length;
-  const staying = bookings
-    .filter((item) => item.status === "checked_in")
-    .reduce((sum, item) => sum + item.totalGuests, 0);
   const visible = bookings.filter((item) => {
     const matchesFilter = filter === "all" || item.status === filter;
     const matchesTodayView =
@@ -129,198 +114,124 @@ export function BookingsScreen() {
   });
 
   return (
-    <Container maxWidth="xl" sx={{ py: { xs: 2.5, sm: 3.25, lg: 4.5 } }}>
-      <Stack spacing={{ xs: 2.25, sm: 3, lg: 3.5 }}>
-        <PageHeader
-          eyebrow="Reservations"
-          title="Bookings"
-          description="See every stay, arrival and guest in one organized workspace."
-          action={
-            <Fab
-              component={Link}
-              href="/bookings/new"
-              color="primary"
-              variant="extended"
-              size="medium"
-            >
-              <AddRoundedIcon sx={{ mr: 1 }} />
-              New booking
-            </Fab>
-          }
-        />
+    <>
+      <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
+          <Typography component="h1" variant="h4">
+            Bookings
+          </Typography>
 
-        <Box
-          sx={{
-            display: "grid",
-            gap: { xs: 1.25, sm: 2 },
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(min(100%, 180px), 1fr))",
-            maxWidth: { lg: 760 },
-          }}
-        >
-          <Stat
-            icon={<LoginRoundedIcon />}
-            label="Arrivals today"
-            value={arrivals}
-            tone="#0B66D4"
-          />
-          <Stat
-            icon={<LogoutRoundedIcon />}
-            label="Departures today"
-            value={departures}
-            tone="#D35454"
-          />
-          <Stat
-            icon={<PeopleRoundedIcon />}
-            label="Guests staying"
-            value={staying}
-            tone="#0E9F6E"
-          />
-        </Box>
-
-        <Paper
-          variant="outlined"
-          sx={{ borderRadius: 1, p: { xs: 1.75, sm: 2.5 } }}
-        >
-          <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-            <TextField
-              placeholder="Search guest, booking number or phone"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchRoundedIcon color="action" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
-            <TextField
-              select
-              value={filter}
-              onChange={(event) => setFilter(event.target.value)}
-              sx={{ minWidth: { md: 220 }, maxWidth: { md: 280 } }}
-            >
-              {[
-                "all",
-                "confirmed",
-                "reserved",
-                "checked_in",
-                "checked_out",
-                "cancelled",
-              ].map((item) => (
-                <MenuItem key={item} value={item}>
-                  {item === "all"
-                    ? "All booking statuses"
-                    : bookingStatusLabel(item)}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Stack>
-          {todayView && (
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ alignItems: "center", mt: 1.5 }}
-            >
-              <Chip
-                color="primary"
-                label={
-                  todayView === "checkins"
-                    ? "Check-ins today"
-                    : "Check-outs today"
-                }
-                onDelete={() => {
-                  setTodayView(null);
-                  window.history.replaceState({}, "", "/bookings");
+          <Paper
+            variant="outlined"
+            sx={{ borderRadius: 1, p: { xs: 1.75, sm: 2.5 } }}
+          >
+            <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
+              <TextField
+                placeholder="Search guest, booking number or phone"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchRoundedIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
-              <Typography color="text.secondary" variant="caption">
-                Showing today’s{" "}
-                {todayView === "checkins" ? "arrivals" : "departures"}.
-              </Typography>
-            </Stack>
-          )}
-        </Paper>
-
-        {loading ? (
-          <Stack spacing={1.25}>
-            {[0, 1, 2, 3, 4].map((item) => (
-              <Skeleton key={item} height={84} variant="rounded" />
-            ))}
-          </Stack>
-        ) : error ? (
-          <Alert
-            severity="error"
-            action={
-              <Button
-                color="inherit"
-                startIcon={<RefreshRoundedIcon />}
-                onClick={() => void refresh()}
+              <TextField
+                select
+                value={filter}
+                onChange={(event) => setFilter(event.target.value)}
+                sx={{ minWidth: { md: 220 }, maxWidth: { md: 280 } }}
               >
-                Retry
-              </Button>
-            }
-          >
-            {error}
-          </Alert>
-        ) : visible.length === 0 ? (
-          <EmptyBookings />
-        ) : (
-          <BookingTable bookings={visible} />
-        )}
-      </Stack>
-    </Container>
-  );
-}
+                {[
+                  "all",
+                  "confirmed",
+                  "reserved",
+                  "checked_in",
+                  "checked_out",
+                  "cancelled",
+                ].map((item) => (
+                  <MenuItem key={item} value={item}>
+                    {item === "all"
+                      ? "All booking statuses"
+                      : bookingStatusLabel(item)}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+            {todayView && (
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ alignItems: "center", mt: 1.5 }}
+              >
+                <Chip
+                  color="primary"
+                  label={
+                    todayView === "checkins"
+                      ? "Check-ins today"
+                      : "Check-outs today"
+                  }
+                  onDelete={() => {
+                    setTodayView(null);
+                    window.history.replaceState({}, "", "/bookings");
+                  }}
+                />
+                <Typography color="text.secondary" variant="caption">
+                  Showing today’s{" "}
+                  {todayView === "checkins" ? "arrivals" : "departures"}.
+                </Typography>
+              </Stack>
+            )}
+          </Paper>
 
-function Stat({
-  icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-  tone: string;
-}) {
-  return (
-    <Paper variant="outlined" sx={{ borderRadius: 1, p: { xs: 1.5, sm: 2 } }}>
-      <Stack direction="row" spacing={1.25} alignItems="center">
-        <Box
-          sx={{
-            bgcolor: `${tone}14`,
-            borderRadius: 1,
-            color: tone,
-            display: "grid",
-            flexShrink: 0,
-            height: 40,
-            placeItems: "center",
-            width: 40,
-          }}
-        >
-          {icon}
-        </Box>
-        <Box>
-          <Typography
-            sx={{
-              fontSize: { xs: "1.3rem", sm: "1.5rem" },
-              fontWeight: 700,
-              letterSpacing: "-.04em",
-              lineHeight: 1,
-            }}
-          >
-            {value}
-          </Typography>
-          <Typography color="text.secondary" variant="caption">
-            {label}
-          </Typography>
-        </Box>
-      </Stack>
-    </Paper>
+          {loading ? (
+            <Stack spacing={1.25}>
+              {[0, 1, 2, 3, 4].map((item) => (
+                <Skeleton key={item} height={84} variant="rounded" />
+              ))}
+            </Stack>
+          ) : error ? (
+            <Alert
+              severity="error"
+              action={
+                <Button
+                  color="inherit"
+                  startIcon={<RefreshRoundedIcon />}
+                  onClick={() => void refresh()}
+                >
+                  Retry
+                </Button>
+              }
+            >
+              {error}
+            </Alert>
+          ) : visible.length === 0 ? (
+            <EmptyBookings />
+          ) : (
+            <BookingTable bookings={visible} />
+          )}
+        </Stack>
+      </Container>
+      <Fab
+        component={Link}
+        href="/bookings/new"
+        color="primary"
+        variant="extended"
+        sx={{
+          bottom: { xs: 20, sm: 28 },
+          position: "fixed",
+          right: { xs: 18, sm: 28 },
+          zIndex: (theme) => theme.zIndex.speedDial,
+        }}
+      >
+        <AddRoundedIcon sx={{ mr: 1 }} />
+        New booking
+      </Fab>
+    </>
   );
 }
 

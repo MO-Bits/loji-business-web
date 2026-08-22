@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
@@ -11,7 +10,6 @@ import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import {
   Avatar,
   Box,
-  Button,
   Divider,
   Drawer,
   IconButton,
@@ -23,7 +21,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { BrandWordmark } from "@/components/shared/brand-wordmark";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
@@ -106,8 +103,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       onClose={() => setMobileOpen(false)}
       onSignOut={signOut}
       pathname={pathname}
-      propertyImage={propertyImage}
-      propertyName={propertyName}
       role={session.activeRole ?? "Member"}
     />
   );
@@ -163,8 +158,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             backdropFilter: "blur(16px)",
             borderBottom: 1,
             borderColor: "divider",
-            display: { xs: "flex", lg: "none" },
-            height: 60,
+            display: "flex",
+            height: 56,
             justifyContent: "space-between",
             px: { xs: 1.5, sm: 2.5 },
             position: "sticky",
@@ -172,22 +167,45 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             zIndex: (theme) => theme.zIndex.appBar,
           }}
         >
-          <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+          <Stack
+            direction="row"
+            spacing={1.25}
+            sx={{ alignItems: "center", minWidth: 0 }}
+          >
             <IconButton
               aria-label="Open navigation"
               onClick={() => setMobileOpen(true)}
               size="small"
+              sx={{ display: { xs: "inline-flex", lg: "none" } }}
             >
               <MenuRoundedIcon />
             </IconButton>
-            <BrandWordmark priority sx={{ width: { xs: 122, sm: 136 } }} />
+            <Avatar
+              src={propertyImage}
+              variant="rounded"
+              sx={{ bgcolor: "primary.main", height: 30, width: 30 }}
+            >
+              <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography noWrap variant="body2" sx={{ fontWeight: 700 }}>
+                {propertyName}
+              </Typography>
+              <Typography noWrap color="text.secondary" variant="caption">
+                Property workspace
+              </Typography>
+            </Box>
           </Stack>
-          <Avatar
-            src={propertyImage}
-            sx={{ bgcolor: "primary.main", height: 32, width: 32 }}
+          <Typography
+            color="text.secondary"
+            variant="caption"
+            sx={{
+              display: { xs: "none", sm: "block" },
+              textTransform: "capitalize",
+            }}
           >
-            <ApartmentRoundedIcon sx={{ fontSize: 17 }} />
-          </Avatar>
+            {session.activeRole ?? "Member"}
+          </Typography>
         </Box>
 
         {children}
@@ -203,8 +221,6 @@ type SidebarContentProps = {
   onClose: () => void;
   onSignOut: () => Promise<void>;
   pathname: string;
-  propertyImage?: string;
-  propertyName: string;
   role: string;
 };
 
@@ -215,8 +231,6 @@ function SidebarContent({
   onClose,
   onSignOut,
   pathname,
-  propertyImage,
-  propertyName,
   role,
 }: SidebarContentProps) {
   return (
@@ -227,12 +241,11 @@ function SidebarContent({
         direction="row"
         sx={{
           alignItems: "center",
-          height: 60,
-          justifyContent: "space-between",
-          px: 2,
+          height: { xs: 52, lg: 20 },
+          justifyContent: "flex-end",
+          px: 1.25,
         }}
       >
-        <BrandWordmark priority sx={{ width: 132 }} />
         <IconButton
           aria-label="Close navigation"
           onClick={onClose}
@@ -243,38 +256,6 @@ function SidebarContent({
         </IconButton>
       </Stack>
 
-      <Box sx={{ px: 1.25 }}>
-        <Stack
-          direction="row"
-          spacing={1.25}
-          sx={{
-            alignItems: "center",
-            border: 1,
-            borderColor: "divider",
-            borderRadius: 1,
-            minHeight: 48,
-            px: 1.25,
-            py: 0.75,
-          }}
-        >
-          <Avatar
-            src={propertyImage}
-            variant="rounded"
-            sx={{ bgcolor: "primary.main", height: 30, width: 30 }}
-          >
-            <ApartmentRoundedIcon sx={{ fontSize: 17 }} />
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography noWrap variant="body2" sx={{ fontWeight: 500 }}>
-              {propertyName}
-            </Typography>
-            <Typography noWrap color="text.secondary" variant="caption">
-              Workspace
-            </Typography>
-          </Box>
-        </Stack>
-      </Box>
-
       <Box
         sx={{
           display: "flex",
@@ -283,24 +264,9 @@ function SidebarContent({
           minHeight: 0,
           overflowY: "auto",
           px: 1.25,
-          py: 1.5,
+          py: { xs: 1, lg: 1.5 },
         }}
       >
-        <Button
-          component={Link}
-          href="/bookings/new"
-          onClick={onClose}
-          startIcon={<AddRoundedIcon />}
-          variant="outlined"
-          sx={{
-            justifyContent: "flex-start",
-            mb: 1.5,
-            "& .MuiButton-startIcon": { mr: 1.25 },
-          }}
-        >
-          New booking
-        </Button>
-
         <NavigationList
           items={workspaceDestinations}
           onNavigate={onClose}

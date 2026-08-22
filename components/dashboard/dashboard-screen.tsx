@@ -46,13 +46,6 @@ export function DashboardScreen() {
   const { dashboard, loading, error, refresh } = useHomeDashboard(
     sessionState.session?.activePropertyId,
   );
-  const property = sessionState.session?.property as
-    | Record<string, unknown>
-    | null
-    | undefined;
-  const propertyName =
-    typeof property?.name === "string" ? property.name : "Your property";
-
   if (sessionState.loading || loading) return <DashboardSkeleton />;
   if (sessionState.error || error || !dashboard) {
     return (
@@ -78,16 +71,13 @@ export function DashboardScreen() {
     <Box sx={{ minHeight: "100dvh", pb: { xs: 10, md: 5 } }}>
       <Container
         maxWidth="lg"
-        sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 3, lg: 4 } }}
+        sx={{ px: { xs: 1, sm: 2.5 }, py: { xs: 1, sm: 2.5, lg: 3 } }}
       >
         <Paper
           variant="outlined"
           sx={{ bgcolor: "background.paper", overflow: "hidden" }}
         >
-          <DashboardHeader
-            propertyName={propertyName}
-            onRefresh={() => void refresh()}
-          />
+          <DashboardHeader onRefresh={() => void refresh()} />
           <Divider />
           <Box
             sx={{
@@ -147,21 +137,15 @@ export function DashboardScreen() {
   );
 }
 
-function DashboardHeader({
-  propertyName,
-  onRefresh,
-}: {
-  propertyName: string;
-  onRefresh: () => void;
-}) {
+function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
   return (
     <Stack
       direction={{ xs: "column", sm: "row" }}
-      spacing={2}
+      spacing={1}
       sx={{
         alignItems: { sm: "center" },
         justifyContent: "space-between",
-        p: { xs: 2.25, sm: 3 },
+        p: { xs: 1.5, sm: 2 },
       }}
     >
       <Box sx={{ minWidth: 0 }}>
@@ -170,7 +154,7 @@ function DashboardHeader({
           variant="h4"
           sx={{ overflowWrap: "anywhere" }}
         >
-          {propertyName}
+          Home
         </Typography>
         <Typography color="text.secondary" sx={{ mt: 0.45 }}>
           {new Date().toLocaleDateString("en-TZ", {
@@ -215,8 +199,8 @@ function Metric({
         borderColor: "divider",
         color: "inherit",
         minWidth: 0,
-        px: { xs: 1, sm: 2.5 },
-        py: { xs: 2, sm: 2.75 },
+        px: { xs: 0.75, sm: 2 },
+        py: { xs: 1.35, sm: 1.8 },
         textAlign: "center",
         textDecoration: "none",
         transition: "background-color 150ms ease",
@@ -302,8 +286,8 @@ function RoomBoard({
         sx={{
           alignItems: { sm: "center" },
           justifyContent: "space-between",
-          px: { xs: 2, sm: 3 },
-          py: 2,
+          px: { xs: 1.5, sm: 2 },
+          py: 1.25,
         }}
       >
         <Stack
@@ -343,13 +327,13 @@ function RoomBoard({
             sx={{
               bgcolor: "action.hover",
               display: "grid",
-              gap: { xs: 1.15, sm: 1.5 },
+              gap: { xs: 0.8, sm: 1.1 },
               gridTemplateColumns: {
                 xs: "repeat(2,minmax(0,1fr))",
                 md: "repeat(3,minmax(0,1fr))",
                 lg: "repeat(4,minmax(0,1fr))",
               },
-              p: { xs: 1.5, sm: 2.5, lg: 3 },
+              p: { xs: 1, sm: 1.75, lg: 2 },
             }}
           >
             {visible.map(({ room, state }) => (
@@ -476,8 +460,8 @@ function RoomTile({
         color: "text.primary",
         display: "flex",
         flexDirection: "column",
-        minHeight: { xs: 148, sm: 160 },
-        p: { xs: 1.4, sm: 1.75 },
+        minHeight: { xs: 124, sm: 136 },
+        p: { xs: 1, sm: 1.35 },
         textDecoration: "none",
         textAlign: "left",
         font: "inherit",
