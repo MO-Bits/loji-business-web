@@ -22,8 +22,7 @@ import {
 
 import { HospitalityHeroIllustration } from "@/components/content/learn-more-illustrations";
 import { useLanguage } from "@/components/providers/language-provider";
-import { BrandSymbol } from "@/components/shared/brand-symbol";
-import { BrandWordmark } from "@/components/shared/brand-wordmark";
+import { BrandLockup } from "@/components/shared/brand-lockup";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 
 import { GoogleMark } from "./google-mark";
@@ -77,10 +76,11 @@ export function LoginScreen() {
           direction="row"
           sx={{ alignItems: "center", justifyContent: "space-between" }}
         >
-          <Stack direction="row" spacing={1.1} sx={{ alignItems: "center" }}>
-            <BrandSymbol priority size={36} />
-            <BrandWordmark priority sx={{ width: { xs: 146, sm: 172 } }} />
-          </Stack>
+          <BrandLockup
+            priority
+            symbolSize={36}
+            textSize={{ xs: "1.06rem", sm: "1.16rem" }}
+          />
 
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
             <TranslateRoundedIcon

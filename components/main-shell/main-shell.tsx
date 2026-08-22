@@ -25,7 +25,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
-import { BrandSymbol } from "@/components/shared/brand-symbol";
+import { BrandLockup } from "@/components/shared/brand-lockup";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { AppStatus } from "@/features/session/models/app-status";
@@ -288,7 +288,7 @@ function SidebarContent({
           onClick={onClose}
           sx={{ display: "inline-flex", p: 0.5 }}
         >
-          <BrandSymbol size={30} />
+          <BrandLockup symbolSize={28} textSize=".92rem" />
         </Box>
         <IconButton
           aria-label="Close navigation"
