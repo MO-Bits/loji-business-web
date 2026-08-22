@@ -152,7 +152,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           flex: 1,
           minWidth: 0,
-          overflowX: "clip",
+          overflowX: "hidden",
           pb: 0,
         }}
       >
