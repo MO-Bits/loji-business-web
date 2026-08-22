@@ -19,9 +19,9 @@ export function PageHeader({
     <Stack
       component="header"
       direction={{ xs: "column", sm: "row" }}
-      spacing={{ xs: 2, sm: 3 }}
+      spacing={{ xs: 1.5, sm: 3 }}
       sx={{
-        alignItems: { sm: "flex-end" },
+        alignItems: { sm: "center" },
         justifyContent: "space-between",
       }}
     >
@@ -46,8 +46,8 @@ export function PageHeader({
           sx={{
             fontSize: { xs: "0.9rem", sm: "1rem" },
             lineHeight: 1.55,
-            maxWidth: 640,
-            mt: 0.5,
+            maxWidth: 680,
+            mt: 0.65,
           }}
         >
           {description}

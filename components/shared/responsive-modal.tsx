@@ -44,8 +44,11 @@ export function ResponsiveModal({
       slotProps={{
         paper: {
           sx: {
-            borderRadius: "16px 16px 0 0",
-            maxHeight: "min(88dvh, 760px)",
+            borderRadius: "8px 8px 0 0",
+            borderTop: "1px solid",
+            borderColor: "divider",
+            boxShadow: "0 -18px 60px rgba(15,23,42,.18)",
+            maxHeight: "min(90dvh, 780px)",
             overflow: "hidden",
           },
         },

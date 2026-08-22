@@ -369,6 +369,84 @@ export const theme = createTheme({
         label: { marginTop: 3 },
       },
     },
+    MuiAvatar: {
+      styleOverrides: {
+        root: {
+          border: "1px solid color-mix(in srgb, var(--mui-palette-divider) 78%, transparent)",
+          fontWeight: 700,
+        },
+      },
+    },
+    MuiBackdrop: {
+      styleOverrides: {
+        root: {
+          backdropFilter: "blur(3px)",
+          backgroundColor: "rgba(15,23,42,.42)",
+        },
+      },
+    },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: {
+          backgroundImage: "none",
+          boxShadow: "none",
+        },
+      },
+    },
+    MuiBadge: {
+      styleOverrides: {
+        badge: {
+          border: "2px solid var(--mui-palette-background-paper)",
+          fontSize: ".68rem",
+          fontWeight: 700,
+          minWidth: 18,
+        },
+      },
+    },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: { borderRadius: 999, height: 6 },
+        bar: { borderRadius: 999 },
+      },
+    },
+    MuiAutocomplete: {
+      styleOverrides: {
+        paper: {
+          border: "1px solid var(--mui-palette-divider)",
+          boxShadow: "0 16px 44px rgba(17,24,39,.14)",
+          marginTop: 6,
+        },
+        option: {
+          borderRadius: 6,
+          margin: "2px 6px",
+          minHeight: 42,
+        },
+      },
+    },
+    MuiSwitch: {
+      styleOverrides: {
+        switchBase: {
+          "&.Mui-checked + .MuiSwitch-track": { opacity: 1 },
+        },
+        track: { opacity: .35 },
+      },
+    },
+    MuiSnackbar: {
+      styleOverrides: {
+        root: {
+          "@media (max-width: 599px)": {
+            bottom: "max(16px, env(safe-area-inset-bottom)) !important",
+            left: "12px !important",
+            right: "12px !important",
+          },
+        },
+      },
+    },
+    MuiPaginationItem: {
+      styleOverrides: {
+        root: { borderRadius: 7, fontWeight: 600 },
+      },
+    },
     MuiCssBaseline: {
       styleOverrides: {
         body: {

@@ -147,3 +147,57 @@ textarea,
 select {
   font: inherit;
 }
+
+
+/* Consistent application surfaces and mobile ergonomics */
+html {
+  background: var(--mui-palette-background-default, #f4f6f9);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+.MuiPaper-outlined {
+  isolation: isolate;
+}
+
+.MuiButton-root,
+.MuiIconButton-root,
+.MuiListItemButton-root,
+.MuiFab-root {
+  touch-action: manipulation;
+}
+
+.MuiDialogContent-root,
+.MuiDrawer-paper {
+  overscroll-behavior: contain;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--mui-palette-text-primary);
+  box-shadow: 0 0 0 1000px var(--mui-palette-background-paper) inset;
+  transition: background-color 9999s ease-out;
+}
+
+@media (max-width: 599px) {
+  .MuiContainer-root {
+    width: 100%;
+  }
+
+  .MuiDialogActions-root > .MuiButton-root {
+    flex: 1 1 auto;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .MuiPaper-outlined[data-interactive="true"]:hover {
+    border-color: color-mix(
+      in srgb,
+      var(--mui-palette-primary-main) 32%,
+      var(--mui-palette-divider)
+    );
+  }
+}
