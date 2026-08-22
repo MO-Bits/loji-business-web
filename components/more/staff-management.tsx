@@ -185,14 +185,31 @@ export function StaffManagement() {
         </Alert>
       </Snackbar>
       <Fab
+        aria-label={t("Invite staff", "Alika mfanyakazi")}
+        color="primary"
+        disabled={!propertyId}
+        onClick={() => setInviteOpen(true)}
+        sx={{
+          bottom: 18,
+          display: { xs: "inline-flex", sm: "none" },
+          position: "fixed",
+          right: 18,
+          zIndex: (theme) => theme.zIndex.speedDial,
+        }}
+      >
+        <AddRoundedIcon />
+      </Fab>
+      <Fab
+        aria-label={t("Invite staff", "Alika mfanyakazi")}
         color="primary"
         variant="extended"
         disabled={!propertyId}
         onClick={() => setInviteOpen(true)}
         sx={{
-          bottom: { xs: 20, sm: 28 },
+          bottom: 28,
+          display: { xs: "none", sm: "inline-flex" },
           position: "fixed",
-          right: { xs: 18, sm: 28 },
+          right: 28,
           zIndex: (theme) => theme.zIndex.speedDial,
         }}
       >
