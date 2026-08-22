@@ -7,7 +7,6 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
@@ -20,8 +19,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  MenuItem,
-  Select,
   Stack,
   Tooltip,
   Typography,
@@ -41,6 +38,7 @@ import {
   workspaceDestinations,
 } from "./destinations";
 import { PropertySwitcher } from "./property-switcher";
+import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 
 const drawerWidth = 232;
 
@@ -159,27 +157,42 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           sx={{
             alignItems: "center",
             bgcolor: "background.paper",
-            backdropFilter: "blur(16px)",
             borderBottom: 1,
             borderColor: "divider",
-            display: "flex",
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "44px minmax(0, 1fr) auto",
+              lg: "minmax(0, 1fr) auto",
+            },
             height: { xs: 56, lg: 64 },
-            px: { xs: 1.5, sm: 2.5 },
+            px: { xs: 0.75, sm: 1.5, lg: 2.5 },
             position: "sticky",
             top: 0,
             zIndex: (theme) => theme.zIndex.appBar,
           }}
         >
-          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", minWidth: 0, width: "100%" }}>
-            <IconButton
-              aria-label={t("Open navigation", "Fungua menyu")}
-              onClick={() => setMobileOpen(true)}
-              size="small"
-              sx={{ display: { xs: "inline-flex", lg: "none" }, flexShrink: 0 }}
-            >
-              <MenuRoundedIcon />
-            </IconButton>
+          <IconButton
+            aria-label={t("Open navigation", "Fungua menyu")}
+            onClick={() => setMobileOpen(true)}
+            size="small"
+            sx={{
+              display: { xs: "inline-flex", lg: "none" },
+              height: 40,
+              justifySelf: "start",
+              width: 40,
+            }}
+          >
+            <MenuRoundedIcon />
+          </IconButton>
 
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: { xs: "center", lg: "flex-start" },
+              minWidth: 0,
+              overflow: "hidden",
+            }}
+          >
             <PropertySwitcher
               activePropertyId={session.activePropertyId}
               memberships={session.memberships}
@@ -189,7 +202,11 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                 router.refresh();
               }}
             />
-          </Stack>
+          </Box>
+
+          <Box sx={{ justifySelf: "end", pl: { xs: 0.5, sm: 1 } }}>
+            <TopBarLanguageSwitch />
+          </Box>
         </Box>
 
         {children}
@@ -217,7 +234,7 @@ function SidebarContent({
   pathname,
   role,
 }: SidebarContentProps) {
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   return (
@@ -307,30 +324,6 @@ function SidebarContent({
                   {t("Appearance", "Mwonekano")}
                 </Typography>
                 <ThemeModeSelect fullWidth />
-              </Box>
-              <Box>
-                <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.6 }}>
-                  <TranslateRoundedIcon sx={{ color: "text.secondary", fontSize: 15 }} />
-                  <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 600 }}>
-                    {t("Language", "Lugha")}
-                  </Typography>
-                </Stack>
-                <Select
-                  fullWidth
-                  value={language}
-                  onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
-                  size="small"
-                  inputProps={{ "aria-label": t("Language", "Lugha") }}
-                  sx={{
-                    bgcolor: "background.paper",
-                    fontSize: ".8rem",
-                    fontWeight: 700,
-                    "& .MuiSelect-select": { py: 0.75 },
-                  }}
-                >
-                  <MenuItem value="en">{t("English", "Kiingereza")}</MenuItem>
-                  <MenuItem value="sw">{t("Swahili", "Kiswahili")}</MenuItem>
-                </Select>
               </Box>
             </Stack>
           </Collapse>
