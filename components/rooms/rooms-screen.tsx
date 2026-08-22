@@ -6,6 +6,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import {
   Alert,
   Box,
@@ -13,9 +14,13 @@ import {
   Chip,
   Container,
   Fab,
+  InputAdornment,
   Paper,
   Skeleton,
   Stack,
+  TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
@@ -37,6 +42,8 @@ export function RoomsScreen() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<"all" | "available" | "inactive">("all");
   const propertyId = session?.activePropertyId;
   const canManage = ["owner", "manager"].includes(
     session?.activeRole?.toLowerCase() ?? "",
@@ -55,6 +62,21 @@ export function RoomsScreen() {
       setLoading(false);
     }
   }, [client, propertyId]);
+  const visibleRooms = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return rooms.filter((room) => {
+      const matchesStatus =
+        status === "all" ||
+        (status === "available" ? room.isActive : !room.isActive);
+      const matchesQuery =
+        !normalized ||
+        room.name.toLowerCase().includes(normalized) ||
+        room.roomType.toLowerCase().includes(normalized) ||
+        room.amenities.some((amenity) => amenity.toLowerCase().includes(normalized));
+      return matchesStatus && matchesQuery;
+    });
+  }, [query, rooms, status]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
     return () => window.clearTimeout(timer);
@@ -66,6 +88,39 @@ export function RoomsScreen() {
           <Typography component="h1" variant="h4">
             {t("Rooms", "Vyumba")}
           </Typography>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}
+          >
+            <TextField
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t("Search rooms", "Tafuta vyumba")}
+              size="small"
+              sx={{ maxWidth: { sm: 360 }, width: "100%" }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchRoundedIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            <ToggleButtonGroup
+              exclusive
+              size="small"
+              value={status}
+              onChange={(_, value) => value && setStatus(value)}
+              aria-label={t("Filter rooms", "Chuja vyumba")}
+            >
+              <ToggleButton value="all">{t("All", "Vyote")}</ToggleButton>
+              <ToggleButton value="available">{t("Available", "Vinapatikana")}</ToggleButton>
+              <ToggleButton value="inactive">{t("Inactive", "Vimezimwa")}</ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
           {loading ? (
             <Box
               sx={{
@@ -100,6 +155,11 @@ export function RoomsScreen() {
             </Alert>
           ) : rooms.length === 0 ? (
             <EmptyRooms canManage={canManage} />
+          ) : visibleRooms.length === 0 ? (
+            <Paper variant="outlined" sx={{ p: 5, textAlign: "center" }}>
+              <Typography variant="h6">{t("No matching rooms", "Hakuna vyumba vinavyolingana")}</Typography>
+              <Typography color="text.secondary">{t("Try another search or status filter.", "Jaribu utafutaji au kichujio kingine.")}</Typography>
+            </Paper>
           ) : (
             <Box
               sx={{
@@ -113,7 +173,7 @@ export function RoomsScreen() {
                 },
               }}
             >
-              {rooms.map((room) => (
+              {visibleRooms.map((room) => (
                 <RoomCard key={room.id} room={room} />
               ))}
             </Box>
@@ -169,6 +229,8 @@ function RoomCard({ room }: { room: Room }) {
           <Box
             component="img"
             src={room.images[0]}
+            loading="lazy"
+            decoding="async"
             alt={room.name}
             sx={{
               height: "100%",
