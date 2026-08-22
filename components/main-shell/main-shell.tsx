@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
@@ -41,28 +40,14 @@ import {
   type MainDestination,
   workspaceDestinations,
 } from "./destinations";
+import { PropertySwitcher } from "./property-switcher";
 
 const drawerWidth = 232;
-
-function imageFromProperty(
-  property: Record<string, unknown> | null | undefined,
-) {
-  if (!property || !Array.isArray(property.images) || !property.images.length) {
-    return undefined;
-  }
-
-  const first = property.images[0];
-  if (typeof first === "string") return first;
-  if (first && typeof first === "object" && "url" in first) {
-    return String((first as { url?: unknown }).url ?? "") || undefined;
-  }
-  return undefined;
-}
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { session, loading, error, refresh } = useAppSession();
+  const { session, loading, error, refresh, switchProperty } = useAppSession();
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -82,12 +67,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const canManage = ["owner", "manager"].includes(
     session.activeRole?.toLowerCase() ?? "",
   );
-  const property = session.property as
-    | Record<string, unknown>
-    | null
-    | undefined;
-  const propertyImage = imageFromProperty(property);
-  const propertyName = String(property?.name ?? "Your property");
   const name = String(
     session.user?.user_metadata?.full_name ??
       session.user?.user_metadata?.name ??
@@ -123,13 +102,20 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         component="a"
         href="#main-content"
         sx={{
-          bgcolor: "primary.main", color: "primary.contrastText", left: 12,
-          px: 2, py: 1, position: "fixed", top: -80, zIndex: 9999,
+          bgcolor: "primary.main",
+          color: "primary.contrastText",
+          left: 12,
+          px: 2,
+          py: 1,
+          position: "fixed",
+          top: -80,
+          zIndex: 9999,
           "&:focus": { top: 12 },
         }}
       >
         {t("Skip to content", "Ruka hadi maudhui")}
       </Box>
+
       <Drawer
         variant="permanent"
         sx={{
@@ -167,12 +153,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         component="main"
         id="main-content"
         tabIndex={-1}
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          overflowX: "clip",
-          pb: 0,
-        }}
+        sx={{ flex: 1, minWidth: 0, overflowX: "clip", pb: 0 }}
       >
         <Box
           sx={{
@@ -183,55 +164,32 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             borderColor: "divider",
             display: "flex",
             height: { xs: 56, lg: 64 },
-            justifyContent: "flex-start",
             px: { xs: 1.5, sm: 2.5 },
             position: "sticky",
             top: 0,
             zIndex: (theme) => theme.zIndex.appBar,
           }}
         >
-          <Stack
-            direction="row"
-            spacing={1.25}
-            sx={{ alignItems: "center", minWidth: 0 }}
-          >
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", minWidth: 0, width: "100%" }}>
             <IconButton
-              aria-label="Open navigation"
+              aria-label={t("Open navigation", "Fungua menyu")}
               onClick={() => setMobileOpen(true)}
               size="small"
-              sx={{ display: { xs: "inline-flex", lg: "none" } }}
+              sx={{ display: { xs: "inline-flex", lg: "none" }, flexShrink: 0 }}
             >
               <MenuRoundedIcon />
             </IconButton>
-            <Avatar
-              src={propertyImage}
-              variant="rounded"
-              sx={{
-                bgcolor: "primary.main",
-                height: { xs: 30, sm: 34, lg: 36 },
-                width: { xs: 30, sm: 34, lg: 36 },
-              }}
-            >
-              <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
-            </Avatar>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                noWrap
-                sx={{
-                  fontSize: { xs: ".88rem", sm: "1rem", lg: "1.08rem" },
-                  fontWeight: 700,
-                  letterSpacing: "-.015em",
-                  lineHeight: 1.2,
-                }}
-              >
-                {propertyName}
-              </Typography>
-              <Typography noWrap color="text.secondary" variant="caption">
-                {t("Property workspace", "Eneo la biashara")}
-              </Typography>
-            </Box>
-          </Stack>
 
+            <PropertySwitcher
+              activePropertyId={session.activePropertyId}
+              memberships={session.memberships}
+              property={session.property}
+              onSwitch={async (propertyId) => {
+                await switchProperty(propertyId);
+                router.refresh();
+              }}
+            />
+          </Stack>
         </Box>
 
         {children}
@@ -261,18 +219,12 @@ function SidebarContent({
 }: SidebarContentProps) {
   const { language, setLanguage, t } = useLanguage();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+
   return (
-    <Box
-      sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}
-    >
+    <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
       <Stack
         direction="row"
-        sx={{
-          alignItems: "center",
-          height: 52,
-          justifyContent: "space-between",
-          px: 1.25,
-        }}
+        sx={{ alignItems: "center", height: 52, justifyContent: "space-between", px: 1.25 }}
       >
         <Box
           component={Link}
@@ -284,7 +236,7 @@ function SidebarContent({
           <BrandLockup symbolSize={28} textSize=".92rem" />
         </Box>
         <IconButton
-          aria-label="Close navigation"
+          aria-label={t("Close navigation", "Funga menyu")}
           onClick={onClose}
           size="small"
           sx={{ display: { xs: "inline-flex", lg: "none" } }}
@@ -304,27 +256,14 @@ function SidebarContent({
           py: { xs: 1, lg: 1.5 },
         }}
       >
-        <NavigationList
-          items={workspaceDestinations}
-          onNavigate={onClose}
-          pathname={pathname}
-        />
+        <NavigationList items={workspaceDestinations} onNavigate={onClose} pathname={pathname} />
 
         {canManage ? (
           <Box sx={{ mt: 2 }}>
-            <Typography
-              color="text.secondary"
-              component="p"
-              variant="caption"
-              sx={{ px: 1.25, pb: 0.75 }}
-            >
+            <Typography color="text.secondary" component="p" variant="caption" sx={{ px: 1.25, pb: 0.75 }}>
               {t("Manage", "Usimamizi")}
             </Typography>
-            <NavigationList
-              items={managementDestinations}
-              onNavigate={onClose}
-              pathname={pathname}
-            />
+            <NavigationList items={managementDestinations} onNavigate={onClose} pathname={pathname} />
           </Box>
         ) : null}
 
@@ -342,57 +281,58 @@ function SidebarContent({
               slotProps={{ primary: { variant: "caption", color: "text.secondary" } }}
             />
             <ExpandMoreRoundedIcon
-              sx={{ color: "text.secondary", fontSize: 18, transform: preferencesOpen ? "rotate(180deg)" : "none", transition: "transform 160ms ease" }}
+              sx={{
+                color: "text.secondary",
+                fontSize: 18,
+                transform: preferencesOpen ? "rotate(180deg)" : "none",
+                transition: "transform 160ms ease",
+              }}
             />
           </ListItemButton>
+
           <Collapse in={preferencesOpen} timeout="auto" unmountOnExit>
-          <Stack
-            spacing={1.25}
-            sx={{
-              bgcolor: "action.hover",
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 1,
-              mt: .5,
-              p: 1.25,
-            }}
-          >
-            <Box>
-              <Typography
-                color="text.secondary"
-                display="block"
-                variant="caption"
-                sx={{ fontWeight: 600, mb: .6 }}
-              >
-                {t("Appearance", "Mwonekano")}
-              </Typography>
-              <ThemeModeSelect fullWidth />
-            </Box>
-            <Box>
-              <Stack direction="row" spacing={.75} sx={{ alignItems: "center", mb: .6 }}>
-                <TranslateRoundedIcon sx={{ color: "text.secondary", fontSize: 15 }} />
-                <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 600 }}>
-                  {t("Language", "Lugha")}
+            <Stack
+              spacing={1.25}
+              sx={{
+                bgcolor: "action.hover",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                mt: 0.5,
+                p: 1.25,
+              }}
+            >
+              <Box>
+                <Typography color="text.secondary" display="block" variant="caption" sx={{ fontWeight: 600, mb: 0.6 }}>
+                  {t("Appearance", "Mwonekano")}
                 </Typography>
-              </Stack>
-              <Select
-                fullWidth
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
-                size="small"
-                inputProps={{ "aria-label": t("Language", "Lugha") }}
-                sx={{
-                  bgcolor: "background.paper",
-                  fontSize: ".8rem",
-                  fontWeight: 700,
-                  "& .MuiSelect-select": { py: .75 },
-                }}
-              >
-                <MenuItem value="en">{t("English", "Kiingereza")}</MenuItem>
-                <MenuItem value="sw">{t("Swahili", "Kiswahili")}</MenuItem>
-              </Select>
-            </Box>
-          </Stack>
+                <ThemeModeSelect fullWidth />
+              </Box>
+              <Box>
+                <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mb: 0.6 }}>
+                  <TranslateRoundedIcon sx={{ color: "text.secondary", fontSize: 15 }} />
+                  <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 600 }}>
+                    {t("Language", "Lugha")}
+                  </Typography>
+                </Stack>
+                <Select
+                  fullWidth
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
+                  size="small"
+                  inputProps={{ "aria-label": t("Language", "Lugha") }}
+                  sx={{
+                    bgcolor: "background.paper",
+                    fontSize: ".8rem",
+                    fontWeight: 700,
+                    "& .MuiSelect-select": { py: 0.75 },
+                  }}
+                >
+                  <MenuItem value="en">{t("English", "Kiingereza")}</MenuItem>
+                  <MenuItem value="sw">{t("Swahili", "Kiswahili")}</MenuItem>
+                </Select>
+              </Box>
+            </Stack>
           </Collapse>
         </Box>
 
@@ -416,28 +356,20 @@ function SidebarContent({
             "&:hover": { bgcolor: "action.hover" },
           }}
         >
-          <Avatar
-            src={avatar}
-            sx={{ bgcolor: "text.primary", height: 30, width: 30 }}
-          >
+          <Avatar src={avatar} sx={{ bgcolor: "text.primary", height: 30, width: 30 }}>
             {name[0]?.toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography noWrap variant="body2" sx={{ fontWeight: 500 }}>
               {name}
             </Typography>
-            <Typography
-              noWrap
-              color="text.secondary"
-              variant="caption"
-              sx={{ textTransform: "capitalize" }}
-            >
+            <Typography noWrap color="text.secondary" variant="caption" sx={{ textTransform: "capitalize" }}>
               {role}
             </Typography>
           </Box>
-          <Tooltip title="Sign out">
+          <Tooltip title={t("Sign out", "Ondoka")}>
             <IconButton
-              aria-label="Sign out"
+              aria-label={t("Sign out", "Ondoka")}
               color="inherit"
               onClick={(event) => {
                 event.preventDefault();
@@ -471,6 +403,7 @@ function NavigationList({
     "/more/property": ["Property", "Jengo"],
     "/more/staff": ["Staff", "Wafanyakazi"],
   };
+
   return (
     <List disablePadding>
       {items.map((item) => {
@@ -513,10 +446,7 @@ function NavigationList({
               sx={{ m: 0 }}
               slotProps={{
                 primary: {
-                  sx: {
-                    fontSize: "0.875rem",
-                    fontWeight: selected ? 500 : 400,
-                  },
+                  sx: { fontSize: "0.875rem", fontWeight: selected ? 500 : 400 },
                 },
               }}
             />
