@@ -8,26 +8,30 @@ export const theme = createTheme({
     light: {
       palette: {
         primary: {
-          main: "#0B66D4",
-          light: "#4D93E8",
-          dark: "#074A9E",
+          main: "#155EEF",
+          light: "#528BFF",
+          dark: "#0B46B5",
         },
-        secondary: { main: "#0E9F6E" },
+        secondary: { main: "#12A66A" },
+        success: { main: "#159455" },
+        warning: { main: "#D97706" },
+        error: { main: "#D14343" },
+        info: { main: "#1769D2" },
         background: {
-          default: "#F7F8FA",
+          default: "#F4F6F9",
           paper: "#FFFFFF",
         },
         text: {
-          primary: "#17202A",
-          secondary: "#647181",
+          primary: "#101828",
+          secondary: "#667085",
         },
-        divider: "#E2E7EC",
+        divider: "#E3E8EF",
       },
     },
     dark: {
       palette: {
         primary: {
-          main: "#64B5F6",
+          main: "#7CB2FF",
         },
         background: {
           default: "#0D1117",
@@ -65,7 +69,7 @@ export const theme = createTheme({
       lineHeight: 1.14,
     },
     h4: {
-      fontSize: "clamp(1.45rem, 2.2vw, 2rem)",
+      fontSize: "clamp(1.4rem, 2vw, 1.85rem)",
       fontWeight: 700,
       letterSpacing: "-0.025em",
       lineHeight: 1.2,
@@ -97,13 +101,14 @@ export const theme = createTheme({
           paddingInline: 16,
           transition:
             "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
+          letterSpacing: "-.005em",
           "&:active": { transform: "scale(.985)" },
         },
         sizeLarge: { minHeight: 48, paddingInline: 20 },
         contained: {
-          boxShadow: "0 1px 2px rgba(11,102,212,.18)",
+          boxShadow: "0 1px 2px rgba(21,94,239,.2)",
           "&:hover": {
-            boxShadow: "0 4px 12px rgba(11,102,212,.2)",
+            boxShadow: "0 7px 18px rgba(21,94,239,.22)",
             transform: "translateY(-1px)",
           },
         },
@@ -202,7 +207,7 @@ export const theme = createTheme({
         },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
-          boxShadow: "0 1px 2px rgba(17,24,39,.025)",
+          boxShadow: "0 1px 3px rgba(16,24,40,.035)",
         },
       },
     },
@@ -216,6 +221,27 @@ export const theme = createTheme({
           fontWeight: 500,
         },
         sizeSmall: { height: 24 },
+      },
+    },
+    MuiFab: {
+      defaultProps: { disableRipple: false },
+      styleOverrides: {
+        root: {
+          boxShadow: "0 8px 24px rgba(21,94,239,.24)",
+          minHeight: 48,
+          textTransform: "none",
+          "&:hover": {
+            boxShadow: "0 12px 30px rgba(21,94,239,.3)",
+            transform: "translateY(-1px)",
+          },
+          "&:active": { transform: "scale(.98)" },
+        },
+        extended: {
+          borderRadius: 999,
+          fontSize: ".875rem",
+          fontWeight: 700,
+          paddingInline: 20,
+        },
       },
     },
     MuiIconButton: {
@@ -268,7 +294,7 @@ export const theme = createTheme({
     MuiTabs: {
       styleOverrides: {
         root: { minHeight: 44 },
-        indicator: { borderRadius: 4, height: 2 },
+        indicator: { borderRadius: 4, height: 3 },
       },
     },
     MuiTab: {
@@ -303,6 +329,39 @@ export const theme = createTheme({
       styleOverrides: {
         root: { borderRadius: 6, minHeight: 40 },
       },
+    },
+    MuiAccordion: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+          borderRadius: "8px !important",
+          "&::before": { display: "none" },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        head: {
+          backgroundColor: "var(--mui-palette-background-default)",
+          color: "var(--mui-palette-text-secondary)",
+          fontSize: ".75rem",
+          fontWeight: 700,
+          letterSpacing: ".035em",
+          textTransform: "uppercase",
+        },
+        root: { borderColor: "var(--mui-palette-divider)" },
+      },
+    },
+    MuiTableRow: {
+      styleOverrides: {
+        root: {
+          transition: "background-color 140ms ease",
+          "&:hover": { backgroundColor: "var(--mui-palette-action-hover)" },
+        },
+      },
+    },
+    MuiSelect: {
+      defaultProps: { MenuProps: { disableScrollLock: true } },
     },
     MuiBottomNavigationAction: {
       styleOverrides: {
