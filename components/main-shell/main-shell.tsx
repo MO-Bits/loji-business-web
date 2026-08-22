@@ -75,10 +75,16 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     typeof session.user?.user_metadata?.avatar_url === "string"
       ? session.user.user_metadata.avatar_url
       : undefined;
+  const canSwitchProperty = session.memberships.filter((item) => item.property_id).length > 1;
 
   const signOut = async () => {
     await createClient().auth.signOut();
     router.replace("/login");
+    router.refresh();
+  };
+
+  const switchActiveProperty = async (propertyId: string) => {
+    await switchProperty(propertyId);
     router.refresh();
   };
 
@@ -155,58 +161,99 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       >
         <Box
           sx={{
-            alignItems: "center",
             bgcolor: "background.paper",
             borderBottom: 1,
             borderColor: "divider",
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "44px minmax(0, 1fr) auto",
-              lg: "minmax(0, 1fr) auto",
-            },
-            height: { xs: 56, lg: 64 },
-            px: { xs: 0.75, sm: 1.5, lg: 2.5 },
             position: "sticky",
             top: 0,
             zIndex: (theme) => theme.zIndex.appBar,
           }}
         >
-          <IconButton
-            aria-label={t("Open navigation", "Fungua menyu")}
-            onClick={() => setMobileOpen(true)}
-            size="small"
-            sx={{
-              display: { xs: "inline-flex", lg: "none" },
-              height: 40,
-              justifySelf: "start",
-              width: 40,
-            }}
-          >
-            <MenuRoundedIcon />
-          </IconButton>
-
           <Box
             sx={{
+              alignItems: "center",
               display: "flex",
-              justifyContent: { xs: "center", lg: "flex-start" },
-              minWidth: 0,
-              overflow: "hidden",
+              height: { xs: 82, sm: 84, lg: 64 },
+              justifyContent: "space-between",
+              px: { xs: 2.25, sm: 3, lg: 2.5 },
             }}
           >
-            <PropertySwitcher
-              activePropertyId={session.activePropertyId}
-              memberships={session.memberships}
-              property={session.property}
-              onSwitch={async (propertyId) => {
-                await switchProperty(propertyId);
-                router.refresh();
+            <Box
+              component={Link}
+              href="/dashboard"
+              aria-label="Loji Business home"
+              sx={{
+                alignItems: "center",
+                display: { xs: "inline-flex", lg: "none" },
+                minWidth: 0,
+                textDecoration: "none",
               }}
-            />
+            >
+              <BrandLockup
+                priority
+                symbolSize={36}
+                textSize={{ xs: "1.05rem", sm: "1.12rem" }}
+              />
+            </Box>
+
+            <Box
+              sx={{
+                display: { xs: "none", lg: "flex" },
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <PropertySwitcher
+                activePropertyId={session.activePropertyId}
+                memberships={session.memberships}
+                property={session.property}
+                onSwitch={switchActiveProperty}
+              />
+            </Box>
+
+            <Stack
+              direction="row"
+              spacing={{ xs: 0.5, sm: 1, lg: 1 }}
+              sx={{ alignItems: "center", flexShrink: 0 }}
+            >
+              <TopBarLanguageSwitch />
+              <IconButton
+                aria-label={t("Open navigation", "Fungua menyu")}
+                onClick={() => setMobileOpen(true)}
+                sx={{
+                  color: "primary.main",
+                  display: { xs: "inline-flex", lg: "none" },
+                  height: 48,
+                  width: 48,
+                  "& .MuiSvgIcon-root": {
+                    fontSize: 32,
+                  },
+                }}
+              >
+                <MenuRoundedIcon />
+              </IconButton>
+            </Stack>
           </Box>
 
-          <Box sx={{ justifySelf: "end", pl: { xs: 0.5, sm: 1 } }}>
-            <TopBarLanguageSwitch />
-          </Box>
+          {canSwitchProperty ? (
+            <Box
+              sx={{
+                alignItems: "center",
+                borderTop: 1,
+                borderColor: "divider",
+                display: { xs: "flex", lg: "none" },
+                minHeight: 42,
+                px: { xs: 1.75, sm: 2.5 },
+              }}
+            >
+              <PropertySwitcher
+                activePropertyId={session.activePropertyId}
+                memberships={session.memberships}
+                property={session.property}
+                onSwitch={switchActiveProperty}
+              />
+            </Box>
+          ) : null}
         </Box>
 
         {children}
