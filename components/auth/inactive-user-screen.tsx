@@ -35,7 +35,7 @@ export function InactiveUserScreen() {
   }
 
   return (
-    <Box component="main" sx={{ bgcolor: "#F4F6F8", minHeight: "100dvh" }}>
+    <Box component="main" sx={{ bgcolor: "background.default", minHeight: "100dvh" }}>
       <Box
         component="header"
         sx={{
@@ -75,7 +75,7 @@ export function InactiveUserScreen() {
         <Paper
           variant="outlined"
           sx={{
-            borderColor: "rgba(15,23,42,.09)",
+            borderColor: "divider",
             borderRadius: 1,
             boxShadow: "0 22px 65px rgba(15,23,42,.08)",
             display: "grid",
@@ -274,7 +274,7 @@ function RecoveryStep({
       <Box
         sx={{
           alignItems: "center",
-          bgcolor: "#EAF3FF",
+          bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
           borderRadius: 1,
           color: "primary.main",
           display: "flex",

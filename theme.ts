@@ -28,13 +28,26 @@ export const theme = createTheme({
           secondary: "#667085",
         },
         divider: "#E3E8EF",
+        action: {
+          hover: "rgba(16,24,40,.045)",
+          selected: "rgba(21,94,239,.09)",
+          disabledBackground: "rgba(16,24,40,.08)",
+        },
       },
     },
     dark: {
       palette: {
         primary: {
           main: "#7CB2FF",
+          light: "#A8CBFF",
+          dark: "#4C8DE8",
+          contrastText: "#07111F",
         },
+        secondary: { main: "#45C993" },
+        success: { main: "#45C486", light: "#78DBA9", dark: "#23945D" },
+        warning: { main: "#F4B557", light: "#FFD28A", dark: "#C9821F" },
+        error: { main: "#FF7B7B", light: "#FFA6A6", dark: "#D94F4F" },
+        info: { main: "#72B7FF" },
         background: {
           default: "#0D1117",
           paper: "#161B22",
@@ -43,7 +56,12 @@ export const theme = createTheme({
           primary: "#F0F3F6",
           secondary: "#9DA7B3",
         },
-        divider: "#30363D",
+        divider: "#303A46",
+        action: {
+          hover: "rgba(255,255,255,.055)",
+          selected: "rgba(124,178,255,.13)",
+          disabledBackground: "rgba(255,255,255,.08)",
+        },
       },
     },
   },

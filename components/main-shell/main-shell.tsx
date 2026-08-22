@@ -313,63 +313,61 @@ function SidebarContent({
         ) : null}
 
         <Box sx={{ mt: 2 }}>
-          <Typography
-            color="text.secondary"
-            component="p"
-            variant="caption"
-            sx={{ px: 1.25, pb: 0.75 }}
-          >
-            {t("Preferences", "Mapendeleo")}
-          </Typography>
           <Stack
+            direction="row"
             spacing={1}
+            sx={{ alignItems: "center", px: 1.25, pb: .75 }}
+          >
+            <TuneRoundedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
+            <Typography color="text.secondary" component="p" variant="caption">
+              {t("Preferences", "Mapendeleo")}
+            </Typography>
+          </Stack>
+          <Stack
+            spacing={1.25}
             sx={{
+              bgcolor: "action.hover",
               border: "1px solid",
               borderColor: "divider",
               borderRadius: 1,
-              p: 1,
+              p: 1.25,
             }}
           >
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ alignItems: "center", justifyContent: "space-between" }}
-            >
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
-                <TuneRoundedIcon sx={{ color: "text.secondary", fontSize: 18 }} />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {t("Appearance", "Mwonekano")}
-                </Typography>
-              </Stack>
-              <ThemeModeSelect />
-            </Stack>
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ alignItems: "center", justifyContent: "space-between" }}
-            >
-              <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
-                <TranslateRoundedIcon sx={{ color: "text.secondary", fontSize: 18 }} />
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            <Box>
+              <Typography
+                color="text.secondary"
+                display="block"
+                variant="caption"
+                sx={{ fontWeight: 600, mb: .6 }}
+              >
+                {t("Appearance", "Mwonekano")}
+              </Typography>
+              <ThemeModeSelect fullWidth />
+            </Box>
+            <Box>
+              <Stack direction="row" spacing={.75} sx={{ alignItems: "center", mb: .6 }}>
+                <TranslateRoundedIcon sx={{ color: "text.secondary", fontSize: 15 }} />
+                <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 600 }}>
                   {t("Language", "Lugha")}
                 </Typography>
               </Stack>
               <Select
+                fullWidth
                 value={language}
                 onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
                 size="small"
                 inputProps={{ "aria-label": t("Language", "Lugha") }}
                 sx={{
-                  fontSize: ".78rem",
+                  bgcolor: "background.paper",
+                  fontSize: ".8rem",
                   fontWeight: 700,
-                  minWidth: 88,
-                  "& .MuiSelect-select": { py: .65 },
+                  "& .MuiSelect-select": { py: .75 },
                 }}
               >
                 <MenuItem value="en">{t("English", "Kiingereza")}</MenuItem>
                 <MenuItem value="sw">{t("Swahili", "Kiswahili")}</MenuItem>
               </Select>
-            </Stack>
+            </Box>
           </Stack>
         </Box>
 

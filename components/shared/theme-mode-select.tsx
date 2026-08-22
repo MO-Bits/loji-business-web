@@ -24,7 +24,13 @@ function ModeIcon({ mode }: { mode: ThemeMode }) {
   return <SettingsBrightnessRoundedIcon fontSize="small" />;
 }
 
-export function ThemeModeSelect({ compact = false }: { compact?: boolean }) {
+export function ThemeModeSelect({
+  compact = false,
+  fullWidth = false,
+}: {
+  compact?: boolean;
+  fullWidth?: boolean;
+}) {
   const { mode, setMode } = useColorScheme();
   const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
@@ -48,6 +54,7 @@ export function ThemeModeSelect({ compact = false }: { compact?: boolean }) {
   return (
     <Select
       disabled={!mounted}
+      fullWidth={fullWidth}
       value={value}
       onChange={(event) => setMode(event.target.value as ThemeMode)}
       size="small"
@@ -72,7 +79,8 @@ export function ThemeModeSelect({ compact = false }: { compact?: boolean }) {
       }}
       sx={{
         bgcolor: "background.paper",
-        minWidth: compact ? { xs: 48, sm: 100 } : 108,
+        minWidth: fullWidth ? 0 : compact ? { xs: 48, sm: 100 } : 108,
+        width: fullWidth ? "100%" : undefined,
         "& .MuiSelect-select": {
           alignItems: "center",
           display: "flex",

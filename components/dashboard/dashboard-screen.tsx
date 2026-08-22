@@ -508,7 +508,10 @@ function RoomTile({
           label={occupied ? t("Occupied", "Kimetumika") : t("Ready", "Tayari")}
           size="small"
           sx={{
-            bgcolor: "rgba(255,255,255,.78)",
+            bgcolor: "background.paper",
+            border: "1px solid",
+            borderColor: "divider",
+            color: "text.primary",
             flexShrink: 0,
             fontSize: { xs: ".64rem", sm: ".7rem" },
             height: 24,

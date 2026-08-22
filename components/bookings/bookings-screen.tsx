@@ -252,7 +252,7 @@ function BookingTable({ bookings }: { bookings: Booking[] }) {
     <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden" }}>
       <Box
         sx={{
-          bgcolor: "#F7F9FB",
+          bgcolor: "background.default",
           borderBottom: "1px solid",
           borderColor: "divider",
           display: { xs: "none", lg: "grid" },
@@ -326,13 +326,13 @@ function BookingRow({ booking, last }: { booking: Booking; last: boolean }) {
         py: { xs: 1.75, lg: 1.6 },
         textDecoration: "none",
         transition: "background 150ms ease",
-        "&:hover": { bgcolor: "#F8FAFC" },
+        "&:hover": { bgcolor: "action.hover" },
       }}
     >
       <Stack direction="row" spacing={1.25} alignItems="center">
         <Avatar
           sx={{
-            bgcolor: "#EAF3FF",
+            bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
             color: "primary.dark",
             flexShrink: 0,
             fontSize: ".78rem",
@@ -442,7 +442,7 @@ function EmptyBookings() {
     >
       <Box
         sx={{
-          bgcolor: "#EAF3FF",
+          bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
           borderRadius: "50%",
           color: "primary.main",
           display: "grid",

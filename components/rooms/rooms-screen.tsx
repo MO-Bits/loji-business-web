@@ -160,7 +160,7 @@ function RoomCard({ room }: { room: Room }) {
       <Box
         sx={{
           aspectRatio: "16/8",
-          bgcolor: "#EEF2F6",
+          bgcolor: "action.hover",
           overflow: "hidden",
           position: "relative",
         }}
@@ -180,7 +180,7 @@ function RoomCard({ room }: { room: Room }) {
           />
         ) : (
           <Box sx={{ display: "grid", height: "100%", placeItems: "center" }}>
-            <BedRoundedIcon sx={{ color: "#A8B3BF", fontSize: 46 }} />
+            <BedRoundedIcon sx={{ color: "text.disabled", fontSize: 46 }} />
           </Box>
         )}
         <Chip
@@ -192,8 +192,12 @@ function RoomCard({ room }: { room: Room }) {
           color={room.isActive ? "success" : "default"}
           size="small"
           sx={{
-            bgcolor: room.isActive ? "#EAF8F2" : "rgba(255,255,255,.92)",
-            color: room.isActive ? "#087A54" : "text.primary",
+            bgcolor: room.isActive
+              ? "color-mix(in srgb, var(--mui-palette-success-main) 18%, var(--mui-palette-background-paper))"
+              : "background.paper",
+            border: "1px solid",
+            borderColor: room.isActive ? "success.main" : "divider",
+            color: room.isActive ? "success.main" : "text.primary",
             left: 14,
             position: "absolute",
             top: 14,
@@ -277,7 +281,7 @@ function EmptyRooms({ canManage }: { canManage: boolean }) {
     >
       <Box
         sx={{
-          bgcolor: "#EAF3FF",
+          bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
           borderRadius: "50%",
           color: "primary.main",
           display: "grid",
