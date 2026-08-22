@@ -8,6 +8,7 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
+import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
   Box,
@@ -60,7 +61,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { session, loading, error, refresh } = useAppSession();
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -167,7 +168,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             borderColor: "divider",
             display: "flex",
             height: { xs: 56, lg: 64 },
-            justifyContent: "space-between",
+            justifyContent: "flex-start",
             px: { xs: 1.5, sm: 2.5 },
             position: "sticky",
             top: 0,
@@ -215,33 +216,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               </Typography>
             </Box>
           </Stack>
-          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-            <ThemeModeSelect compact />
-            <TranslateRoundedIcon
-              sx={{
-                color: "text.secondary",
-                display: { xs: "none", sm: "block" },
-                fontSize: 18,
-              }}
-            />
-            <Select
-              value={language}
-              onChange={(event) =>
-                setLanguage(event.target.value as "en" | "sw")
-              }
-              size="small"
-              inputProps={{ "aria-label": t("Language", "Lugha") }}
-              sx={{
-                fontSize: ".78rem",
-                fontWeight: 700,
-                minWidth: { xs: 66, sm: 92 },
-                "& .MuiSelect-select": { py: 0.75 },
-              }}
-            >
-              <MenuItem value="en">EN</MenuItem>
-              <MenuItem value="sw">SW</MenuItem>
-            </Select>
-          </Stack>
+
         </Box>
 
         {children}
@@ -269,7 +244,7 @@ function SidebarContent({
   pathname,
   role,
 }: SidebarContentProps) {
-  const { t } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   return (
     <Box
       sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}
@@ -336,6 +311,67 @@ function SidebarContent({
             />
           </Box>
         ) : null}
+
+        <Box sx={{ mt: 2 }}>
+          <Typography
+            color="text.secondary"
+            component="p"
+            variant="caption"
+            sx={{ px: 1.25, pb: 0.75 }}
+          >
+            {t("Preferences", "Mapendeleo")}
+          </Typography>
+          <Stack
+            spacing={1}
+            sx={{
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 1,
+              p: 1,
+            }}
+          >
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: "center", justifyContent: "space-between" }}
+            >
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+                <TuneRoundedIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {t("Appearance", "Mwonekano")}
+                </Typography>
+              </Stack>
+              <ThemeModeSelect />
+            </Stack>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ alignItems: "center", justifyContent: "space-between" }}
+            >
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+                <TranslateRoundedIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {t("Language", "Lugha")}
+                </Typography>
+              </Stack>
+              <Select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
+                size="small"
+                inputProps={{ "aria-label": t("Language", "Lugha") }}
+                sx={{
+                  fontSize: ".78rem",
+                  fontWeight: 700,
+                  minWidth: 88,
+                  "& .MuiSelect-select": { py: .65 },
+                }}
+              >
+                <MenuItem value="en">{t("English", "Kiingereza")}</MenuItem>
+                <MenuItem value="sw">{t("Swahili", "Kiswahili")}</MenuItem>
+              </Select>
+            </Stack>
+          </Stack>
+        </Box>
 
         <Box sx={{ flex: 1, minHeight: 24 }} />
         <Divider sx={{ mb: 1 }} />

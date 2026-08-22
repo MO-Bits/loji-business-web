@@ -11,7 +11,12 @@ import { LanguageProvider } from "@/components/providers/language-provider";
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-      <ThemeProvider theme={theme} defaultMode="system">
+      <ThemeProvider
+        theme={theme}
+        defaultMode="system"
+        modeStorageKey="loji-theme-mode"
+        disableTransitionOnChange
+      >
         <CssBaseline />
         <LanguageProvider>
           <FeedbackProvider>{children}</FeedbackProvider>
