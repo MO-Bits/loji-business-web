@@ -1,13 +1,63 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
+import { localDateKey } from "@/lib/date-time";
 import { parseRoom, type Room } from "../models/room";
 
 export type RoomInput = { name: string; roomType: string; capacity: number; bedCount: number; pricePerNight: number; amenities: string[]; images: string[]; isActive?: boolean };
+export type RoomOperationalStatus = "available" | "occupied" | "checking_out_today" | "inactive";
 
 export async function getRooms(client: SupabaseClient<Database>, propertyId: string): Promise<Room[]> {
   const { data, error } = await client.from("rooms").select("*").eq("property_id", propertyId).order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((row) => parseRoom(row));
+}
+
+export async function getRoomOperationalStatuses(
+  client: SupabaseClient<Database>,
+  rooms: Room[],
+): Promise<Record<string, RoomOperationalStatus>> {
+  const statuses: Record<string, RoomOperationalStatus> = {};
+  for (const room of rooms) statuses[room.id] = room.isActive ? "available" : "inactive";
+
+  const activeRoomIds = rooms.filter((room) => room.isActive).map((room) => room.id);
+  if (!activeRoomIds.length) return statuses;
+
+  const today = localDateKey();
+  const { data, error } = await client
+    .from("bookings")
+    .select("room_id,check_in,check_out,checked_out_at,status")
+    .in("room_id", activeRoomIds)
+    .lte("check_in", today)
+    .gte("check_out", today);
+
+  if (error) throw new Error(error.message);
+
+  for (const booking of data ?? []) {
+    if (booking.checked_out_at) continue;
+    const state = String(booking.status ?? "").toLowerCase();
+    if (["cancelled", "canceled", "checked_out"].includes(state)) continue;
+    statuses[booking.room_id] = booking.check_out === today
+      ? "checking_out_today"
+      : "occupied";
+  }
+
+  return statuses;
+}
+
+export async function setRoomActive(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  room: Room,
+  isActive: boolean,
+) {
+  const { error } = await client.rpc("update_room_basic_info", {
+    p_room_id: room.id,
+    p_property_id: propertyId,
+    p_room_name: room.name.trim(),
+    p_room_type: room.roomType,
+    p_is_active: isActive,
+  });
+  if (error) throw new Error(error.message);
 }
 
 export async function getRoom(client: SupabaseClient<Database>, propertyId: string, roomId: string): Promise<Room | null> {

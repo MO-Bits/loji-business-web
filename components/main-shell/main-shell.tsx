@@ -3,12 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
@@ -21,8 +19,6 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  MenuItem,
-  Select,
   Stack,
   Tooltip,
   Typography,
@@ -41,28 +37,15 @@ import {
   type MainDestination,
   workspaceDestinations,
 } from "./destinations";
+import { PropertySwitcher } from "./property-switcher";
+import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 
 const drawerWidth = 232;
-
-function imageFromProperty(
-  property: Record<string, unknown> | null | undefined,
-) {
-  if (!property || !Array.isArray(property.images) || !property.images.length) {
-    return undefined;
-  }
-
-  const first = property.images[0];
-  if (typeof first === "string") return first;
-  if (first && typeof first === "object" && "url" in first) {
-    return String((first as { url?: unknown }).url ?? "") || undefined;
-  }
-  return undefined;
-}
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { session, loading, error, refresh } = useAppSession();
+  const { session, loading, error, refresh, switchProperty } = useAppSession();
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -82,12 +65,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const canManage = ["owner", "manager"].includes(
     session.activeRole?.toLowerCase() ?? "",
   );
-  const property = session.property as
-    | Record<string, unknown>
-    | null
-    | undefined;
-  const propertyImage = imageFromProperty(property);
-  const propertyName = String(property?.name ?? "Your property");
   const name = String(
     session.user?.user_metadata?.full_name ??
       session.user?.user_metadata?.name ??
@@ -98,10 +75,16 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     typeof session.user?.user_metadata?.avatar_url === "string"
       ? session.user.user_metadata.avatar_url
       : undefined;
+  const canSwitchProperty = session.memberships.filter((item) => item.property_id).length > 1;
 
   const signOut = async () => {
     await createClient().auth.signOut();
     router.replace("/login");
+    router.refresh();
+  };
+
+  const switchActiveProperty = async (propertyId: string) => {
+    await switchProperty(propertyId);
     router.refresh();
   };
 
@@ -123,13 +106,20 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         component="a"
         href="#main-content"
         sx={{
-          bgcolor: "primary.main", color: "primary.contrastText", left: 12,
-          px: 2, py: 1, position: "fixed", top: -80, zIndex: 9999,
+          bgcolor: "primary.main",
+          color: "primary.contrastText",
+          left: 12,
+          px: 2,
+          py: 1,
+          position: "fixed",
+          top: -80,
+          zIndex: 9999,
           "&:focus": { top: 12 },
         }}
       >
         {t("Skip to content", "Ruka hadi maudhui")}
       </Box>
+
       <Drawer
         variant="permanent"
         sx={{
@@ -167,71 +157,103 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         component="main"
         id="main-content"
         tabIndex={-1}
-        sx={{
-          flex: 1,
-          minWidth: 0,
-          overflowX: "clip",
-          pb: 0,
-        }}
+        sx={{ flex: 1, minWidth: 0, overflowX: "clip", pb: 0 }}
       >
         <Box
           sx={{
-            alignItems: "center",
             bgcolor: "background.paper",
-            backdropFilter: "blur(16px)",
             borderBottom: 1,
             borderColor: "divider",
-            display: "flex",
-            height: { xs: 56, lg: 64 },
-            justifyContent: "flex-start",
-            px: { xs: 1.5, sm: 2.5 },
             position: "sticky",
             top: 0,
             zIndex: (theme) => theme.zIndex.appBar,
           }}
         >
-          <Stack
-            direction="row"
-            spacing={1.25}
-            sx={{ alignItems: "center", minWidth: 0 }}
+          <Box
+            sx={{
+              alignItems: "center",
+              display: "flex",
+              height: { xs: 82, sm: 84, lg: 64 },
+              justifyContent: "space-between",
+              px: { xs: 2.25, sm: 3, lg: 2.5 },
+            }}
           >
-            <IconButton
-              aria-label="Open navigation"
-              onClick={() => setMobileOpen(true)}
-              size="small"
-              sx={{ display: { xs: "inline-flex", lg: "none" } }}
-            >
-              <MenuRoundedIcon />
-            </IconButton>
-            <Avatar
-              src={propertyImage}
-              variant="rounded"
+            <Box
+              component={Link}
+              href="/dashboard"
+              aria-label="Loji Business home"
               sx={{
-                bgcolor: "primary.main",
-                height: { xs: 30, sm: 34, lg: 36 },
-                width: { xs: 30, sm: 34, lg: 36 },
+                alignItems: "center",
+                display: { xs: "inline-flex", lg: "none" },
+                minWidth: 0,
+                textDecoration: "none",
               }}
             >
-              <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
-            </Avatar>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                noWrap
+              <BrandLockup
+                priority
+                symbolSize={36}
+                textSize={{ xs: "1.05rem", sm: "1.12rem" }}
+              />
+            </Box>
+
+            <Box
+              sx={{
+                display: { xs: "none", lg: "flex" },
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <PropertySwitcher
+                activePropertyId={session.activePropertyId}
+                memberships={session.memberships}
+                property={session.property}
+                onSwitch={switchActiveProperty}
+              />
+            </Box>
+
+            <Stack
+              direction="row"
+              spacing={{ xs: 0.5, sm: 1, lg: 1 }}
+              sx={{ alignItems: "center", flexShrink: 0 }}
+            >
+              <TopBarLanguageSwitch />
+              <IconButton
+                aria-label={t("Open navigation", "Fungua menyu")}
+                onClick={() => setMobileOpen(true)}
                 sx={{
-                  fontSize: { xs: ".88rem", sm: "1rem", lg: "1.08rem" },
-                  fontWeight: 700,
-                  letterSpacing: "-.015em",
-                  lineHeight: 1.2,
+                  color: "primary.main",
+                  display: { xs: "inline-flex", lg: "none" },
+                  height: 48,
+                  width: 48,
+                  "& .MuiSvgIcon-root": {
+                    fontSize: 32,
+                  },
                 }}
               >
-                {propertyName}
-              </Typography>
-              <Typography noWrap color="text.secondary" variant="caption">
-                {t("Property workspace", "Eneo la biashara")}
-              </Typography>
-            </Box>
-          </Stack>
+                <MenuRoundedIcon />
+              </IconButton>
+            </Stack>
+          </Box>
 
+          {canSwitchProperty ? (
+            <Box
+              sx={{
+                alignItems: "center",
+                borderTop: 1,
+                borderColor: "divider",
+                display: { xs: "flex", lg: "none" },
+                minHeight: 42,
+                px: { xs: 1.75, sm: 2.5 },
+              }}
+            >
+              <PropertySwitcher
+                activePropertyId={session.activePropertyId}
+                memberships={session.memberships}
+                property={session.property}
+                onSwitch={switchActiveProperty}
+              />
+            </Box>
+          ) : null}
         </Box>
 
         {children}
@@ -259,20 +281,14 @@ function SidebarContent({
   pathname,
   role,
 }: SidebarContentProps) {
-  const { language, setLanguage, t } = useLanguage();
+  const { t } = useLanguage();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+
   return (
-    <Box
-      sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}
-    >
+    <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
       <Stack
         direction="row"
-        sx={{
-          alignItems: "center",
-          height: 52,
-          justifyContent: "space-between",
-          px: 1.25,
-        }}
+        sx={{ alignItems: "center", height: 52, justifyContent: "space-between", px: 1.25 }}
       >
         <Box
           component={Link}
@@ -284,7 +300,7 @@ function SidebarContent({
           <BrandLockup symbolSize={28} textSize=".92rem" />
         </Box>
         <IconButton
-          aria-label="Close navigation"
+          aria-label={t("Close navigation", "Funga menyu")}
           onClick={onClose}
           size="small"
           sx={{ display: { xs: "inline-flex", lg: "none" } }}
@@ -304,27 +320,14 @@ function SidebarContent({
           py: { xs: 1, lg: 1.5 },
         }}
       >
-        <NavigationList
-          items={workspaceDestinations}
-          onNavigate={onClose}
-          pathname={pathname}
-        />
+        <NavigationList items={workspaceDestinations} onNavigate={onClose} pathname={pathname} />
 
         {canManage ? (
           <Box sx={{ mt: 2 }}>
-            <Typography
-              color="text.secondary"
-              component="p"
-              variant="caption"
-              sx={{ px: 1.25, pb: 0.75 }}
-            >
+            <Typography color="text.secondary" component="p" variant="caption" sx={{ px: 1.25, pb: 0.75 }}>
               {t("Manage", "Usimamizi")}
             </Typography>
-            <NavigationList
-              items={managementDestinations}
-              onNavigate={onClose}
-              pathname={pathname}
-            />
+            <NavigationList items={managementDestinations} onNavigate={onClose} pathname={pathname} />
           </Box>
         ) : null}
 
@@ -342,57 +345,34 @@ function SidebarContent({
               slotProps={{ primary: { variant: "caption", color: "text.secondary" } }}
             />
             <ExpandMoreRoundedIcon
-              sx={{ color: "text.secondary", fontSize: 18, transform: preferencesOpen ? "rotate(180deg)" : "none", transition: "transform 160ms ease" }}
+              sx={{
+                color: "text.secondary",
+                fontSize: 18,
+                transform: preferencesOpen ? "rotate(180deg)" : "none",
+                transition: "transform 160ms ease",
+              }}
             />
           </ListItemButton>
+
           <Collapse in={preferencesOpen} timeout="auto" unmountOnExit>
-          <Stack
-            spacing={1.25}
-            sx={{
-              bgcolor: "action.hover",
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 1,
-              mt: .5,
-              p: 1.25,
-            }}
-          >
-            <Box>
-              <Typography
-                color="text.secondary"
-                display="block"
-                variant="caption"
-                sx={{ fontWeight: 600, mb: .6 }}
-              >
-                {t("Appearance", "Mwonekano")}
-              </Typography>
-              <ThemeModeSelect fullWidth />
-            </Box>
-            <Box>
-              <Stack direction="row" spacing={.75} sx={{ alignItems: "center", mb: .6 }}>
-                <TranslateRoundedIcon sx={{ color: "text.secondary", fontSize: 15 }} />
-                <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 600 }}>
-                  {t("Language", "Lugha")}
+            <Stack
+              spacing={1.25}
+              sx={{
+                bgcolor: "action.hover",
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                mt: 0.5,
+                p: 1.25,
+              }}
+            >
+              <Box>
+                <Typography color="text.secondary" display="block" variant="caption" sx={{ fontWeight: 600, mb: 0.6 }}>
+                  {t("Appearance", "Mwonekano")}
                 </Typography>
-              </Stack>
-              <Select
-                fullWidth
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
-                size="small"
-                inputProps={{ "aria-label": t("Language", "Lugha") }}
-                sx={{
-                  bgcolor: "background.paper",
-                  fontSize: ".8rem",
-                  fontWeight: 700,
-                  "& .MuiSelect-select": { py: .75 },
-                }}
-              >
-                <MenuItem value="en">{t("English", "Kiingereza")}</MenuItem>
-                <MenuItem value="sw">{t("Swahili", "Kiswahili")}</MenuItem>
-              </Select>
-            </Box>
-          </Stack>
+                <ThemeModeSelect fullWidth />
+              </Box>
+            </Stack>
           </Collapse>
         </Box>
 
@@ -416,28 +396,20 @@ function SidebarContent({
             "&:hover": { bgcolor: "action.hover" },
           }}
         >
-          <Avatar
-            src={avatar}
-            sx={{ bgcolor: "text.primary", height: 30, width: 30 }}
-          >
+          <Avatar src={avatar} sx={{ bgcolor: "text.primary", height: 30, width: 30 }}>
             {name[0]?.toUpperCase()}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography noWrap variant="body2" sx={{ fontWeight: 500 }}>
               {name}
             </Typography>
-            <Typography
-              noWrap
-              color="text.secondary"
-              variant="caption"
-              sx={{ textTransform: "capitalize" }}
-            >
+            <Typography noWrap color="text.secondary" variant="caption" sx={{ textTransform: "capitalize" }}>
               {role}
             </Typography>
           </Box>
-          <Tooltip title="Sign out">
+          <Tooltip title={t("Sign out", "Ondoka")}>
             <IconButton
-              aria-label="Sign out"
+              aria-label={t("Sign out", "Ondoka")}
               color="inherit"
               onClick={(event) => {
                 event.preventDefault();
@@ -471,6 +443,7 @@ function NavigationList({
     "/more/property": ["Property", "Jengo"],
     "/more/staff": ["Staff", "Wafanyakazi"],
   };
+
   return (
     <List disablePadding>
       {items.map((item) => {
@@ -513,10 +486,7 @@ function NavigationList({
               sx={{ m: 0 }}
               slotProps={{
                 primary: {
-                  sx: {
-                    fontSize: "0.875rem",
-                    fontWeight: selected ? 500 : 400,
-                  },
+                  sx: { fontSize: "0.875rem", fontWeight: selected ? 500 : 400 },
                 },
               }}
             />
