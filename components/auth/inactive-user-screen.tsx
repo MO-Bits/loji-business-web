@@ -19,6 +19,7 @@ import {
   Typography,
 } from "@mui/material";
 
+import { BrandSymbol } from "@/components/shared/brand-symbol";
 import { BrandWordmark } from "@/components/shared/brand-wordmark";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 
@@ -50,7 +51,10 @@ export function InactiveUserScreen() {
             justifyContent="space-between"
             sx={{ minHeight: { xs: 64, sm: 72 } }}
           >
-            <BrandWordmark priority sx={{ width: { xs: 168, sm: 196 } }} />
+            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+              <BrandSymbol priority size={36} />
+              <BrandWordmark priority sx={{ width: { xs: 148, sm: 172 } }} />
+            </Stack>
             <Stack alignItems="center" direction="row" spacing={0.75}>
               <LockOutlinedIcon
                 sx={{ color: "text.secondary", fontSize: 17 }}

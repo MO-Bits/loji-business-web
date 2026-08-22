@@ -25,6 +25,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
+import { BrandSymbol } from "@/components/shared/brand-symbol";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { AppStatus } from "@/features/session/models/app-status";
@@ -275,11 +276,20 @@ function SidebarContent({
         direction="row"
         sx={{
           alignItems: "center",
-          height: { xs: 52, lg: 20 },
-          justifyContent: "flex-end",
+          height: 52,
+          justifyContent: "space-between",
           px: 1.25,
         }}
       >
+        <Box
+          component={Link}
+          href="/dashboard"
+          aria-label="Loji Business home"
+          onClick={onClose}
+          sx={{ display: "inline-flex", p: 0.5 }}
+        >
+          <BrandSymbol size={30} />
+        </Box>
         <IconButton
           aria-label="Close navigation"
           onClick={onClose}

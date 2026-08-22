@@ -15,6 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 
+import { BrandSymbol } from "@/components/shared/brand-symbol";
 import { BrandWordmark } from "@/components/shared/brand-wordmark";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 
@@ -45,7 +46,10 @@ export function LoginScreen() {
           py: { xs: 3, sm: 4, md: 5 },
         }}
       >
-        <BrandWordmark priority sx={{ width: { xs: 168, sm: 196 } }} />
+        <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
+          <BrandSymbol priority size={38} />
+          <BrandWordmark priority sx={{ width: { xs: 154, sm: 178 } }} />
+        </Stack>
 
         <Box
           sx={{

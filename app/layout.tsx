@@ -24,7 +24,7 @@ const organizationData = {
   url: baseUrl,
   logo: {
     "@type": "ImageObject",
-    url: `${baseUrl}/loji-business-wordmark.png`,
+    url: `${baseUrl}/loji-symbol.svg`,
   },
 };
 
@@ -84,12 +84,12 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/favicon.svg",
+        url: "/loji-symbol.svg",
         type: "image/svg+xml",
       },
     ],
-    shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+    shortcut: "/loji-symbol.svg",
+    apple: "/loji-symbol.svg",
   },
 
   openGraph: {
