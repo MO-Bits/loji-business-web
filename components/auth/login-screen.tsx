@@ -23,6 +23,7 @@ import {
 import { HospitalityHeroIllustration } from "@/components/content/learn-more-illustrations";
 import { useLanguage } from "@/components/providers/language-provider";
 import { BrandLockup } from "@/components/shared/brand-lockup";
+import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 
 import { GoogleMark } from "./google-mark";
@@ -83,6 +84,7 @@ export function LoginScreen() {
           />
 
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+            <ThemeModeSelect compact />
             <TranslateRoundedIcon
               sx={{ color: "text.secondary", display: { xs: "none", sm: "block" }, fontSize: 18 }}
             />

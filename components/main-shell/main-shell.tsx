@@ -27,6 +27,7 @@ import {
 import { FullPageLoader } from "@/components/shared/full-page-loader";
 import { BrandLockup } from "@/components/shared/brand-lockup";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
+import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { AppStatus } from "@/features/session/models/app-status";
 import { createClient } from "@/lib/supabase/client";
@@ -214,7 +215,8 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               </Typography>
             </Box>
           </Stack>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+            <ThemeModeSelect compact />
             <TranslateRoundedIcon
               sx={{
                 color: "text.secondary",

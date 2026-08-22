@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 
 import { GoogleAnalytics } from "@next/third-parties/google";
 
@@ -39,6 +39,14 @@ const websiteData = {
     "@id": `${baseUrl}/#organization`,
   },
   inLanguage: "en",
+};
+
+export const viewport: Viewport = {
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#F4F6F9" },
+    { media: "(prefers-color-scheme: dark)", color: "#0D1117" },
+  ],
 };
 
 export const metadata: Metadata = {
