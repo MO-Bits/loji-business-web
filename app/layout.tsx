@@ -53,6 +53,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
 
   applicationName: "Loji Business",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Loji Business",
+    statusBarStyle: "default",
+  },
 
   title: {
     default: "Loji Business",
