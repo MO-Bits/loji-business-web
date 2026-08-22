@@ -154,6 +154,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           minWidth: 0,
           overflowX: "clip",
           pb: 0,
+          pt: { xs: 72, lg: 88 },
         }}
       >
         <Box
@@ -168,9 +169,11 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             display: "flex",
             height: { xs: 56, lg: 64 },
             justifyContent: "space-between",
+            left: { xs: 0, lg: `${drawerWidth}px` },
             mx: { xs: 1, sm: 1.5, lg: 2 },
             px: { xs: 1.5, sm: 2.5 },
-            position: "sticky",
+            position: "fixed",
+            right: 0,
             top: { xs: 8, lg: 12 },
             zIndex: (theme) => theme.zIndex.appBar,
           }}
