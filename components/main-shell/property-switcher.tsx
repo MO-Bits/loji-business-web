@@ -119,40 +119,42 @@ export function PropertySwitcher({
         onClick={(event) => canSwitch && setAnchorEl(event.currentTarget)}
         sx={{
           borderRadius: 1,
-          maxWidth: { xs: "100%", sm: 420 },
+          maxWidth: { xs: "min(58vw, 260px)", sm: 420 },
           minWidth: 0,
-          px: { xs: 0.25, sm: 0.5 },
+          px: { xs: 0, sm: 0.5 },
           py: 0.5,
-          textAlign: { xs: "center", sm: "left" },
+          textAlign: "left",
           "&:hover": canSwitch ? { bgcolor: "action.hover" } : undefined,
         }}
       >
         <Stack
           direction="row"
-          spacing={{ xs: 0.4, sm: 1.1 }}
-          sx={{ alignItems: "center", justifyContent: { xs: "center", sm: "flex-start" }, minWidth: 0 }}
+          spacing={{ xs: 1, sm: 1.1 }}
+          sx={{ alignItems: "center", minWidth: 0 }}
         >
           <Avatar
             src={propertyImage}
             variant="rounded"
             sx={{
               bgcolor: "primary.main",
-              display: { xs: "none", sm: "flex" },
-              height: { sm: 34, lg: 36 },
-              width: { sm: 34, lg: 36 },
+              border: "1px solid",
+              borderColor: "divider",
+              flexShrink: 0,
+              height: { xs: 42, sm: 44, lg: 36 },
+              width: { xs: 42, sm: 44, lg: 36 },
             }}
           >
-            <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
+            <ApartmentRoundedIcon sx={{ fontSize: 18 }} />
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography
               noWrap
               sx={{
-                fontSize: { xs: ".9rem", sm: "1rem", lg: "1.08rem" },
-                fontWeight: { xs: 700, sm: 700 },
+                fontSize: { xs: "1rem", sm: "1.02rem", lg: "1.08rem" },
+                fontWeight: 750,
                 letterSpacing: "-.015em",
-                lineHeight: 1.2,
-                maxWidth: { xs: "min(46vw, 180px)", sm: "none" },
+                lineHeight: 1.15,
+                maxWidth: { xs: "min(38vw, 180px)", sm: "none" },
               }}
             >
               {propertyName}
@@ -161,7 +163,7 @@ export function PropertySwitcher({
               noWrap
               color="text.secondary"
               variant="caption"
-              sx={{ display: { xs: "none", sm: "block" } }}
+              sx={{ display: { xs: "none", lg: "block" } }}
             >
               {canSwitch
                 ? t("Switch property", "Badili jengo")
@@ -170,11 +172,7 @@ export function PropertySwitcher({
           </Box>
           {canSwitch && (
             <ExpandMoreRoundedIcon
-              sx={{
-                color: "text.secondary",
-                fontSize: { xs: 16, sm: 18 },
-                flexShrink: 0,
-              }}
+              sx={{ color: "text.secondary", fontSize: 18, flexShrink: 0 }}
             />
           )}
         </Stack>
