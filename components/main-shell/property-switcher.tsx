@@ -36,6 +36,17 @@ type PropertyOption = {
   role?: string;
 };
 
+const PROPERTY_CACHE_KEY = "loji:property-options:v1";
+
+function readCachedOptions(ids: string[]): PropertyOption[] {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(PROPERTY_CACHE_KEY) ?? "[]") as PropertyOption[];
+    return parsed.filter((option) => ids.includes(option.id));
+  } catch {
+    return [];
+  }
+}
+
 type PropertySwitcherProps = {
   activePropertyId?: string;
   memberships: Membership[];
@@ -65,6 +76,9 @@ export function PropertySwitcher({
       return;
     }
 
+    const cached = readCachedOptions(ids);
+    if (cached.length === ids.length) setOptions(cached);
+
     let cancelled = false;
     void client
       .from("properties")
@@ -75,15 +89,19 @@ export function PropertySwitcher({
         const nameById = new Map(
           (data ?? []).map((item) => [String(item.id), String(item.name ?? "Property")]),
         );
-        setOptions(
-          memberships
-            .filter((item): item is Membership & { property_id: string } => Boolean(item.property_id))
-            .map((item) => ({
-              id: item.property_id,
-              name: nameById.get(item.property_id) ?? t("Property", "Jengo"),
-              role: item.role,
-            })),
-        );
+        const nextOptions = memberships
+          .filter((item): item is Membership & { property_id: string } => Boolean(item.property_id))
+          .map((item) => ({
+            id: item.property_id,
+            name: nameById.get(item.property_id) ?? t("Property", "Jengo"),
+            role: item.role,
+          }));
+        setOptions(nextOptions);
+        try {
+          sessionStorage.setItem(PROPERTY_CACHE_KEY, JSON.stringify(nextOptions));
+        } catch {
+          // Storage may be unavailable in private browsing; live data still works.
+        }
       });
 
     return () => {
