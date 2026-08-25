@@ -35,6 +35,7 @@ import {
 import type { AvailableRoom } from "@/features/bookings/models/booking";
 import { localDateKey } from "@/lib/date-time";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
+import { trackEvent } from "@/lib/analytics";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -248,6 +249,7 @@ export function NewBookingScreen() {
           ? String(booking.id ?? "")
           : "";
       window.localStorage.removeItem(BOOKING_DRAFT_KEY);
+      trackEvent("booking_created", { room_id: selected.id, adults, children, payment_method: form.paymentMethod });
       feedback.success("Booking created successfully.");
       router.replace(id ? `/bookings/${id}` : "/bookings");
       router.refresh();
