@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
 import { BrandLockup } from "@/components/shared/brand-lockup";
+import { BrandSymbol } from "@/components/shared/brand-symbol";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
@@ -75,7 +76,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     typeof session.user?.user_metadata?.avatar_url === "string"
       ? session.user.user_metadata.avatar_url
       : undefined;
-  const canSwitchProperty = session.memberships.filter((item) => item.property_id).length > 1;
 
   const signOut = async () => {
     await createClient().auth.signOut();
@@ -173,28 +173,36 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             sx={{
               alignItems: "center",
               display: "flex",
-              height: { xs: 82, sm: 84, lg: 64 },
+              height: 64,
               justifyContent: "space-between",
               px: { xs: 2.25, sm: 3, lg: 2.5 },
             }}
           >
-            <Box
-              component={Link}
-              href="/dashboard"
-              aria-label="Loji Business home"
+            <Stack
+              direction="row"
+              spacing={1}
               sx={{
                 alignItems: "center",
-                display: { xs: "inline-flex", lg: "none" },
+                display: { xs: "flex", lg: "none" },
+                flex: 1,
                 minWidth: 0,
-                textDecoration: "none",
               }}
             >
-              <BrandLockup
-                priority
-                symbolSize={36}
-                textSize={{ xs: "1.05rem", sm: "1.12rem" }}
+              <Box
+                component={Link}
+                href="/dashboard"
+                aria-label={t("Loji Business home", "Nyumbani Loji Business")}
+                sx={{ display: "inline-flex", flexShrink: 0 }}
+              >
+                <BrandSymbol priority size={34} />
+              </Box>
+              <PropertySwitcher
+                activePropertyId={session.activePropertyId}
+                memberships={session.memberships}
+                property={session.property}
+                onSwitch={switchActiveProperty}
               />
-            </Box>
+            </Stack>
 
             <Box
               sx={{
@@ -235,25 +243,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             </Stack>
           </Box>
 
-          {canSwitchProperty ? (
-            <Box
-              sx={{
-                alignItems: "center",
-                borderTop: 1,
-                borderColor: "divider",
-                display: { xs: "flex", lg: "none" },
-                minHeight: 42,
-                px: { xs: 1.75, sm: 2.5 },
-              }}
-            >
-              <PropertySwitcher
-                activePropertyId={session.activePropertyId}
-                memberships={session.memberships}
-                property={session.property}
-                onSwitch={switchActiveProperty}
-              />
-            </Box>
-          ) : null}
         </Box>
 
         {children}
