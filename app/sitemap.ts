@@ -14,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ['/help', 'monthly', 0.75],
     ['/faq', 'monthly', 0.75],
     ['/security', 'monthly', 0.7],
-    ['/updates', 'weekly', 0.65],
+    ['/whats-new', 'weekly', 0.65],
     ['/contact', 'monthly', 0.7],
     ['/privacy', 'yearly', 0.4],
     ['/terms', 'yearly', 0.4],
