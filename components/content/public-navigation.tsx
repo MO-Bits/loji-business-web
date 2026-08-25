@@ -51,7 +51,7 @@ export function PublicNavigation() {
         component="header"
         sx={{
           alignItems: "center",
-          bgcolor: "rgba(var(--mui-palette-background-defaultChannel) / .9)",
+          bgcolor: "background.paper",
           borderBottom: 1,
           borderColor: "divider",
           display: "flex",
@@ -63,7 +63,6 @@ export function PublicNavigation() {
           top: 0,
           width: "100%",
           zIndex: (theme) => theme.zIndex.appBar,
-          backdropFilter: "blur(18px)",
         }}
       >
         <Link
