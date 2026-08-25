@@ -7,9 +7,13 @@ import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
+import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
+import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
@@ -55,6 +59,13 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const { session, loading, error, refresh, switchProperty } = useAppSession();
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileNavValue = pathname.startsWith("/bookings")
+    ? "/bookings"
+    : pathname.startsWith("/rooms")
+      ? "/rooms"
+      : pathname === "/dashboard"
+        ? "/dashboard"
+        : "menu";
 
   useEffect(() => {
     if (!loading && session && session.status !== AppStatus.Ready) {
@@ -269,15 +280,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       >
         <BottomNavigation
           showLabels
-          value={
-            pathname.startsWith("/bookings")
-              ? "/bookings"
-              : pathname.startsWith("/rooms")
-                ? "/rooms"
-                : pathname === "/dashboard"
-                  ? "/dashboard"
-                  : "menu"
-          }
+          value={mobileNavValue}
           onChange={(_, value) => {
             if (value === "menu") {
               setMobileOpen(true);
@@ -285,27 +288,64 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             }
             router.push(String(value));
           }}
-          sx={{ borderTop: 1, borderColor: "divider", height: 64 }}
+          sx={{
+            borderTop: 1,
+            borderColor: "divider",
+            height: 64,
+            px: 0.5,
+            "& .MuiBottomNavigationAction-root": {
+              minWidth: 56,
+              position: "relative",
+              transition: "color 160ms ease, transform 160ms ease",
+              "&::before": {
+                bgcolor: "primary.main",
+                borderRadius: 99,
+                content: '""',
+                height: 3,
+                opacity: 0,
+                position: "absolute",
+                top: 0,
+                transform: "scaleX(.45)",
+                transition: "opacity 160ms ease, transform 160ms ease",
+                width: 24,
+              },
+              "&.Mui-selected": {
+                transform: "translateY(-1px)",
+                "&::before": { opacity: 1, transform: "scaleX(1)" },
+              },
+            },
+            "& .MuiBottomNavigationAction-label": {
+              fontSize: "0.68rem",
+              fontWeight: 600,
+              mt: 0.25,
+            },
+            "@media (max-width: 350px)": {
+              "& .MuiBottomNavigationAction-label:not(.Mui-selected)": {
+                opacity: 0,
+                height: 0,
+              },
+            },
+          }}
         >
           <BottomNavigationAction
             label={t("Home", "Nyumbani")}
             value="/dashboard"
-            icon={<HomeRoundedIcon />}
+            icon={mobileNavValue === "/dashboard" ? <HomeRoundedIcon /> : <HomeOutlinedIcon />}
           />
           <BottomNavigationAction
             label={t("Bookings", "Uhifadhi")}
             value="/bookings"
-            icon={<CalendarMonthRoundedIcon />}
+            icon={mobileNavValue === "/bookings" ? <CalendarMonthRoundedIcon /> : <CalendarMonthOutlinedIcon />}
           />
           <BottomNavigationAction
             label={t("Rooms", "Vyumba")}
             value="/rooms"
-            icon={<BedRoundedIcon />}
+            icon={mobileNavValue === "/rooms" ? <BedRoundedIcon /> : <BedOutlinedIcon />}
           />
           <BottomNavigationAction
             label={t("Menu", "Menyu")}
             value="menu"
-            icon={<MenuRoundedIcon />}
+            icon={mobileNavValue === "menu" ? <MenuRoundedIcon /> : <MenuOutlinedIcon />}
           />
         </BottomNavigation>
       </Paper>
