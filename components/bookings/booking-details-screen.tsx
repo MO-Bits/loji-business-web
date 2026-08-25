@@ -139,7 +139,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
           <Paper variant="outlined" sx={{ overflow: "hidden" }}>
             <Box
               sx={{
-                bgcolor: "#14345B",
+                bgcolor: "primary.dark",
                 color: "white",
                 p: { xs: 2.25, sm: 3.25, lg: 4 },
               }}
@@ -201,6 +201,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
               <Summary label="Total" value={money.format(booking.totalPrice)} />
             </Box>
           </Paper>
+          <ActivityTimeline booking={booking} />
           <Box
             sx={{
               display: "grid",
@@ -382,6 +383,50 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
     </Box>
   );
 }
+function ActivityTimeline({ booking }: { booking: Booking }) {
+  const normalized = booking.status.toLowerCase();
+  const checkedIn = Boolean(booking.checkedInAt) || ["checked_in", "checked_out"].includes(normalized);
+  const checkedOut = Boolean(booking.checkedOutAt) || normalized === "checked_out";
+  const confirmed = !["pending", "cancelled", "canceled"].includes(normalized);
+  const paid = booking.amountPaid > 0;
+  const events = [
+    { label: "Created", done: true, value: formatLocalDateTime(booking.createdAt) },
+    { label: "Confirmed", done: confirmed, value: confirmed ? bookingStatusLabel(booking.status) : "Awaiting confirmation" },
+    { label: "Payment", done: paid, value: paid ? `${money.format(booking.amountPaid)} received` : "No payment recorded" },
+    { label: "Checked in", done: checkedIn, value: booking.checkedInAt ? formatLocalDateTime(booking.checkedInAt) : "Not yet" },
+    { label: "Checked out", done: checkedOut, value: booking.checkedOutAt ? formatLocalDateTime(booking.checkedOutAt) : "Not yet" },
+  ];
+
+  return (
+    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 } }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>Activity</Typography>
+      <Box
+        component="ol"
+        aria-label="Booking activity timeline"
+        sx={{
+          display: "grid",
+          gap: { xs: 1.5, md: 0 },
+          gridTemplateColumns: { xs: "1fr", md: `repeat(${events.length}, minmax(0, 1fr))` },
+          listStyle: "none",
+          m: 0,
+          p: 0,
+        }}
+      >
+        {events.map((event, index) => (
+          <Box component="li" key={event.label} sx={{ minWidth: 0, position: "relative", pl: { xs: 3.5, md: 0 }, pt: { md: 3.5 }, textAlign: { md: "center" } }}>
+            {index < events.length - 1 ? (
+              <Box sx={{ bgcolor: event.done ? "primary.main" : "divider", height: { xs: "calc(100% + 12px)", md: 2 }, left: { xs: 7, md: "50%" }, position: "absolute", top: { xs: 14, md: 7 }, width: { xs: 2, md: "100%" } }} />
+            ) : null}
+            <Box sx={{ bgcolor: event.done ? "primary.main" : "background.paper", border: "2px solid", borderColor: event.done ? "primary.main" : "divider", borderRadius: "50%", height: 16, left: { xs: 0, md: "calc(50% - 8px)" }, position: "absolute", top: { xs: 3, md: 0 }, width: 16, zIndex: 1 }} />
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>{event.label}</Typography>
+            <Typography color="text.secondary" variant="caption" sx={{ display: "block", mt: .25, overflowWrap: "anywhere" }}>{event.value}</Typography>
+          </Box>
+        ))}
+      </Box>
+    </Paper>
+  );
+}
+
 function Summary({ label, value }: { label: string; value: string }) {
   return (
     <Box sx={{ p: 1.5 }}>
