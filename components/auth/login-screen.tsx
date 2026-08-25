@@ -1,6 +1,7 @@
 "use client";
 
 import NextLink from "next/link";
+import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
 import {
   Alert,
@@ -8,13 +9,20 @@ import {
   Button,
   CircularProgress,
   Container,
+  Divider,
+  Drawer,
+  IconButton,
   Link,
+  List,
+  ListItemButton,
+  ListItemText,
   MenuItem,
   Select,
   Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
+import { useState } from "react";
 
 import { useLanguage } from "@/components/providers/language-provider";
 import { BrandLockup } from "@/components/shared/brand-lockup";
@@ -26,6 +34,14 @@ import { GoogleMark } from "./google-mark";
 export function LoginScreen() {
   const auth = useAuthController();
   const { language, setLanguage, t } = useLanguage();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  const navItems = [
+    { href: "#login", label: t("Login", "Ingia") },
+    { href: "/learn-more", label: t("About", "Kuhusu") },
+    { href: "/terms", label: t("Terms", "Masharti") },
+    { href: "/privacy", label: t("Privacy Policy", "Sera ya faragha") },
+  ];
 
   return (
     <Box
@@ -50,25 +66,71 @@ export function LoginScreen() {
           direction="row"
           sx={{
             alignItems: "center",
+            bgcolor: "rgba(var(--mui-palette-background-defaultChannel) / .88)",
+            borderBottom: 1,
+            borderColor: "divider",
+            gap: 2,
             justifyContent: "space-between",
-            minHeight: 42,
+            minHeight: { xs: 58, md: 64 },
+            mx: { xs: -2.25, sm: -3.5 },
+            px: { xs: 2.25, sm: 3.5 },
+            position: "sticky",
+            top: 0,
+            zIndex: (theme) => theme.zIndex.appBar,
+            backdropFilter: "blur(18px)",
           }}
         >
-          <BrandLockup
-            priority
-            symbolSize={30}
-            textSize={{ xs: ".96rem", sm: "1rem" }}
-          />
+          <Link
+            aria-label={t("Loji Business home", "Nyumbani Loji Business")}
+            component={NextLink}
+            href="/"
+            sx={{ display: "inline-flex", flexShrink: 0 }}
+            underline="none"
+          >
+            <BrandLockup
+              priority
+              symbolSize={30}
+              textSize={{ xs: ".96rem", sm: "1rem" }}
+            />
+          </Link>
 
-          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+          <Stack
+            component="nav"
+            direction="row"
+            spacing={0.25}
+            sx={{
+              alignItems: "center",
+              display: { xs: "none", md: "flex" },
+              ml: "auto",
+            }}
+          >
+            {navItems.map((item) => (
+              <Button
+                color="inherit"
+                component={NextLink}
+                href={item.href}
+                key={item.href}
+                sx={{
+                  color: item.href === "#login" ? "text.primary" : "text.secondary",
+                  fontSize: ".82rem",
+                  minHeight: 38,
+                  px: 1.4,
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </Stack>
+
+          <Stack
+            direction="row"
+            spacing={0.75}
+            sx={{ alignItems: "center", display: { xs: "none", md: "flex" } }}
+          >
             <ThemeModeSelect compact />
             <TranslateRoundedIcon
               aria-hidden
-              sx={{
-                color: "text.secondary",
-                display: { xs: "none", sm: "block" },
-                fontSize: 17,
-              }}
+              sx={{ color: "text.secondary", fontSize: 17 }}
             />
             <Select
               value={language}
@@ -90,9 +152,80 @@ export function LoginScreen() {
               <MenuItem value="sw">SW</MenuItem>
             </Select>
           </Stack>
+
+          <IconButton
+            aria-label={t("Open navigation", "Fungua menyu")}
+            onClick={() => setMobileNavOpen(true)}
+            sx={{ display: { md: "none" } }}
+          >
+            <MenuRoundedIcon />
+          </IconButton>
         </Stack>
 
+        <Drawer
+          anchor="right"
+          onClose={() => setMobileNavOpen(false)}
+          open={mobileNavOpen}
+          slotProps={{
+            paper: {
+              sx: {
+                p: 2,
+                width: "min(86vw, 320px)",
+              },
+            },
+          }}
+        >
+          <BrandLockup priority symbolSize={30} textSize="1rem" />
+          <Divider sx={{ my: 2 }} />
+
+          <List component="nav" disablePadding>
+            {navItems.map((item) => (
+              <ListItemButton
+                component={NextLink}
+                href={item.href}
+                key={item.href}
+                onClick={() => setMobileNavOpen(false)}
+                sx={{ mb: 0.5, minHeight: 46 }}
+              >
+                <ListItemText
+                  primary={item.label}
+                  slotProps={{
+                    primary: {
+                      fontSize: ".9rem",
+                      fontWeight: item.href === "#login" ? 700 : 500,
+                    },
+                  }}
+                />
+              </ListItemButton>
+            ))}
+          </List>
+
+          <Divider sx={{ my: 2 }} />
+          <Typography
+            color="text.secondary"
+            sx={{ fontSize: ".7rem", fontWeight: 700, mb: 1.25 }}
+          >
+            {t("PREFERENCES", "MAPENDELEO")}
+          </Typography>
+          <Stack spacing={1.25}>
+            <ThemeModeSelect />
+            <Select
+              fullWidth
+              value={language}
+              onChange={(event) =>
+                setLanguage(event.target.value as "en" | "sw")
+              }
+              size="small"
+              inputProps={{ "aria-label": t("Language", "Lugha") }}
+            >
+              <MenuItem value="en">English</MenuItem>
+              <MenuItem value="sw">Kiswahili</MenuItem>
+            </Select>
+          </Stack>
+        </Drawer>
+
         <Box
+          id="login"
           sx={{
             alignItems: "center",
             display: "flex",
