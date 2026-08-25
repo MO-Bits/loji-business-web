@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
@@ -248,13 +249,12 @@ function RoomCard({
       <Box component={Link} href={`/rooms/${room.id}`} sx={{ color: "inherit", display: "block", textDecoration: "none" }}>
         <Box sx={{ aspectRatio: "16/8", bgcolor: "action.hover", overflow: "hidden", position: "relative" }}>
           {room.images[0] ? (
-            <Box
-              component="img"
+            <Image
               src={room.images[0]}
-              loading="lazy"
-              decoding="async"
               alt={room.name}
-              sx={{ height: "100%", objectFit: "cover", transition: "transform 300ms ease", width: "100%", ".surface-hover:hover &": { transform: "scale(1.035)" } }}
+              fill
+              sizes="(max-width: 600px) 100vw, (max-width: 1200px) 50vw, 25vw"
+              style={{ objectFit: "cover", transition: "transform 300ms ease" }}
             />
           ) : (
             <Box sx={{ display: "grid", height: "100%", placeItems: "center" }}>
