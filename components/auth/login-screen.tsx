@@ -58,7 +58,8 @@ export function LoginScreen() {
           gridTemplateRows: "auto 1fr auto",
           minHeight: "100dvh",
           px: { xs: 2.25, sm: 3.5 },
-          py: { xs: 2, sm: 2.5 },
+          pb: { xs: 2, sm: 2.5 },
+          pt: { xs: "74px", md: "82px" },
         }}
       >
         <Stack
@@ -72,10 +73,12 @@ export function LoginScreen() {
             gap: 2,
             justifyContent: "space-between",
             minHeight: { xs: 58, md: 64 },
-            mx: { xs: -2.25, sm: -3.5 },
+            left: 0,
             px: { xs: 2.25, sm: 3.5 },
-            position: "sticky",
+            position: "fixed",
+            right: 0,
             top: 0,
+            width: "100%",
             zIndex: (theme) => theme.zIndex.appBar,
             backdropFilter: "blur(18px)",
           }}
