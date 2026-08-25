@@ -85,8 +85,76 @@ const faqs = [
   },
 ];
 
-export function FaqSection() {
-  const { language, t } = useLanguage();
+type FaqSectionProps = {
+  variant?: "feature" | "plain";
+};
+
+function Questions() {
+  const { language } = useLanguage();
+
+  return (
+    <Stack spacing={1.25}>
+      {faqs.map((faq, index) => {
+        const question = language === "sw" ? faq.swQuestion : faq.question;
+        const answer = language === "sw" ? faq.swAnswer : faq.answer;
+
+        return (
+          <Accordion
+            key={faq.question}
+            disableGutters
+            elevation={0}
+            defaultExpanded={index === 0}
+            sx={{
+              bgcolor: "background.paper",
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: "10px !important",
+              overflow: "hidden",
+              transition: "border-color 180ms ease, box-shadow 180ms ease",
+              "&::before": { display: "none" },
+              "&.Mui-expanded": {
+                borderColor: "primary.main",
+                boxShadow: "0 10px 28px rgba(15, 23, 42, .06)",
+              },
+            }}
+          >
+            <AccordionSummary
+              expandIcon={<AddRoundedIcon />}
+              sx={{
+                minHeight: 64,
+                px: { xs: 2, sm: 2.75 },
+                "& .MuiAccordionSummary-content": { my: 1.65 },
+                "& .MuiAccordionSummary-expandIconWrapper": {
+                  color: "primary.main",
+                  transition: "transform 180ms ease",
+                },
+                "& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
+                  transform: "rotate(45deg)",
+                },
+              }}
+            >
+              <Typography sx={{ fontSize: { xs: ".98rem", sm: "1.04rem" }, fontWeight: 700, pr: 1 }}>
+                {question}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: { xs: 2, sm: 2.75 }, pb: 2.75, pt: 0 }}>
+              <Typography color="text.secondary" sx={{ lineHeight: 1.78 }}>
+                {answer}
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+        );
+      })}
+    </Stack>
+  );
+}
+
+export function FaqSection({ variant = "feature" }: FaqSectionProps) {
+  const { t } = useLanguage();
+
+  if (variant === "plain") {
+    return <Questions />;
+  }
 
   return (
     <Box component="section" aria-labelledby="faq-heading">
@@ -138,10 +206,7 @@ export function FaqSection() {
                 lineHeight: 1.04,
               }}
             >
-              {t(
-                "Questions before you get started?",
-                "Una maswali kabla ya kuanza?",
-              )}
+              {t("Questions before you get started?", "Una maswali kabla ya kuanza?")}
             </Typography>
             <Typography color="text.secondary" sx={{ fontSize: "1.02rem", lineHeight: 1.75 }}>
               {t(
@@ -151,67 +216,16 @@ export function FaqSection() {
             </Typography>
             <Button
               component={Link}
-              href="/login"
+              href="/faq"
               endIcon={<ArrowForwardRoundedIcon />}
-              variant="contained"
+              variant="outlined"
               sx={{ alignSelf: "flex-start", mt: 1 }}
             >
-              {t("Start with Loji Business", "Anza na Loji Business")}
+              {t("View all FAQs", "Angalia maswali yote")}
             </Button>
           </Stack>
 
-          <Stack spacing={1.25}>
-            {faqs.map((faq, index) => {
-              const question = language === "sw" ? faq.swQuestion : faq.question;
-              const answer = language === "sw" ? faq.swAnswer : faq.answer;
-
-              return (
-                <Accordion
-                  key={faq.question}
-                  disableGutters
-                  elevation={0}
-                  defaultExpanded={index === 0}
-                  sx={{
-                    bgcolor: "background.default",
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: "8px !important",
-                    overflow: "hidden",
-                    "&::before": { display: "none" },
-                    "&.Mui-expanded": {
-                      bgcolor: "background.paper",
-                      borderColor: "primary.main",
-                    },
-                  }}
-                >
-                  <AccordionSummary
-                    expandIcon={<AddRoundedIcon />}
-                    sx={{
-                      minHeight: 58,
-                      px: { xs: 2, sm: 2.5 },
-                      "& .MuiAccordionSummary-content": { my: 1.5 },
-                      "& .MuiAccordionSummary-expandIconWrapper": {
-                        color: "primary.main",
-                        transition: "transform 180ms ease",
-                      },
-                      "& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
-                        transform: "rotate(45deg)",
-                      },
-                    }}
-                  >
-                    <Typography sx={{ fontSize: { xs: ".97rem", sm: "1.02rem" }, fontWeight: 700 }}>
-                      {question}
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails sx={{ px: { xs: 2, sm: 2.5 }, pb: 2.5, pt: 0 }}>
-                    <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
-                      {answer}
-                    </Typography>
-                  </AccordionDetails>
-                </Accordion>
-              );
-            })}
-          </Stack>
+          <Questions />
         </Box>
       </Paper>
     </Box>
