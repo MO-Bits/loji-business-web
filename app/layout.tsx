@@ -7,6 +7,7 @@ import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
+import { PublicNavigation } from "@/components/content/public-navigation";
 import { AppProviders } from "@/components/providers/app-providers";
 
 import "./globals.css";
@@ -173,7 +174,10 @@ export default function RootLayout({
           }}
         />
 
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <PublicNavigation />
+          {children}
+        </AppProviders>
 
         {googleAnalyticsId ? (
           <GoogleAnalytics gaId={googleAnalyticsId} />
