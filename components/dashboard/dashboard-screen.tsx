@@ -458,7 +458,6 @@ function RoomTile({
 }) {
   const { t } = useLanguage();
   const occupied = state === "occupied";
-  const tone = occupied ? "#3977F6" : "#35A95F";
   const daysLeft = booking
     ? Math.max(
         0,
@@ -467,13 +466,16 @@ function RoomTile({
         ),
       )
     : null;
+  const checkingOutToday = occupied && daysLeft === 0;
+  const tone = checkingOutToday ? "#E59A17" : occupied ? "#3977F6" : "#35A95F";
+  const surface = checkingOutToday ? "rgba(229,154,23,.12)" : occupied ? "rgba(57,119,246,.11)" : "rgba(53,169,95,.11)";
   return (
     <Box
       component="button"
       type="button"
       onClick={onSelect}
       sx={{
-        bgcolor: occupied ? "rgba(57,119,246,.11)" : "rgba(53,169,95,.11)",
+        bgcolor: surface,
         border: "1.5px solid",
         borderColor: tone,
         borderRadius: 1,
@@ -505,7 +507,7 @@ function RoomTile({
           {room.name}
         </Typography>
         <Chip
-          label={occupied ? t("Occupied", "Kimetumika") : t("Ready", "Tayari")}
+          label={checkingOutToday ? t("Checking out today", "Anaondoka leo") : occupied ? t("Occupied", "Kimetumika") : t("Ready", "Tayari")}
           size="small"
           sx={{
             bgcolor: "background.paper",
