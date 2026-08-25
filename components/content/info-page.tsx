@@ -14,7 +14,6 @@ import {
 
 import { useLanguage } from "@/components/providers/language-provider";
 
-import { PublicPageHeader } from "./public-page-header";
 
 export type LegalSectionData = {
   title: string;
@@ -111,8 +110,6 @@ export function LegalPage({
       component="main"
       sx={{ bgcolor: "background.default", minHeight: "100dvh" }}
     >
-      <PublicPageHeader />
-
       <Container maxWidth="lg">
         <Box
           sx={{
