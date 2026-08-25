@@ -66,12 +66,42 @@ export async function getRoom(client: SupabaseClient<Database>, propertyId: stri
   return data ? parseRoom(data) : null;
 }
 
+async function optimizeRoomImage(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml") return file;
+
+  const bitmap = await createImageBitmap(file);
+  const maxDimension = 1920;
+  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) {
+    bitmap.close();
+    return file;
+  }
+
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/webp", 0.82),
+  );
+  if (!blob || blob.size >= file.size) return file;
+
+  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, {
+    type: "image/webp",
+    lastModified: file.lastModified,
+  });
+}
+
 export async function uploadRoomImages(client: SupabaseClient<Database>, propertyId: string, roomId: string, files: File[]) {
   if (!files.length || files.length > 3) throw new Error("Select between 1 and 3 images.");
   if (files.some((file) => file.size > 5 * 1024 * 1024)) throw new Error("Each image must be under 5 MB.");
   const paths: string[] = [];
   try {
-    const urls = await Promise.all(files.map(async (file, index) => {
+    const optimizedFiles = await Promise.all(files.map(optimizeRoomImage));
+    const urls = await Promise.all(optimizedFiles.map(async (file, index) => {
       const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${propertyId}/${roomId}/${index === 0 ? "cover_" : `${index}_`}${Date.now()}_${crypto.randomUUID()}.${extension}`;
       const { error } = await client.storage.from("room-images").upload(path, file, { upsert: false });
