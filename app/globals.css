@@ -181,6 +181,73 @@ div {
   transform: none;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Form labels and spacing                                                    */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * Keep labels physically outside outlined controls so the border is never
+ * interrupted by the label. This applies to TextField and standalone
+ * FormControl/Select inputs while preserving MUI's native input behavior.
+ */
+.MuiTextField-root,
+.MuiFormControl-root:has(> .MuiInputLabel-root) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.MuiTextField-root > .MuiInputLabel-root,
+.MuiFormControl-root:has(> .MuiInputLabel-root) > .MuiInputLabel-root {
+  color: var(--mui-palette-text-primary);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0 0 8px;
+  max-width: 100%;
+  order: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: static;
+  transform: none;
+  transform-origin: left top;
+  white-space: normal;
+}
+
+.MuiTextField-root > .MuiInputLabel-root.Mui-focused,
+.MuiFormControl-root:has(> .MuiInputLabel-root) > .MuiInputLabel-root.Mui-focused {
+  color: var(--mui-palette-text-primary);
+  transform: none;
+}
+
+.MuiTextField-root > .MuiInputBase-root,
+.MuiFormControl-root:has(> .MuiInputLabel-root) > .MuiInputBase-root {
+  order: 1;
+}
+
+.MuiTextField-root > .MuiFormHelperText-root,
+.MuiFormControl-root:has(> .MuiInputLabel-root) > .MuiFormHelperText-root {
+  margin: 6px 0 0;
+  order: 2;
+}
+
+/* Remove the notch because labels now sit above the complete border. */
+.MuiTextField-root .MuiOutlinedInput-notchedOutline legend,
+.MuiFormControl-root:has(> .MuiInputLabel-root)
+  .MuiOutlinedInput-notchedOutline
+  legend {
+  max-width: 0.01px !important;
+  width: 0.01px !important;
+}
+
+/* Clear vertical rhythm between adjacent form controls. */
+.MuiStack-root > .MuiTextField-root + .MuiTextField-root,
+.MuiStack-root > .MuiFormControl-root + .MuiTextField-root,
+.MuiStack-root > .MuiTextField-root + .MuiFormControl-root,
+.MuiStack-root > .MuiFormControl-root + .MuiFormControl-root {
+  margin-top: 4px;
+}
+
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
@@ -234,6 +301,11 @@ input:-webkit-autofill:focus {
 
   .MuiPaper-root {
     scroll-margin-top: 80px;
+  }
+
+  .MuiTextField-root > .MuiInputLabel-root,
+  .MuiFormControl-root:has(> .MuiInputLabel-root) > .MuiInputLabel-root {
+    margin-bottom: 7px;
   }
 
   .MuiAlert-root {
