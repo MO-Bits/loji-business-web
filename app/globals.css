@@ -53,7 +53,9 @@ button,
   touch-action: manipulation;
 }
 
-:focus-visible {
+a:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
   outline: 3px solid
     color-mix(
       in srgb,
@@ -63,9 +65,16 @@ button,
   outline-offset: 2px;
 }
 
-.MuiButtonBase-root:focus-visible,
-.MuiInputBase-root:has(input:focus-visible),
-.MuiInputBase-root:has(textarea:focus-visible) {
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none;
+}
+
+.MuiButtonBase-root:focus-visible {
   outline: none;
 }
 
