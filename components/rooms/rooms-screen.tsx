@@ -38,6 +38,7 @@ import {
 import type { Room } from "@/features/rooms/models/room";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
+import { trackEvent } from "@/lib/analytics";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -100,6 +101,7 @@ export function RoomsScreen() {
     if (!propertyId) return;
     try {
       await setRoomActive(client, propertyId, room, active);
+      trackEvent("room_status_updated", { room_id: room.id, active });
       feedback.success(active ? t("Room activated", "Chumba kimewashwa") : t("Room deactivated", "Chumba kimezimwa"));
       await refresh();
     } catch (cause) {
