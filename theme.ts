@@ -142,80 +142,6 @@ export const theme = createTheme({
         },
       },
     },
-    MuiTextField: {
-      defaultProps: {
-        fullWidth: true,
-        variant: "outlined",
-        size: "medium",
-        slotProps: {
-          inputLabel: { shrink: true },
-          input: { notched: false },
-        },
-      },
-      styleOverrides: {
-        root: {
-          "&:has(> .MuiInputLabel-root)": {
-            marginTop: 24,
-          },
-          "& .MuiOutlinedInput-root": {
-            minHeight: 48,
-          },
-        },
-      },
-    },
-    MuiOutlinedInput: {
-      styleOverrides: {
-        root: {
-          backgroundColor: "var(--mui-palette-background-paper)",
-          transition: "box-shadow 150ms ease, border-color 150ms ease",
-          "& .MuiOutlinedInput-notchedOutline": {
-            borderColor: "var(--mui-palette-divider)",
-          },
-          "&:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: "var(--mui-palette-text-secondary)",
-          },
-          "&.Mui-focused": {
-            boxShadow:
-              "0 0 0 3px color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)",
-          },
-          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-            borderWidth: 1,
-          },
-        },
-        input: {
-          paddingBlock: 13,
-        },
-        multiline: {
-          paddingBlock: 2,
-        },
-      },
-    },
-    MuiFormHelperText: {
-      styleOverrides: {
-        root: {
-          marginInline: 0,
-          marginTop: 6,
-        },
-      },
-    },
-    MuiInputLabel: {
-      styleOverrides: {
-        root: {
-          maxWidth: "100%",
-          overflow: "visible",
-          color: "var(--mui-palette-text-primary)",
-          pointerEvents: "none",
-          transform: "translate(0, -23px) scale(1)",
-          transformOrigin: "left top",
-          "&.MuiInputLabel-shrink": {
-            transform: "translate(0, -23px) scale(1)",
-          },
-          "&.Mui-focused": {
-            color: "var(--mui-palette-primary-main)",
-          },
-        },
-      },
-    },
     MuiPaper: {
       styleOverrides: {
         root: ({ ownerState }) => ({
@@ -474,12 +400,11 @@ export const theme = createTheme({
           WebkitFontSmoothing: "antialiased",
           MozOsxFontSmoothing: "grayscale",
         },
-        "a:focus-visible, button:focus-visible, [role='button']:focus-visible":
-          {
-            outline:
-              "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
-            outlineOffset: 2,
-          },
+        "a:focus-visible, button:focus-visible, [role='button']:focus-visible": {
+          outline:
+            "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
+          outlineOffset: 2,
+        },
       },
     },
   },
