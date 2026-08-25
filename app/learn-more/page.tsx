@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 
+import { FaqSection } from "@/components/content/faq-section";
 import {
   CloudOperationsIllustration,
   ConnectedTeamIllustration,
@@ -294,6 +295,8 @@ export default function LearnMorePage() {
               })}
             </Grid>
           </Box>
+
+          <FaqSection />
 
           <Paper
             component="section"
