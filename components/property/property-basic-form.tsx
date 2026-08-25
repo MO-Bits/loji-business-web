@@ -12,12 +12,9 @@ import {
   Button,
   Chip,
   Container,
-  FormControl,
   IconButton,
-  InputLabel,
   MenuItem,
   Paper,
-  Select,
   Snackbar,
   Stack,
   TextField,
@@ -45,6 +42,7 @@ const amenities = [
   "Gym",
   "Conference Room",
 ];
+
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: "hotel", label: "Hotel" },
   { value: "lodge", label: "Lodge" },
@@ -63,10 +61,12 @@ export function PropertyBasicForm() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [files, setFiles] = useState<File[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
+
   const previews = useMemo(
     () => files.map((file) => URL.createObjectURL(file)),
     [files],
   );
+
   useEffect(() => () => previews.forEach(URL.revokeObjectURL), [previews]);
 
   const pickFiles = (event: ChangeEvent<HTMLInputElement>) => {
@@ -87,6 +87,7 @@ export function PropertyBasicForm() {
     if (!selectedAmenities.length)
       return setLocalError("Select at least one facility.");
     if (!files.length) return setLocalError("Add at least one property photo.");
+
     try {
       await controller.createProperty(
         { name, type, phone, email, amenities: selectedAmenities },
@@ -105,7 +106,7 @@ export function PropertyBasicForm() {
       sx={{ minHeight: "100dvh", pb: 14, pt: { xs: 2, md: 5 } }}
     >
       <Container maxWidth="md">
-        <Stack spacing={3}>
+        <Stack spacing={{ xs: 2.5, sm: 3.5 }}>
           <Button
             startIcon={<ArrowBackRoundedIcon />}
             color="inherit"
@@ -114,6 +115,7 @@ export function PropertyBasicForm() {
           >
             Back
           </Button>
+
           <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
             <Box
               sx={{
@@ -137,13 +139,25 @@ export function PropertyBasicForm() {
           </Stack>
 
           <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
-            <Stack spacing={2.5}>
-              <Typography variant="h6">Property details</Typography>
-              <FormControl fullWidth>
-                <InputLabel>Property type</InputLabel>
-                <Select
-                  value={type}
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="h6">Property details</Typography>
+                <Typography color="text.secondary" variant="body2">
+                  Enter the main information guests and staff will use to identify this property.
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "grid",
+                  gap: { xs: 2.25, sm: 2.5 },
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                }}
+              >
+                <TextField
+                  select
                   label="Property type"
+                  value={type}
                   onChange={(e) => setType(e.target.value as PropertyType)}
                 >
                   {propertyTypes.map((item) => (
@@ -151,37 +165,40 @@ export function PropertyBasicForm() {
                       {item.label}
                     </MenuItem>
                   ))}
-                </Select>
-              </FormControl>
-              <TextField
-                label="Property name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-              <TextField
-                label="Phone"
-                required
-                value={phone}
-                onChange={(e) =>
-                  setPhone(e.target.value.replace(/[^+\d]/g, ""))
-                }
-                inputMode="tel"
-              />
-              <TextField
-                label="Email (optional)"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-              />
+                </TextField>
+
+                <TextField
+                  label="Property name"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+
+                <TextField
+                  label="Phone"
+                  required
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(e.target.value.replace(/[^+\d]/g, ""))
+                  }
+                  slotProps={{ htmlInput: { inputMode: "tel" } }}
+                />
+
+                <TextField
+                  label="Email (optional)"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                />
+              </Box>
             </Stack>
           </Paper>
 
           <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
-            <Stack spacing={2}>
+            <Stack spacing={2.25}>
               <Box>
                 <Typography variant="h6">Amenities</Typography>
-                <Typography color="text.secondary">
+                <Typography color="text.secondary" variant="body2">
                   Select everything available at your property.
                 </Typography>
               </Box>
@@ -210,10 +227,10 @@ export function PropertyBasicForm() {
           </Paper>
 
           <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
-            <Stack spacing={2}>
+            <Stack spacing={2.25}>
               <Box>
                 <Typography variant="h6">Property photos</Typography>
-                <Typography color="text.secondary">
+                <Typography color="text.secondary" variant="body2">
                   Add 1–3 photos. The first photo is your cover.
                 </Typography>
               </Box>
@@ -315,6 +332,7 @@ export function PropertyBasicForm() {
           </Button>
         </Container>
       </Paper>
+
       <Snackbar
         open={Boolean(localError || controller.error)}
         autoHideDuration={5000}
