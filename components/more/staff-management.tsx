@@ -8,6 +8,7 @@ import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import {
   Alert,
   Avatar,
@@ -23,6 +24,7 @@ import {
   FormControl,
   Fab,
   IconButton,
+  InputAdornment,
   InputLabel,
   Menu,
   MenuItem,
@@ -70,6 +72,16 @@ export function StaffManagement() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const visibleStaff = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return staff.filter((member) => {
+      const matchesRole = roleFilter === "all" || member.role.toLowerCase() === roleFilter;
+      const matchesQuery = !normalized || member.displayName.toLowerCase().includes(normalized) || member.email.toLowerCase().includes(normalized);
+      return matchesRole && matchesQuery;
+    });
+  }, [query, roleFilter, staff]);
   const refresh = useCallback(async () => {
     if (!propertyId) return;
     setLoading(true);
@@ -121,6 +133,39 @@ export function StaffManagement() {
             />
           </Tabs>
         </Paper>
+        {tab === 0 ? (
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <TextField
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t("Search staff", "Tafuta wafanyakazi")}
+              size="small"
+              fullWidth
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchRoundedIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
+              }}
+            />
+            <FormControl size="small" sx={{ minWidth: { sm: 180 } }}>
+              <InputLabel>{t("Role", "Jukumu")}</InputLabel>
+              <Select
+                value={roleFilter}
+                label={t("Role", "Jukumu")}
+                onChange={(event) => setRoleFilter(event.target.value)}
+              >
+                <MenuItem value="all">{t("All roles", "Majukumu yote")}</MenuItem>
+                <MenuItem value="owner">{t("Owner", "Mmiliki")}</MenuItem>
+                <MenuItem value="manager">{t("Manager", "Meneja")}</MenuItem>
+                <MenuItem value="receptionist">{t("Receptionist", "Mapokezi")}</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        ) : null}
         {loading ? (
           <Box sx={{ display: "grid", minHeight: 280, placeItems: "center" }}>
             <CircularProgress size={28} />
@@ -142,7 +187,7 @@ export function StaffManagement() {
           </Alert>
         ) : tab === 0 ? (
           <StaffList
-            members={staff}
+            members={visibleStaff}
             propertyId={propertyId ?? ""}
             currentRole={currentRole}
             currentUserId={currentUserId}
@@ -558,6 +603,17 @@ function InviteDialog({
               </MenuItem>
             </Select>
           </FormControl>
+          <Alert severity="info" icon={false}>
+            {role === "manager"
+              ? t(
+                  "Managers receive broad operational access for rooms, bookings and staff.",
+                  "Mameneja hupata ruhusa pana za uendeshaji wa vyumba, uhifadhi na wafanyakazi.",
+                )
+              : t(
+                  "Receptionists can manage daily bookings and guest operations without ownership access.",
+                  "Wahudumu wa mapokezi husimamia uhifadhi na wageni bila ruhusa za umiliki.",
+                )}
+          </Alert>
         </Stack>
       </DialogContent>
       <DialogActions>
