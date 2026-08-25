@@ -123,14 +123,14 @@ export function PropertySwitcher({
           minWidth: 0,
           px: { xs: 0.25, sm: 0.5 },
           py: 0.5,
-          textAlign: { xs: "center", sm: "left" },
+          textAlign: "left",
           "&:hover": canSwitch ? { bgcolor: "action.hover" } : undefined,
         }}
       >
         <Stack
           direction="row"
-          spacing={{ xs: 0.4, sm: 1.1 }}
-          sx={{ alignItems: "center", justifyContent: { xs: "center", sm: "flex-start" }, minWidth: 0 }}
+          spacing={{ xs: 0.25, sm: 1.1 }}
+          sx={{ alignItems: "center", justifyContent: "flex-start", minWidth: 0 }}
         >
           <Avatar
             src={propertyImage}
@@ -156,16 +156,6 @@ export function PropertySwitcher({
               }}
             >
               {propertyName}
-            </Typography>
-            <Typography
-              noWrap
-              color="text.secondary"
-              variant="caption"
-              sx={{ display: { xs: "none", sm: "block" } }}
-            >
-              {canSwitch
-                ? t("Switch property", "Badili jengo")
-                : t("Property workspace", "Eneo la biashara")}
             </Typography>
           </Box>
           {canSwitch && (
