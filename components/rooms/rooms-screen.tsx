@@ -38,6 +38,7 @@ import {
 import type { Room } from "@/features/rooms/models/room";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
+import { useAppFeedback } from "@/components/providers/feedback-provider";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -49,10 +50,13 @@ type RoomFilter = "all" | RoomOperationalStatus;
 
 export function RoomsScreen() {
   const { t } = useLanguage();
+  const feedback = useAppFeedback();
   const { session } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const feedback = useAppFeedback();
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [statuses, setStatuses] = useState<Record<string, RoomOperationalStatus>>({});
+  const [updatingRoomId, setUpdatingRoomId] = useState<string | null>(null);
   const [operationalStatuses, setOperationalStatuses] = useState<Record<string, RoomOperationalStatus>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +94,20 @@ export function RoomsScreen() {
       return matchesStatus && matchesQuery;
     });
   }, [operationalStatuses, query, rooms, status]);
+
+  const updateAvailability = async (room: Room, isActive: boolean) => {
+    if (!propertyId) return;
+    setUpdatingRoomId(room.id);
+    try {
+      await setRoomActive(client, propertyId, room, isActive);
+      feedback.success(isActive ? t("Room activated.", "Chumba kimewashwa.") : t("Room deactivated.", "Chumba kimezimwa."));
+      await refresh();
+    } catch (cause) {
+      feedback.error(cause instanceof Error ? cause.message : t("Unable to update room.", "Imeshindikana kusasisha chumba."));
+    } finally {
+      setUpdatingRoomId(null);
+    }
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => void refresh(), 0);
