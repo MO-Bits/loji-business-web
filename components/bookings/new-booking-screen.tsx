@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
@@ -396,18 +397,22 @@ export function NewBookingScreen() {
                     <Stack direction={{ xs: "column", sm: "row" }}>
                       {room.images[0] ? (
                         <Box
-                          component="img"
-                          src={room.images[0]}
-                          loading="lazy"
-                          decoding="async"
-                          alt={room.name}
                           sx={{
                             aspectRatio: { xs: "16/8", sm: "auto" },
-                            height: { sm: 128 },
-                            objectFit: "cover",
+                            height: { xs: "auto", sm: 128 },
+                            minHeight: { xs: 120, sm: 128 },
+                            position: "relative",
                             width: { xs: "100%", sm: 132 },
                           }}
-                        />
+                        >
+                          <Image
+                            src={room.images[0]}
+                            alt={room.name}
+                            fill
+                            sizes="(max-width: 600px) 100vw, 132px"
+                            style={{ objectFit: "cover" }}
+                          />
+                        </Box>
                       ) : (
                         <Box
                           sx={{
