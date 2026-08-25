@@ -73,4 +73,25 @@ Email: lojipms@gmail.com
 Phone Number: +255772290005` },
 ];
 
-export default function TermsPage() { return <LegalPage kind="terms" title="Terms of Use" introTitle="Loji Business Agreement" intro="Please read these terms carefully before creating an account, accepting an invitation, or using Loji Business." sections={sections} />; }
+const swSections: Array<Pick<LegalSectionData, "swTitle" | "swContent">> = [
+  { swTitle: "1. Kukubali Masharti", swContent: "Kwa kufungua akaunti, kukubali mwaliko au kutumia Loji Business, unakubali masharti haya. Wamiliki wanathibitisha kuwa wana mamlaka ya kusimamia biashara, na wafanyakazi watatumia mfumo kulingana na ruhusa walizopewa." },
+  { swTitle: "2. Kuhusu Loji Business", swContent: "Loji Business hutoa zana za kidijitali kwa hoteli, lodge, nyumba za wageni, apartment na biashara zinazofanana. Mfumo husaidia kusimamia majengo, vyumba, uhifadhi, wageni, wafanyakazi na shughuli; haumiliki wala kuendesha biashara yako." },
+  { swTitle: "3. Akaunti, Majukumu na Ufikiaji", swContent: "Mfumo una majukumu ya Mmiliki, Meneja, Mapokezi na wafanyakazi wengine walioidhinishwa. Wasimamizi wanawajibika kutoa na kuondoa ruhusa. Kila mtumiaji anatakiwa kulinda akaunti yake na anawajibika kwa vitendo vinavyofanywa kupitia akaunti hiyo." },
+  { swTitle: "4. Taarifa za Jengo na Biashara", swContent: "Watumiaji wanaweza kuweka taarifa za jengo, vyumba, bei, uhifadhi, wageni na wafanyakazi. Biashara na watumiaji wake wanawajibika kuhakikisha taarifa hizo ni sahihi." },
+  { swTitle: "5. Umiliki wa Taarifa za Biashara", swContent: "Taarifa zilizohifadhiwa kwenye eneo la kazi ni mali ya biashara inayomiliki eneo hilo. Wamiliki na wasimamizi walioidhinishwa hudhibiti ufikiaji. Loji Business huchakata taarifa kwa ajili ya kutoa, kulinda na kuboresha huduma." },
+  { swTitle: "6. Wajibu Kuhusu Taarifa za Wageni", swContent: "Biashara na wafanyakazi walioidhinishwa wanawajibika kukusanya na kusimamia taarifa za wageni kwa mujibu wa sheria. Mtumiaji anapaswa kuona taarifa zinazohitajika tu kwa kazi yake." },
+  { swTitle: "7. Ruhusa za Wafanyakazi", swContent: "Wamiliki na wasimamizi huamua ruhusa za wafanyakazi kwenye uhifadhi, vyumba, wageni, ripoti na mipangilio. Mfanyakazi hatakiwi kujaribu kufikia taarifa au huduma nje ya ruhusa alizopewa." },
+  { swTitle: "8. Matumizi Yanayokubalika", swContent: "Hairuhusiwi kutumia mfumo kwa vitendo haramu, kufikia biashara nyingine bila ruhusa, kushirikisha akaunti na mtu asiyeidhinishwa, kukwepa ulinzi, kupakia programu hatarishi au kutumia vibaya taarifa. Ukiukaji unaweza kusababisha ufikiaji kuzuiwa au kusitishwa." },
+  { swTitle: "9. Upatikanaji wa Huduma", swContent: "Tunalenga kuweka Loji Business salama na inayopatikana. Huduma inaweza kusimama kwa muda kutokana na matengenezo, masasisho ya usalama, hitilafu za kiufundi au huduma za washirika. Tutafanya juhudi stahiki kuirejesha." },
+  { swTitle: "10. Malipo na Usajili", swContent: "Baadhi ya huduma zinaweza kuhitaji malipo au usajili. Bei itaonyeshwa kabla ya ununuzi. Akaunti yenye deni inaweza kuwekewa mipaka, na bei zinaweza kubadilishwa kwa taarifa ya kutosha." },
+  { swTitle: "11. Huduma za Watoa Huduma Wengine", swContent: "Loji Business inaweza kutumia watoa huduma za uthibitishaji, wingu, hifadhi, ramani, malipo na arifa. Huduma hizo zinaweza kuwa na masharti na sera zao." },
+  { swTitle: "12. Kusimamisha au Kufunga Akaunti", swContent: "Mmiliki anaweza kuondoa ufikiaji wa mfanyakazi wakati wowote. Loji Business inaweza kusimamisha akaunti inayokiuka masharti, kuhatarisha usalama, kufanya udanganyifu au kujaribu ufikiaji usioidhinishwa." },
+  { swTitle: "13. Kikomo cha Dhima", swContent: "Loji Business ni zana ya kusaidia shughuli za malazi. Hatuwajibiki kwa mapato yaliyopotea, uhifadhi uliokosekana, taarifa zisizo sahihi zilizoingizwa na watumiaji, maamuzi ya biashara au matatizo ya huduma za nje. Biashara inabaki kuwajibika kwa shughuli zake." },
+  { swTitle: "14. Mabadiliko ya Masharti", swContent: "Tunaweza kusasisha masharti haya kadiri huduma inavyokua. Mabadiliko muhimu yanaweza kutangazwa kupitia programu au njia rasmi. Kuendelea kutumia huduma kunamaanisha umekubali masharti yaliyosasishwa." },
+  { swTitle: "15. Sheria Inayotumika", swContent: "Masharti haya yanaongozwa na sheria za Jamhuri ya Muungano wa Tanzania. Migogoro itaanza kutatuliwa kwa mazungumzo ya nia njema, na ikishindikana inaweza kupelekwa katika mahakama husika za Tanzania." },
+  { swTitle: "16. Wasiliana Nasi", swContent: "Kwa maswali kuhusu masharti haya, wasiliana na msaada wa Loji Business.\n\nBarua pepe: lojipms@gmail.com\nSimu: +255772290005" },
+];
+
+const localizedSections = sections.map((section, index) => ({ ...section, ...swSections[index] }));
+
+export default function TermsPage() { return <LegalPage kind="terms" title="Terms of Use" introTitle="Loji Business Agreement" intro="Please read these terms carefully before creating an account, accepting an invitation, or using Loji Business." sections={localizedSections} swTitle="Masharti ya Matumizi" swIntroTitle="Makubaliano ya Loji Business" swIntro="Soma masharti haya kwa makini kabla ya kufungua akaunti, kukubali mwaliko au kutumia Loji Business." />; }
