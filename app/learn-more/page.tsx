@@ -26,7 +26,6 @@ import {
   ConnectedTeamIllustration,
   HospitalityHeroIllustration,
 } from "@/components/content/learn-more-illustrations";
-import { PublicPageHeader } from "@/components/content/public-page-header";
 import { useLanguage } from "@/components/providers/language-provider";
 
 const reasons = [
@@ -115,8 +114,6 @@ export default function LearnMorePage() {
 
   return (
     <Box component="main" sx={{ bgcolor: "background.default", minHeight: "100dvh" }}>
-      <PublicPageHeader />
-
       <Container maxWidth="lg">
         <Stack spacing={{ xs: 8, md: 13 }} sx={{ pb: { xs: 7, md: 11 }, pt: { xs: 6, sm: 8, md: 10 } }}>
           <Box
