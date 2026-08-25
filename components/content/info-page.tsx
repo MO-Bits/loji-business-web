@@ -15,10 +15,14 @@ import {
   Typography,
 } from "@mui/material";
 import Link from "next/link";
+import { useLanguage } from "@/components/providers/language-provider";
 
-export type LegalSectionData = { title: string; content: string };
+export type LegalSectionData = { title: string; content: string; swTitle?: string; swContent?: string };
 
-function LegalSection({ title, content }: LegalSectionData) {
+function LegalSection({ title, content, swTitle, swContent }: LegalSectionData) {
+  const { language } = useLanguage();
+  const localizedTitle = language === "sw" ? swTitle ?? title : title;
+  const localizedContent = language === "sw" ? swContent ?? content : content;
   return (
     <Paper
       component="section"
@@ -38,14 +42,14 @@ function LegalSection({ title, content }: LegalSectionData) {
         />
         <Box>
           <Typography variant="h6" sx={{ mb: 1.5 }}>
-            {title}
+            {localizedTitle}
           </Typography>
           <Typography
             component="div"
             color="text.secondary"
             sx={{ whiteSpace: "pre-line", lineHeight: 1.75 }}
           >
-            {content}
+            {localizedContent}
           </Typography>
         </Box>
       </Stack>
@@ -67,6 +71,7 @@ export function LegalPage({
   sections: LegalSectionData[];
 }) {
   const Icon = kind === "privacy" ? ShieldOutlinedIcon : VerifiedOutlinedIcon;
+  const { t } = useLanguage();
   return (
     <Box component="main" sx={{ minHeight: "100dvh", py: { xs: 2, md: 5 } }}>
       <Container maxWidth="md">
@@ -77,7 +82,7 @@ export function LegalPage({
               href="/login"
               startIcon={<ArrowBackRoundedIcon />}
             >
-              Back
+              {t("Back", "Rudi")}
             </Button>
             <Divider orientation="vertical" flexItem />
             <Typography variant="h5" fontWeight={700}>
@@ -132,7 +137,7 @@ export function LegalPage({
                     sx={{ fontSize: 17 }}
                   />
                   <Typography variant="caption" fontWeight={700}>
-                    Effective Date: August 7, 2026
+                    {t("Effective Date: August 7, 2026", "Tarehe ya kuanza kutumika: 7 Agosti 2026")}
                   </Typography>
                 </Stack>
               </Box>
