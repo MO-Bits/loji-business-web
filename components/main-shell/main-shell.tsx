@@ -6,10 +6,15 @@ import { usePathname, useRouter } from "next/navigation";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
+  BottomNavigation,
+  BottomNavigationAction,
   Box,
   Collapse,
   Divider,
@@ -19,6 +24,7 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Paper,
   Stack,
   Tooltip,
   Typography,
@@ -157,14 +163,27 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         component="main"
         id="main-content"
         tabIndex={-1}
-        sx={{ flex: 1, minWidth: 0, overflowX: "clip", pb: 0 }}
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          overflowX: "clip",
+          pb: { xs: 9, lg: 0 },
+          pt: "64px",
+          "& .MuiFab-root": {
+            "@media (max-width: 1199.95px)": {
+              bottom: "calc(76px + env(safe-area-inset-bottom)) !important",
+            },
+          },
+        }}
       >
         <Box
           sx={{
             bgcolor: "background.paper",
             borderBottom: 1,
             borderColor: "divider",
-            position: "sticky",
+            left: { xs: 0, lg: `${drawerWidth}px` },
+            position: "fixed",
+            right: 0,
             top: 0,
             zIndex: (theme) => theme.zIndex.appBar,
           }}
@@ -247,6 +266,64 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
         {children}
       </Box>
+
+      <Paper
+        component="nav"
+        aria-label={t("Primary navigation", "Menyu kuu")}
+        square
+        elevation={8}
+        sx={{
+          bottom: 0,
+          display: { xs: "block", lg: "none" },
+          left: 0,
+          pb: "env(safe-area-inset-bottom)",
+          position: "fixed",
+          right: 0,
+          zIndex: (theme) => theme.zIndex.appBar,
+        }}
+      >
+        <BottomNavigation
+          showLabels
+          value={
+            pathname.startsWith("/bookings")
+              ? "/bookings"
+              : pathname.startsWith("/rooms")
+                ? "/rooms"
+                : pathname === "/dashboard"
+                  ? "/dashboard"
+                  : "menu"
+          }
+          onChange={(_, value) => {
+            if (value === "menu") {
+              setMobileOpen(true);
+              return;
+            }
+            router.push(String(value));
+          }}
+          sx={{ borderTop: 1, borderColor: "divider", height: 64 }}
+        >
+          <BottomNavigationAction
+            label={t("Home", "Nyumbani")}
+            value="/dashboard"
+            icon={<HomeRoundedIcon />}
+          />
+          <BottomNavigationAction
+            label={t("Bookings", "Uhifadhi")}
+            value="/bookings"
+            icon={<CalendarMonthRoundedIcon />}
+          />
+          <BottomNavigationAction
+            label={t("Rooms", "Vyumba")}
+            value="/rooms"
+            icon={<BedRoundedIcon />}
+          />
+          <BottomNavigationAction
+            label={t("Menu", "Menyu")}
+            value="menu"
+            icon={<MenuRoundedIcon />}
+          />
+        </BottomNavigation>
+      </Paper>
     </Box>
   );
 }
