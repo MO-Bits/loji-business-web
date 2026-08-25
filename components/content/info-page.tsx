@@ -1,59 +1,82 @@
 "use client";
 
-import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import VerifiedOutlinedIcon from "@mui/icons-material/VerifiedOutlined";
 import {
-  alpha,
   Box,
-  Button,
   Container,
   Divider,
-  Paper,
+  Link as MuiLink,
   Stack,
   Typography,
 } from "@mui/material";
-import Link from "next/link";
+
 import { useLanguage } from "@/components/providers/language-provider";
 
-export type LegalSectionData = { title: string; content: string; swTitle?: string; swContent?: string };
+import { PublicPageHeader } from "./public-page-header";
 
-function LegalSection({ title, content, swTitle, swContent }: LegalSectionData) {
+export type LegalSectionData = {
+  title: string;
+  content: string;
+  swTitle?: string;
+  swContent?: string;
+};
+
+function sectionId(index: number) {
+  return `section-${index + 1}`;
+}
+
+function LegalSection({
+  section,
+  index,
+}: {
+  section: LegalSectionData;
+  index: number;
+}) {
   const { language } = useLanguage();
-  const localizedTitle = language === "sw" ? swTitle ?? title : title;
-  const localizedContent = language === "sw" ? swContent ?? content : content;
+  const title =
+    language === "sw" ? section.swTitle ?? section.title : section.title;
+  const content =
+    language === "sw"
+      ? section.swContent ?? section.content
+      : section.content;
+
   return (
-    <Paper
+    <Box
       component="section"
-      variant="outlined"
-      sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 3 }}
+      id={sectionId(index)}
+      sx={{
+        scrollMarginTop: 88,
+        py: { xs: 3.25, sm: 4 },
+      }}
     >
-      <Stack direction="row" spacing={1.5} alignItems="flex-start">
-        <Box
-          sx={{
-            width: 4,
-            height: 20,
-            mt: 0.25,
-            borderRadius: 1,
-            bgcolor: "primary.main",
-            flexShrink: 0,
-          }}
-        />
-        <Box>
-          <Typography variant="h6" sx={{ mb: 1.5 }}>
-            {localizedTitle}
-          </Typography>
-          <Typography
-            component="div"
-            color="text.secondary"
-            sx={{ whiteSpace: "pre-line", lineHeight: 1.75 }}
-          >
-            {localizedContent}
-          </Typography>
-        </Box>
-      </Stack>
-    </Paper>
+      <Typography
+        component="h2"
+        sx={{
+          color: "text.primary",
+          fontSize: { xs: "1.13rem", sm: "1.25rem" },
+          fontWeight: 700,
+          letterSpacing: "-.015em",
+          lineHeight: 1.35,
+          mb: 1.5,
+        }}
+      >
+        {title}
+      </Typography>
+      <Typography
+        component="div"
+        color="text.secondary"
+        sx={{
+          fontSize: { xs: ".94rem", sm: "1rem" },
+          lineHeight: 1.82,
+          maxWidth: "72ch",
+          whiteSpace: "pre-line",
+        }}
+      >
+        {content}
+      </Typography>
+    </Box>
   );
 }
 
@@ -78,83 +101,169 @@ export function LegalPage({
 }) {
   const Icon = kind === "privacy" ? ShieldOutlinedIcon : VerifiedOutlinedIcon;
   const { t, language } = useLanguage();
+  const localizedTitle = language === "sw" ? swTitle ?? title : title;
+  const localizedIntroTitle =
+    language === "sw" ? swIntroTitle ?? introTitle : introTitle;
+  const localizedIntro = language === "sw" ? swIntro ?? intro : intro;
+
   return (
-    <Box component="main" sx={{ minHeight: "100dvh", py: { xs: 2, md: 5 } }}>
-      <Container maxWidth="md">
-        <Stack spacing={3}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <Button
-              component={Link}
-              href="/login"
-              startIcon={<ArrowBackRoundedIcon />}
-            >
-              {t("Back", "Rudi")}
-            </Button>
-            <Divider orientation="vertical" flexItem />
-            <Typography variant="h5" fontWeight={700}>
-              {language === "sw" ? swTitle ?? title : title}
-            </Typography>
-          </Stack>
-          <Paper
-            variant="outlined"
-            sx={(theme) => ({
-              p: { xs: 2.5, sm: 3.5 },
-              borderRadius: 1,
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.12)}, ${alpha(theme.palette.background.paper, 0.95)})`,
-            })}
+    <Box
+      component="main"
+      sx={{ bgcolor: "background.default", minHeight: "100dvh" }}
+    >
+      <PublicPageHeader />
+
+      <Container maxWidth="lg">
+        <Box
+          sx={{
+            display: "grid",
+            gap: { xs: 0, md: 7, lg: 10 },
+            gridTemplateColumns: {
+              xs: "minmax(0, 1fr)",
+              md: "220px minmax(0, 720px)",
+            },
+            justifyContent: "center",
+            py: { xs: 5, sm: 7, md: 9 },
+          }}
+        >
+          <Box
+            component="aside"
+            sx={{
+              alignSelf: "start",
+              display: { xs: "none", md: "block" },
+              position: "sticky",
+              top: 92,
+            }}
           >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2.5}
-              alignItems={{ sm: "center" }}
+            <Typography
+              color="text.secondary"
+              variant="overline"
+              sx={{ fontWeight: 700, letterSpacing: ".1em" }}
             >
+              {t("On this page", "Katika ukurasa huu")}
+            </Typography>
+            <Stack
+              component="nav"
+              aria-label={t("Page sections", "Sehemu za ukurasa")}
+              spacing={0.35}
+              sx={{ mt: 1.25 }}
+            >
+              {sections.map((section, index) => (
+                <MuiLink
+                  href={`#${sectionId(index)}`}
+                  key={section.title}
+                  underline="none"
+                  sx={{
+                    borderLeft: "2px solid",
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    fontSize: ".78rem",
+                    lineHeight: 1.35,
+                    pl: 1.25,
+                    py: .45,
+                    transition: "color 150ms ease, border-color 150ms ease",
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      color: "text.primary",
+                    },
+                  }}
+                >
+                  {language === "sw"
+                    ? section.swTitle ?? section.title
+                    : section.title}
+                </MuiLink>
+              ))}
+            </Stack>
+          </Box>
+
+          <Box>
+            <Stack spacing={2.25} sx={{ mb: { xs: 3, sm: 4 } }}>
               <Box
                 sx={{
-                  width: 54,
-                  height: 54,
+                  alignItems: "center",
+                  bgcolor: "action.hover",
+                  border: "1px solid",
+                  borderColor: "divider",
                   borderRadius: 1,
+                  color: "primary.main",
                   display: "grid",
+                  height: 48,
                   placeItems: "center",
-                  bgcolor: "primary.main",
-                  color: "primary.contrastText",
-                  flexShrink: 0,
+                  width: 48,
                 }}
               >
                 <Icon />
               </Box>
-              <Box>
-                <Typography variant="h6" color="primary.main" fontWeight={700}>
-                  {language === "sw" ? swIntroTitle ?? introTitle : introTitle}
+              <Typography
+                component="h1"
+                sx={{
+                  fontSize: { xs: "2.25rem", sm: "3.25rem" },
+                  fontWeight: 700,
+                  letterSpacing: "-.05em",
+                  lineHeight: 1.05,
+                }}
+              >
+                {localizedTitle}
+              </Typography>
+              <Typography
+                color="text.primary"
+                sx={{
+                  fontSize: { xs: "1.05rem", sm: "1.2rem" },
+                  fontWeight: 600,
+                  letterSpacing: "-.015em",
+                }}
+              >
+                {localizedIntroTitle}
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{ fontSize: { xs: ".96rem", sm: "1.03rem" }, lineHeight: 1.75 }}
+              >
+                {localizedIntro}
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={0.75}
+                sx={{ alignItems: "center", color: "text.secondary" }}
+              >
+                <CalendarMonthRoundedIcon sx={{ fontSize: 16 }} />
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                  {t(
+                    "Effective 7 August 2026",
+                    "Inaanza kutumika 7 Agosti 2026",
+                  )}
                 </Typography>
-                <Typography
-                  color="text.secondary"
-                  sx={{ mt: 0.75, lineHeight: 1.65 }}
-                >
-                  {language === "sw" ? swIntro ?? intro : intro}
-                </Typography>
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  alignItems="center"
-                  sx={{ mt: 1.5 }}
-                >
-                  <CalendarMonthRoundedIcon
-                    color="primary"
-                    sx={{ fontSize: 17 }}
-                  />
-                  <Typography variant="caption" fontWeight={700}>
-                    {t("Effective Date: August 7, 2026", "Tarehe ya kuanza kutumika: 7 Agosti 2026")}
-                  </Typography>
-                </Stack>
-              </Box>
+              </Stack>
             </Stack>
-          </Paper>
-          <Stack spacing={2}>
-            {sections.map((section) => (
-              <LegalSection key={section.title} {...section} />
-            ))}
-          </Stack>
-        </Stack>
+
+            <Divider />
+
+            <Box>
+              {sections.map((section, index) => (
+                <Box key={section.title}>
+                  <LegalSection section={section} index={index} />
+                  {index < sections.length - 1 ? <Divider /> : null}
+                </Box>
+              ))}
+            </Box>
+
+            <Box
+              sx={{
+                borderTop: "1px solid",
+                borderColor: "divider",
+                mt: 3,
+                pt: 3,
+              }}
+            >
+              <Typography color="text.secondary" variant="caption">
+                {t(
+                  "Questions about this document? Contact lojipms@gmail.com.",
+                  "Una swali kuhusu waraka huu? Wasiliana kupitia lojipms@gmail.com.",
+                )}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Container>
     </Box>
   );
