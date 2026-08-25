@@ -30,6 +30,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Skeleton,
   Snackbar,
   Stack,
   Tab,
@@ -168,9 +169,15 @@ export function StaffManagement() {
           </Stack>
         ) : null}
         {loading ? (
-          <Box sx={{ display: "grid", minHeight: 280, placeItems: "center" }}>
-            <CircularProgress size={28} />
-          </Box>
+          <Stack spacing={1} aria-label={t("Loading staff", "Inapakia wafanyakazi")}>
+            {[0, 1, 2, 3].map((item) => (
+              <Paper key={item} variant="outlined" sx={{ alignItems: "center", display: "flex", gap: 1.5, p: 2 }}>
+                <Skeleton height={42} variant="circular" width={42} />
+                <Box sx={{ flex: 1 }}><Skeleton width="40%" /><Skeleton width="65%" /></Box>
+                <Skeleton height={28} width={72} />
+              </Paper>
+            ))}
+          </Stack>
         ) : error ? (
           <Alert
             severity="error"
