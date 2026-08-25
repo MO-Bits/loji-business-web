@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/types/database.types";
 import type { Membership } from "../models/app-session";
+import { trackEvent } from "@/lib/analytics";
 
 export const ACTIVE_PROPERTY_STORAGE_KEY = "loji.activePropertyId";
 
@@ -13,6 +14,7 @@ export function readPreferredPropertyId() {
 export function savePreferredPropertyId(propertyId: string) {
   if (typeof window !== "undefined") {
     window.localStorage.setItem(ACTIVE_PROPERTY_STORAGE_KEY, propertyId);
+    trackEvent("property_switched", { property_id: propertyId });
     window.dispatchEvent(new CustomEvent("loji:property-change", { detail: propertyId }));
   }
 }
