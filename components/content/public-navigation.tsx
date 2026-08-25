@@ -46,19 +46,22 @@ export function PublicNavigation() {
     { href: "/privacy", label: t("Privacy Policy", "Sera ya faragha") },
   ];
 
+  const toggleLanguage = () => setLanguage(language === "en" ? "sw" : "en");
+
   return (
     <>
       <Box
         component="header"
         sx={{
           alignItems: "center",
-          bgcolor: "background.paper",
+          backdropFilter: "saturate(150%) blur(14px)",
+          bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 94%, transparent)",
           borderBottom: 1,
           borderColor: "divider",
           display: "flex",
           height: 64,
           left: 0,
-          px: { xs: 2.25, sm: 3.5 },
+          px: { xs: 2, sm: 3.5 },
           position: "fixed",
           right: 0,
           top: 0,
@@ -79,7 +82,7 @@ export function PublicNavigation() {
         <Stack
           component="nav"
           direction="row"
-          spacing={0.25}
+          spacing={0.15}
           sx={{
             alignItems: "center",
             display: { xs: "none", md: "flex" },
@@ -98,14 +101,15 @@ export function PublicNavigation() {
                 sx={{
                   color: active ? "text.primary" : "text.secondary",
                   fontSize: ".82rem",
-                  fontWeight: active ? 700 : 500,
+                  fontWeight: active ? 700 : 550,
                   minHeight: 38,
-                  px: 1.4,
+                  px: 1.35,
+                  position: "relative",
                   "&::after": active
                     ? {
                         bgcolor: "primary.main",
-                        borderRadius: 1,
-                        bottom: 2,
+                        borderRadius: 99,
+                        bottom: 1,
                         content: '""',
                         height: 2,
                         left: 14,
@@ -123,8 +127,8 @@ export function PublicNavigation() {
 
         <Stack
           direction="row"
-          spacing={0.75}
-          sx={{ alignItems: "center", display: { xs: "none", md: "flex" }, ml: 2 }}
+          spacing={0.65}
+          sx={{ alignItems: "center", display: { xs: "none", md: "flex" }, ml: 1.75 }}
         >
           <ThemeModeSelect compact />
           <TranslateRoundedIcon aria-hidden sx={{ color: "text.secondary", fontSize: 17 }} />
@@ -147,13 +151,35 @@ export function PublicNavigation() {
           </Select>
         </Stack>
 
-        <IconButton
-          aria-label={t("Open navigation", "Fungua menyu")}
-          onClick={() => setMobileOpen(true)}
-          sx={{ display: { md: "none" }, ml: "auto" }}
+        <Stack
+          direction="row"
+          spacing={0.25}
+          sx={{ alignItems: "center", display: { xs: "flex", md: "none" }, ml: "auto" }}
         >
-          <MenuRoundedIcon />
-        </IconButton>
+          <Button
+            aria-label={t("Change language", "Badili lugha")}
+            onClick={toggleLanguage}
+            color="inherit"
+            size="small"
+            startIcon={<TranslateRoundedIcon sx={{ fontSize: "17px !important" }} />}
+            sx={{
+              color: "text.secondary",
+              fontSize: ".76rem",
+              fontWeight: 750,
+              minHeight: 40,
+              minWidth: 0,
+              px: 1,
+            }}
+          >
+            {language === "en" ? "SW" : "EN"}
+          </Button>
+          <IconButton
+            aria-label={t("Open navigation", "Fungua menyu")}
+            onClick={() => setMobileOpen(true)}
+          >
+            <MenuRoundedIcon />
+          </IconButton>
+        </Stack>
       </Box>
 
       <Box aria-hidden sx={{ height: 64 }} />
@@ -162,9 +188,22 @@ export function PublicNavigation() {
         anchor="right"
         onClose={() => setMobileOpen(false)}
         open={mobileOpen}
-        slotProps={{ paper: { sx: { p: 2, width: "min(86vw, 320px)" } } }}
+        slotProps={{
+          paper: {
+            sx: {
+              p: 2,
+              width: "min(88vw, 330px)",
+            },
+          },
+        }}
       >
         <BrandLockup priority symbolSize={30} textSize="1rem" />
+        <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>
+          {t(
+            "Hospitality operations, kept simple.",
+            "Usimamizi wa malazi, kwa urahisi.",
+          )}
+        </Typography>
         <Divider sx={{ my: 2 }} />
 
         <List component="nav" disablePadding>
@@ -178,14 +217,14 @@ export function PublicNavigation() {
                 key={item.href}
                 onClick={() => setMobileOpen(false)}
                 selected={active}
-                sx={{ mb: 0.5, minHeight: 46 }}
+                sx={{ mb: 0.4, minHeight: 46, px: 1.5 }}
               >
                 <ListItemText
                   primary={item.label}
                   slotProps={{
                     primary: {
                       fontSize: ".9rem",
-                      fontWeight: active ? 700 : 500,
+                      fontWeight: active ? 700 : 550,
                     },
                   }}
                 />
@@ -194,8 +233,12 @@ export function PublicNavigation() {
           })}
         </List>
 
+        <Box sx={{ flex: 1 }} />
         <Divider sx={{ my: 2 }} />
-        <Typography color="text.secondary" sx={{ fontSize: ".7rem", fontWeight: 700, mb: 1.25 }}>
+        <Typography
+          color="text.secondary"
+          sx={{ fontSize: ".7rem", fontWeight: 750, letterSpacing: ".06em", mb: 1.25 }}
+        >
           {t("PREFERENCES", "MAPENDELEO")}
         </Typography>
         <Stack spacing={1.25}>
