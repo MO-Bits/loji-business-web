@@ -30,7 +30,7 @@ export async function getInvitations(supabase: SupabaseClient<Database>, propert
   return data.map((item) => ({ id: item.id, email: item.email, role: item.role, status: item.status ?? "pending", token: item.token ?? "", createdAt: item.created_at ? parseDatabaseDate(item.created_at) : null }));
 }
 
-async function rpc(supabase: SupabaseClient<Database>, name: "change_staff_role" | "remove_staff" | "delete_property_invitation" | "invite_staff", args: Record<string, string>, fallback: string) {
+async function rpc(supabase: SupabaseClient<Database>, name: "remove_staff" | "delete_property_invitation" | "invite_staff", args: Record<string, string>, fallback: string) {
   const { data, error } = await supabase.rpc(name, args as never);
   if (error) throw new Error(error.message);
   rpcMessage(data, fallback);
@@ -41,7 +41,21 @@ export async function updateStaffStatus(supabase: SupabaseClient<Database>, prop
   if (error) throw new Error(error.message);
 }
 
-export const changeStaffRole = (client: SupabaseClient<Database>, propertyUserId: string, role: string) => rpc(client, "change_staff_role", { p_property_user_id: propertyUserId, p_role: role }, "Failed to change staff role");
+export async function changeStaffRole(
+  supabase: SupabaseClient<Database>,
+  propertyId: string,
+  staffUserId: string,
+  role: "manager" | "receptionist",
+) {
+  const { data, error } = await supabase.rpc("change_staff_role", {
+    p_property_id: propertyId,
+    p_staff_user_id: staffUserId,
+    p_role: role,
+  } as never);
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 export const removeStaff = (client: SupabaseClient<Database>, propertyId: string, propertyUserId: string) => rpc(client, "remove_staff", { p_property_id: propertyId, p_property_user_id: propertyUserId }, "Failed to remove staff");
 export const deleteInvitation = (client: SupabaseClient<Database>, propertyId: string, invitationId: string) => rpc(client, "delete_property_invitation", { p_property_id: propertyId, p_invitation_id: invitationId }, "Failed to delete invitation");
 export const inviteStaff = (client: SupabaseClient<Database>, propertyId: string, email: string, role: string) => rpc(client, "invite_staff", { p_property_id: propertyId, p_email: email, p_role: role }, "Failed to send invitation");
