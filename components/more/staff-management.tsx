@@ -57,6 +57,7 @@ import {
 import { formatLocalDateTime } from "@/lib/date-time";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { useLanguage } from "@/components/providers/language-provider";
+import { trackEvent } from "@/lib/analytics";
 
 export function StaffManagement() {
   const { t } = useLanguage();
@@ -211,6 +212,7 @@ export function StaffManagement() {
             () => inviteStaff(supabase, propertyId, email, role),
             "Invitation sent successfully",
           );
+          trackEvent("staff_invited", { role });
           setInviteOpen(false);
         }}
       />
