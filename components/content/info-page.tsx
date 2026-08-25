@@ -63,15 +63,21 @@ export function LegalPage({
   introTitle,
   intro,
   sections,
+  swTitle,
+  swIntroTitle,
+  swIntro,
 }: {
   kind: "terms" | "privacy";
   title: string;
   introTitle: string;
   intro: string;
   sections: LegalSectionData[];
+  swTitle?: string;
+  swIntroTitle?: string;
+  swIntro?: string;
 }) {
   const Icon = kind === "privacy" ? ShieldOutlinedIcon : VerifiedOutlinedIcon;
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   return (
     <Box component="main" sx={{ minHeight: "100dvh", py: { xs: 2, md: 5 } }}>
       <Container maxWidth="md">
@@ -86,7 +92,7 @@ export function LegalPage({
             </Button>
             <Divider orientation="vertical" flexItem />
             <Typography variant="h5" fontWeight={700}>
-              {title}
+              {language === "sw" ? swTitle ?? title : title}
             </Typography>
           </Stack>
           <Paper
@@ -118,13 +124,13 @@ export function LegalPage({
               </Box>
               <Box>
                 <Typography variant="h6" color="primary.main" fontWeight={700}>
-                  {introTitle}
+                  {language === "sw" ? swIntroTitle ?? introTitle : introTitle}
                 </Typography>
                 <Typography
                   color="text.secondary"
                   sx={{ mt: 0.75, lineHeight: 1.65 }}
                 >
-                  {intro}
+                  {language === "sw" ? swIntro ?? intro : intro}
                 </Typography>
                 <Stack
                   direction="row"
