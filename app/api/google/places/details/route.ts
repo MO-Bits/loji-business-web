@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
+import { rateLimit, rateLimitHeaders, requestIdentity } from "@/lib/server/rate-limit";
 
 export async function GET(request: Request) {
+  const limit = rateLimit(`google:${requestIdentity(request)}`, { limit: 40 });
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: "Too many location requests. Please wait a moment and try again." },
+      { status: 429, headers: { ...rateLimitHeaders(limit), "Retry-After": String(Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000))) } },
+    );
+  }
   const key = process.env.GOOGLE_PLACES_API_KEY;
   const url = new URL(request.url);
   const placeId = url.searchParams.get("placeId");
