@@ -13,6 +13,7 @@ export function readPreferredPropertyId() {
 export function savePreferredPropertyId(propertyId: string) {
   if (typeof window !== "undefined") {
     window.localStorage.setItem(ACTIVE_PROPERTY_STORAGE_KEY, propertyId);
+    window.dispatchEvent(new CustomEvent("loji:property-change", { detail: propertyId }));
   }
 }
 
