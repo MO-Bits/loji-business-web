@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
@@ -41,6 +41,8 @@ const money = new Intl.NumberFormat("en-TZ", {
   currency: "TZS",
   maximumFractionDigits: 0,
 });
+const BOOKING_DRAFT_KEY = "loji-new-booking-draft";
+
 const tomorrow = () => {
   const value = new Date();
   value.setDate(value.getDate() + 1);
@@ -85,9 +87,48 @@ export function NewBookingScreen() {
     paymentMethod: "cash",
     transactionRef: "",
   });
+  const draftReady = useRef(false);
+  const [draftSaved, setDraftSaved] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof typeof form, string>>
   >({});
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(BOOKING_DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved) as {
+          checkIn?: string;
+          checkOut?: string;
+          adults?: number;
+          children?: number;
+          form?: Partial<typeof form>;
+        };
+        if (draft.checkIn) setCheckIn(draft.checkIn);
+        if (draft.checkOut) setCheckOut(draft.checkOut);
+        if (typeof draft.adults === "number") setAdults(Math.max(1, draft.adults));
+        if (typeof draft.children === "number") setChildren(Math.max(0, draft.children));
+        if (draft.form) setForm((current) => ({ ...current, ...draft.form }));
+      }
+    } catch {
+      window.localStorage.removeItem(BOOKING_DRAFT_KEY);
+    } finally {
+      draftReady.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!draftReady.current) return;
+    setDraftSaved(false);
+    const timer = window.setTimeout(() => {
+      window.localStorage.setItem(
+        BOOKING_DRAFT_KEY,
+        JSON.stringify({ checkIn, checkOut, adults, children, form }),
+      );
+      setDraftSaved(true);
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [adults, checkIn, checkOut, children, form]);
+
   const field = (name: keyof typeof form) => ({
     value: form[name],
     error: Boolean(fieldErrors[name]),
@@ -206,6 +247,7 @@ export function NewBookingScreen() {
         booking && typeof booking === "object" && !Array.isArray(booking)
           ? String(booking.id ?? "")
           : "";
+      window.localStorage.removeItem(BOOKING_DRAFT_KEY);
       feedback.success("Booking created successfully.");
       router.replace(id ? `/bookings/${id}` : "/bookings");
       router.refresh();
@@ -237,6 +279,9 @@ export function NewBookingScreen() {
             >
               Search availability, select a room and enter guest details.
             </Typography>
+            {draftSaved ? (
+              <Typography color="success.main" variant="caption">Draft saved on this device</Typography>
+            ) : null}
           </Box>
         </Stack>
         <Stepper
@@ -351,6 +396,8 @@ export function NewBookingScreen() {
                         <Box
                           component="img"
                           src={room.images[0]}
+                          loading="lazy"
+                          decoding="async"
                           alt={room.name}
                           sx={{
                             aspectRatio: { xs: "16/8", sm: "auto" },
@@ -401,6 +448,11 @@ export function NewBookingScreen() {
             )}
           </Paper>
         )}
+        {Object.keys(fieldErrors).length > 0 ? (
+          <Alert severity="warning">
+            {Object.keys(fieldErrors).length} required guest field{Object.keys(fieldErrors).length === 1 ? "" : "s"} need attention before confirmation.
+          </Alert>
+        ) : null}
         {selected && (
           <ResponsiveBookingContainer
             open={guestSheetOpen}
