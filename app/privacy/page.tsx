@@ -58,4 +58,24 @@ Email: lojipms@gmail.com
 Phone Number: +255772290005` },
 ];
 
-export default function PrivacyPage() { return <LegalPage kind="privacy" title="Privacy Policy" introTitle="Loji Business Privacy Commitment" intro="This Privacy Policy explains how Loji Business collects, uses, stores, and protects information when owners and staff use our property management platform." sections={sections} />; }
+const swSections: Array<Pick<LegalSectionData, "swTitle" | "swContent">> = [
+  { swTitle: "1. Taarifa Tunazokusanya", swContent: "Tunakusanya taarifa zinazohitajika kutoa huduma, ikiwemo taarifa za akaunti, jengo, vyumba, bei, uhifadhi, wageni, wafanyakazi, kifaa, kumbukumbu za mfumo na matumizi. Taarifa halisi hutegemea huduma na ruhusa unazotumia." },
+  { swTitle: "2. Majukumu na Ufikiaji wa Taarifa", swContent: "Loji Business ina Wamiliki, Mameneja, Mapokezi na wafanyakazi wengine walioidhinishwa. Wamiliki na wasimamizi hudhibiti ufikiaji; mfanyakazi huona taarifa na huduma zinazoruhusiwa kwa jukumu lake." },
+  { swTitle: "3. Jinsi Tunavyotumia Taarifa", swContent: "Tunatumia taarifa kutoa huduma za jengo, vyumba, uhifadhi na wageni; kuthibitisha watumiaji; kulinda mfumo; kutekeleza ruhusa; kuboresha uaminifu; kutoa msaada na arifa; na kugundua matumizi mabaya." },
+  { swTitle: "4. Umiliki wa Taarifa za Biashara", swContent: "Taarifa za biashara ni mali ya biashara inayomiliki eneo la kazi. Wamiliki na wasimamizi walioidhinishwa hudhibiti ufikiaji. Loji Business haidai umiliki wa taarifa za jengo, wageni au shughuli zako." },
+  { swTitle: "5. Taarifa za Wageni na Wajibu wa Faragha", swContent: "Biashara ndiyo inayowajibika kukusanya taarifa za wageni kisheria, kusimamia ruhusa za wafanyakazi na kutumia taarifa kwa madhumuni halali. Loji Business hutoa zana za usimamizi lakini haiamui namna biashara inavyokusanya taarifa." },
+  { swTitle: "6. Usalama wa Taarifa", swContent: "Tunatumia hatua stahiki kama uthibitishaji salama, mawasiliano yaliyosimbwa, ruhusa, miundombinu salama ya wingu na ufuatiliaji. Hakuna huduma ya mtandaoni inayoweza kuahidi usalama kamili, hivyo tunaendelea kuboresha ulinzi." },
+  { swTitle: "7. Huduma za Watoa Huduma Wengine", swContent: "Tunaweza kutumia huduma za uthibitishaji, hosting, hifadhidata, hifadhi, ramani, malipo na arifa. Watoa huduma hao huchakata taarifa kwa kiwango kinachohitajika kutoa huduma zao." },
+  { swTitle: "8. Taarifa za Mahali", swContent: "Baadhi ya huduma zinaweza kuomba mahali ulipo kwa ajili ya kusanidi jengo, ramani na utafutaji wa karibu. Ruhusa hii ni hiari na inaweza kudhibitiwa kwenye mipangilio ya kifaa." },
+  { swTitle: "9. Haki Zako za Faragha", swContent: "Kwa mujibu wa sheria, unaweza kuomba kuona taarifa zako, kusahihisha taarifa zisizo sahihi, kufuta akaunti na kupata maelezo ya uchakataji. Wamiliki wanaweza pia kusimamia au kuondoa ufikiaji wa wafanyakazi." },
+  { swTitle: "10. Muda wa Kuhifadhi Taarifa", swContent: "Tunahifadhi taarifa kwa muda unaohitajika kutoa huduma, kutunza kumbukumbu za biashara, kulinda mfumo, kutimiza sheria na kutatua migogoro. Baadhi ya taarifa zinaweza kubaki kwa sababu za kisheria au kiutendaji." },
+  { swTitle: "11. Kufuta Akaunti", swContent: "Mtumiaji anaweza kuomba akaunti ifutwe. Mmiliki anapaswa kuhifadhi kumbukumbu muhimu kabla ya kufuta eneo la kazi. Baadhi ya taarifa zinaweza kuhifadhiwa kwa mahitaji ya sheria, usalama au uzingatiaji." },
+  { swTitle: "12. Faragha ya Watoto", swContent: "Loji Business imekusudiwa kwa watumiaji wa biashara. Hatutoi akaunti kwa watoto kwa kujua wala kukusanya kwa makusudi taarifa zao binafsi." },
+  { swTitle: "13. Mabadiliko ya Sera Hii", swContent: "Tunaweza kusasisha sera hii huduma, teknolojia au sheria zinapobadilika. Mabadiliko muhimu yanaweza kutangazwa kupitia programu au njia rasmi. Kuendelea kutumia huduma kunamaanisha umekubali sera iliyosasishwa." },
+  { swTitle: "14. Sheria Inayotumika", swContent: "Sera hii inaongozwa na sheria zinazotumika za Jamhuri ya Muungano wa Tanzania. Tunalenga kushughulikia taarifa binafsi kwa uwajibikaji, uwazi na usalama." },
+  { swTitle: "15. Wasiliana Nasi", swContent: "Kwa maswali ya faragha, maombi ya taarifa au masuala ya usalama, wasiliana na msaada wa Loji Business.\n\nBarua pepe: lojipms@gmail.com\nSimu: +255772290005" },
+];
+
+const localizedSections = sections.map((section, index) => ({ ...section, ...swSections[index] }));
+
+export default function PrivacyPage() { return <LegalPage kind="privacy" title="Privacy Policy" introTitle="Loji Business Privacy Commitment" intro="This Privacy Policy explains how Loji Business collects, uses, stores, and protects information when owners and staff use our property management platform." sections={localizedSections} swTitle="Sera ya Faragha" swIntroTitle="Ahadi ya Faragha ya Loji Business" swIntro="Sera hii inaeleza jinsi Loji Business inavyokusanya, kutumia, kuhifadhi na kulinda taarifa wakati wamiliki na wafanyakazi wanatumia mfumo." />; }
