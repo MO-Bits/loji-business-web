@@ -56,6 +56,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(Boolean(roomId));
   const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!roomId || !session?.activePropertyId) return;
     getRoom(client, session.activePropertyId, roomId)
@@ -78,8 +79,10 @@ export function RoomForm({ roomId }: { roomId?: string }) {
       )
       .finally(() => setInitialLoading(false));
   }, [client, roomId, session?.activePropertyId]);
+
   const previews = useMemo(() => files.map(URL.createObjectURL), [files]);
   useEffect(() => () => previews.forEach(URL.revokeObjectURL), [previews]);
+
   const pick = (event: ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? []);
     event.target.value = "";
@@ -89,6 +92,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
       return setError("Each image must be under 5 MB.");
     setFiles((current) => [...current, ...picked]);
   };
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const propertyId = session?.activePropertyId;
@@ -99,6 +103,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     if (!amenities.length) return setError("Select at least one amenity.");
     if (!existingImages.length && !files.length)
       return setError("Add at least one room image.");
+
     setLoading(true);
     setError(null);
     try {
@@ -131,12 +136,14 @@ export function RoomForm({ roomId }: { roomId?: string }) {
       setLoading(false);
     }
   };
+
   if (initialLoading)
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
         <Typography>Loading room…</Typography>
       </Container>
     );
+
   return (
     <Container
       component="form"
@@ -144,7 +151,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
       maxWidth="md"
       sx={{ py: { xs: 3, md: 5 } }}
     >
-      <Stack spacing={3}>
+      <Stack spacing={{ xs: 2.5, sm: 3.5 }}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <IconButton aria-label="Back" onClick={() => router.back()}>
             <ArrowBackRoundedIcon />
@@ -158,63 +165,84 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </Typography>
           </Box>
         </Stack>
+
         <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
-          <Stack spacing={2.5}>
-            <Typography variant="h6">Basic information</Typography>
-            <TextField
-              required
-              label="Room name / number"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <TextField
-              select
-              label="Room type"
-              value={roomType}
-              onChange={(e) => setRoomType(e.target.value)}
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="h6">Basic information</Typography>
+              <Typography color="text.secondary" variant="body2">
+                Keep the room name, type, capacity and price clear for staff and guests.
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: "grid",
+                gap: { xs: 2.25, sm: 2.5 },
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+              }}
             >
-              {["single", "master", "suite", "deluxe", "twin", "family"].map(
-                (type) => (
-                  <MenuItem
-                    key={type}
-                    value={type}
-                    sx={{ textTransform: "capitalize" }}
-                  >
-                    {type}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <TextField
-                fullWidth
+                required
+                label="Room name / number"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+
+              <TextField
+                select
+                label="Room type"
+                value={roomType}
+                onChange={(e) => setRoomType(e.target.value)}
+              >
+                {["single", "master", "suite", "deluxe", "twin", "family"].map(
+                  (type) => (
+                    <MenuItem
+                      key={type}
+                      value={type}
+                      sx={{ textTransform: "capitalize" }}
+                    >
+                      {type}
+                    </MenuItem>
+                  ),
+                )}
+              </TextField>
+
+              <TextField
                 label="Guest capacity"
                 type="number"
                 value={capacity}
-                onChange={(e) =>
-                  setCapacity(Math.max(1, Number(e.target.value)))
-                }
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  setCapacity(Number.isFinite(value) ? value : 1);
+                }}
+                onBlur={() => setCapacity((value) => Math.min(20, Math.max(1, value)))}
                 slotProps={{ htmlInput: { min: 1, max: 20 } }}
               />
+
               <TextField
-                fullWidth
                 label="Bed count"
                 type="number"
                 value={bedCount}
-                onChange={(e) =>
-                  setBedCount(Math.max(1, Number(e.target.value)))
-                }
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  setBedCount(Number.isFinite(value) ? value : 1);
+                }}
+                onBlur={() => setBedCount((value) => Math.min(20, Math.max(1, value)))}
                 slotProps={{ htmlInput: { min: 1, max: 20 } }}
               />
-            </Stack>
-            <TextField
-              required
-              label="Price per night (TZS)"
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              slotProps={{ htmlInput: { min: 1 } }}
-            />
+
+              <TextField
+                required
+                label="Price per night (TZS)"
+                type="number"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                slotProps={{ htmlInput: { min: 1 } }}
+                sx={{ gridColumn: { sm: "1 / -1" } }}
+              />
+            </Box>
+
             {roomId && (
               <FormControlLabel
                 control={
@@ -228,11 +256,12 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             )}
           </Stack>
         </Paper>
+
         <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
-          <Stack spacing={2}>
+          <Stack spacing={2.25}>
             <Box>
               <Typography variant="h6">Amenities</Typography>
-              <Typography color="text.secondary">
+              <Typography color="text.secondary" variant="body2">
                 Select at least one amenity.
               </Typography>
             </Box>
@@ -256,11 +285,12 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </Stack>
           </Stack>
         </Paper>
+
         <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
-          <Stack spacing={2}>
+          <Stack spacing={2.25}>
             <Box>
               <Typography variant="h6">Room images</Typography>
-              <Typography color="text.secondary">
+              <Typography color="text.secondary" variant="body2">
                 Add up to 3 images. The first is the cover image.
               </Typography>
             </Box>
@@ -324,6 +354,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </Stack>
           </Stack>
         </Paper>
+
         <Button
           type="submit"
           size="large"
@@ -332,6 +363,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
         >
           {loading ? "Saving room…" : roomId ? "Save changes" : "Create room"}
         </Button>
+
         <Snackbar
           open={Boolean(error)}
           autoHideDuration={6000}
