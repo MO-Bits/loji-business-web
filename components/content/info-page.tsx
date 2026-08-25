@@ -11,9 +11,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
 
 import { useLanguage } from "@/components/providers/language-provider";
-
 
 export type LegalSectionData = {
   title: string;
@@ -44,9 +44,10 @@ function LegalSection({
   return (
     <Box
       component="section"
+      data-legal-section={index}
       id={sectionId(index)}
       sx={{
-        scrollMarginTop: 88,
+        scrollMarginTop: { xs: 88, md: 24 },
         py: { xs: 3.25, sm: 4 },
       }}
     >
@@ -100,80 +101,175 @@ export function LegalPage({
 }) {
   const Icon = kind === "privacy" ? ShieldOutlinedIcon : VerifiedOutlinedIcon;
   const { t, language } = useLanguage();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] = useState(0);
   const localizedTitle = language === "sw" ? swTitle ?? title : title;
   const localizedIntroTitle =
     language === "sw" ? swIntroTitle ?? introTitle : introTitle;
   const localizedIntro = language === "sw" ? swIntro ?? intro : intro;
 
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+
+    const updateActiveSection = () => {
+      const sectionElements = Array.from(
+        root.querySelectorAll<HTMLElement>("[data-legal-section]"),
+      );
+      const rootTop = root.getBoundingClientRect().top;
+      const readingLine = rootTop + 104;
+      let nextActive = 0;
+
+      for (const element of sectionElements) {
+        if (element.getBoundingClientRect().top <= readingLine) {
+          nextActive = Number(element.dataset.legalSection ?? 0);
+        } else {
+          break;
+        }
+      }
+
+      const reachedBottom =
+        root.scrollHeight - root.scrollTop - root.clientHeight < 8;
+      if (reachedBottom && sectionElements.length > 0) {
+        nextActive = sectionElements.length - 1;
+      }
+
+      setActiveSection(nextActive);
+    };
+
+    updateActiveSection();
+    root.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+
+    return () => {
+      root.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+    };
+  }, [sections]);
+
+  const openSection = (index: number) => {
+    const root = contentRef.current;
+    const section = root?.querySelector<HTMLElement>(
+      `#${sectionId(index)}`,
+    );
+    if (!section) return;
+
+    setActiveSection(index);
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.history.replaceState(null, "", `#${sectionId(index)}`);
+  };
+
   return (
     <Box
       component="main"
-      sx={{ bgcolor: "background.default", minHeight: "100dvh" }}
+      sx={{
+        bgcolor: "background.default",
+        height: { xs: "auto", md: "calc(100dvh - 64px)" },
+        minHeight: "calc(100dvh - 64px)",
+      }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth="lg" sx={{ height: { md: "100%" } }}>
         <Box
           sx={{
             display: "grid",
-            gap: { xs: 0, md: 7, lg: 10 },
+            gap: { xs: 0, md: 5, lg: 8 },
             gridTemplateColumns: {
               xs: "minmax(0, 1fr)",
-              md: "220px minmax(0, 720px)",
+              md: "240px minmax(0, 720px)",
             },
+            height: { md: "100%" },
             justifyContent: "center",
-            py: { xs: 5, sm: 7, md: 9 },
+            overflow: { md: "hidden" },
+            py: { xs: 5, sm: 7, md: 0 },
           }}
         >
           <Box
             component="aside"
             sx={{
-              alignSelf: "start",
               display: { xs: "none", md: "block" },
-              position: "sticky",
-              top: 92,
+              height: "100%",
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              pr: 1.5,
+              py: 5,
+              scrollbarColor: "var(--mui-palette-divider) transparent",
+              scrollbarWidth: "thin",
             }}
           >
             <Typography
               color="text.secondary"
               variant="overline"
-              sx={{ fontWeight: 700, letterSpacing: ".1em" }}
+              sx={{
+                display: "block",
+                fontWeight: 700,
+                letterSpacing: ".1em",
+                mb: 1.25,
+              }}
             >
               {t("On this page", "Katika ukurasa huu")}
             </Typography>
+
             <Stack
               component="nav"
               aria-label={t("Page sections", "Sehemu za ukurasa")}
               spacing={0.35}
-              sx={{ mt: 1.25 }}
             >
-              {sections.map((section, index) => (
-                <MuiLink
-                  href={`#${sectionId(index)}`}
-                  key={section.title}
-                  underline="none"
-                  sx={{
-                    borderLeft: "2px solid",
-                    borderColor: "divider",
-                    color: "text.secondary",
-                    fontSize: ".78rem",
-                    lineHeight: 1.35,
-                    pl: 1.25,
-                    py: .45,
-                    transition: "color 150ms ease, border-color 150ms ease",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      color: "text.primary",
-                    },
-                  }}
-                >
-                  {language === "sw"
-                    ? section.swTitle ?? section.title
-                    : section.title}
-                </MuiLink>
-              ))}
+              {sections.map((section, index) => {
+                const active = activeSection === index;
+                return (
+                  <MuiLink
+                    aria-current={active ? "location" : undefined}
+                    href={`#${sectionId(index)}`}
+                    key={section.title}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openSection(index);
+                    }}
+                    underline="none"
+                    sx={{
+                      bgcolor: active ? "action.selected" : "transparent",
+                      borderLeft: "2px solid",
+                      borderColor: active ? "primary.main" : "divider",
+                      borderRadius: "0 6px 6px 0",
+                      color: active ? "primary.main" : "text.secondary",
+                      cursor: "pointer",
+                      display: "block",
+                      fontSize: ".8rem",
+                      fontWeight: active ? 700 : 500,
+                      lineHeight: 1.35,
+                      px: 1.25,
+                      py: .7,
+                      transition:
+                        "background-color 150ms ease, color 150ms ease, border-color 150ms ease",
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                        borderColor: "primary.main",
+                        color: "text.primary",
+                      },
+                    }}
+                  >
+                    {language === "sw"
+                      ? section.swTitle ?? section.title
+                      : section.title}
+                  </MuiLink>
+                );
+              })}
             </Stack>
           </Box>
 
-          <Box>
+          <Box
+            ref={contentRef}
+            sx={{
+              height: { md: "100%" },
+              overflowY: { md: "auto" },
+              overscrollBehavior: { md: "contain" },
+              pr: { md: 1.5 },
+              py: { md: 5 },
+              scrollBehavior: "smooth",
+              scrollbarColor: "var(--mui-palette-divider) transparent",
+              scrollbarWidth: "thin",
+            }}
+          >
             <Stack spacing={2.25} sx={{ mb: { xs: 3, sm: 4 } }}>
               <Box
                 sx={{
@@ -214,7 +310,10 @@ export function LegalPage({
               </Typography>
               <Typography
                 color="text.secondary"
-                sx={{ fontSize: { xs: ".96rem", sm: "1.03rem" }, lineHeight: 1.75 }}
+                sx={{
+                  fontSize: { xs: ".96rem", sm: "1.03rem" },
+                  lineHeight: 1.75,
+                }}
               >
                 {localizedIntro}
               </Typography>
@@ -249,6 +348,7 @@ export function LegalPage({
                 borderTop: "1px solid",
                 borderColor: "divider",
                 mt: 3,
+                pb: 5,
                 pt: 3,
               }}
             >
