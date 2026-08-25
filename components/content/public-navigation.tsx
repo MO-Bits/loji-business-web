@@ -25,7 +25,7 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { BrandLockup } from "@/components/shared/brand-lockup";
 import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 
-const publicPaths = ["/login", "/learn-more", "/terms", "/privacy"] as const;
+const publicPaths = ["/login", "/learn-more", "/faq", "/terms", "/privacy"] as const;
 
 export function PublicNavigation() {
   const pathname = usePathname();
@@ -41,15 +41,10 @@ export function PublicNavigation() {
   const items = [
     { href: "/login", label: t("Login", "Ingia") },
     { href: "/learn-more", label: t("About", "Kuhusu") },
-    { href: "/learn-more#faq", label: t("FAQs", "Maswali") },
+    { href: "/faq", label: t("FAQs", "Maswali") },
     { href: "/terms", label: t("Terms", "Masharti") },
     { href: "/privacy", label: t("Privacy Policy", "Sera ya faragha") },
   ];
-
-  const isItemActive = (href: string) => {
-    if (href === "/learn-more#faq") return false;
-    return pathname === href;
-  };
 
   return (
     <>
@@ -78,25 +73,12 @@ export function PublicNavigation() {
           sx={{ display: "inline-flex", flexShrink: 0 }}
           underline="none"
         >
-          <BrandLockup
-            priority
-            symbolSize={30}
-            textSize={{ xs: ".96rem", sm: "1rem" }}
-          />
+          <BrandLockup priority symbolSize={30} textSize={{ xs: ".96rem", sm: "1rem" }} />
         </Link>
 
-        <Stack
-          component="nav"
-          direction="row"
-          spacing={0.25}
-          sx={{
-            alignItems: "center",
-            display: { xs: "none", md: "flex" },
-            ml: "auto",
-          }}
-        >
+        <Stack component="nav" direction="row" spacing={0.25} sx={{ alignItems: "center", display: { xs: "none", md: "flex" }, ml: "auto" }}>
           {items.map((item) => {
-            const active = isItemActive(item.href);
+            const active = pathname === item.href;
             return (
               <Button
                 aria-current={active ? "page" : undefined}
@@ -110,18 +92,16 @@ export function PublicNavigation() {
                   fontWeight: active ? 700 : 500,
                   minHeight: 38,
                   px: 1.4,
-                  "&::after": active
-                    ? {
-                        bgcolor: "primary.main",
-                        borderRadius: 1,
-                        bottom: 2,
-                        content: '\"\"',
-                        height: 2,
-                        left: 14,
-                        position: "absolute",
-                        right: 14,
-                      }
-                    : undefined,
+                  "&::after": active ? {
+                    bgcolor: "primary.main",
+                    borderRadius: 1,
+                    bottom: 2,
+                    content: '\"\"',
+                    height: 2,
+                    left: 14,
+                    position: "absolute",
+                    right: 14,
+                  } : undefined,
                 }}
               >
                 {item.label}
@@ -130,21 +110,12 @@ export function PublicNavigation() {
           })}
         </Stack>
 
-        <Stack
-          direction="row"
-          spacing={0.75}
-          sx={{ alignItems: "center", display: { xs: "none", md: "flex" }, ml: 2 }}
-        >
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", display: { xs: "none", md: "flex" }, ml: 2 }}>
           <ThemeModeSelect compact />
-          <TranslateRoundedIcon
-            aria-hidden
-            sx={{ color: "text.secondary", fontSize: 17 }}
-          />
+          <TranslateRoundedIcon aria-hidden sx={{ color: "text.secondary", fontSize: 17 }} />
           <Select
             value={language}
-            onChange={(event) =>
-              setLanguage(event.target.value as "en" | "sw")
-            }
+            onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
             size="small"
             inputProps={{ "aria-label": t("Language", "Lugha") }}
             sx={{
@@ -161,11 +132,7 @@ export function PublicNavigation() {
           </Select>
         </Stack>
 
-        <IconButton
-          aria-label={t("Open navigation", "Fungua menyu")}
-          onClick={() => setMobileOpen(true)}
-          sx={{ display: { md: "none" }, ml: "auto" }}
-        >
+        <IconButton aria-label={t("Open navigation", "Fungua menyu")} onClick={() => setMobileOpen(true)} sx={{ display: { md: "none" }, ml: "auto" }}>
           <MenuRoundedIcon />
         </IconButton>
       </Box>
@@ -176,18 +143,14 @@ export function PublicNavigation() {
         anchor="right"
         onClose={() => setMobileOpen(false)}
         open={mobileOpen}
-        slotProps={{
-          paper: {
-            sx: { p: 2, width: "min(86vw, 320px)" },
-          },
-        }}
+        slotProps={{ paper: { sx: { p: 2, width: "min(86vw, 320px)" } } }}
       >
         <BrandLockup priority symbolSize={30} textSize="1rem" />
         <Divider sx={{ my: 2 }} />
 
         <List component="nav" disablePadding>
           {items.map((item) => {
-            const active = isItemActive(item.href);
+            const active = pathname === item.href;
             return (
               <ListItemButton
                 aria-current={active ? "page" : undefined}
@@ -200,12 +163,7 @@ export function PublicNavigation() {
               >
                 <ListItemText
                   primary={item.label}
-                  slotProps={{
-                    primary: {
-                      fontSize: ".9rem",
-                      fontWeight: active ? 700 : 500,
-                    },
-                  }}
+                  slotProps={{ primary: { fontSize: ".9rem", fontWeight: active ? 700 : 500 } }}
                 />
               </ListItemButton>
             );
@@ -213,10 +171,7 @@ export function PublicNavigation() {
         </List>
 
         <Divider sx={{ my: 2 }} />
-        <Typography
-          color="text.secondary"
-          sx={{ fontSize: ".7rem", fontWeight: 700, mb: 1.25 }}
-        >
+        <Typography color="text.secondary" sx={{ fontSize: ".7rem", fontWeight: 700, mb: 1.25 }}>
           {t("PREFERENCES", "MAPENDELEO")}
         </Typography>
         <Stack spacing={1.25}>
@@ -224,9 +179,7 @@ export function PublicNavigation() {
           <Select
             fullWidth
             value={language}
-            onChange={(event) =>
-              setLanguage(event.target.value as "en" | "sw")
-            }
+            onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
             size="small"
             inputProps={{ "aria-label": t("Language", "Lugha") }}
           >
