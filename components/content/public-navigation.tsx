@@ -41,9 +41,15 @@ export function PublicNavigation() {
   const items = [
     { href: "/login", label: t("Login", "Ingia") },
     { href: "/learn-more", label: t("About", "Kuhusu") },
+    { href: "/learn-more#faq", label: t("FAQs", "Maswali") },
     { href: "/terms", label: t("Terms", "Masharti") },
     { href: "/privacy", label: t("Privacy Policy", "Sera ya faragha") },
   ];
+
+  const isItemActive = (href: string) => {
+    if (href === "/learn-more#faq") return false;
+    return pathname === href;
+  };
 
   return (
     <>
@@ -90,7 +96,7 @@ export function PublicNavigation() {
           }}
         >
           {items.map((item) => {
-            const active = pathname === item.href;
+            const active = isItemActive(item.href);
             return (
               <Button
                 aria-current={active ? "page" : undefined}
@@ -109,7 +115,7 @@ export function PublicNavigation() {
                         bgcolor: "primary.main",
                         borderRadius: 1,
                         bottom: 2,
-                        content: '""',
+                        content: '\"\"',
                         height: 2,
                         left: 14,
                         position: "absolute",
@@ -181,7 +187,7 @@ export function PublicNavigation() {
 
         <List component="nav" disablePadding>
           {items.map((item) => {
-            const active = pathname === item.href;
+            const active = isItemActive(item.href);
             return (
               <ListItemButton
                 aria-current={active ? "page" : undefined}
