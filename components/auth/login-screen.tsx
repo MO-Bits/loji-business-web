@@ -1,8 +1,6 @@
 "use client";
 
 import NextLink from "next/link";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import TranslateRoundedIcon from "@mui/icons-material/TranslateRounded";
 import {
   Alert,
@@ -10,17 +8,14 @@ import {
   Button,
   CircularProgress,
   Container,
-  Divider,
   Link,
   MenuItem,
-  Paper,
   Select,
   Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
 
-import { HospitalityHeroIllustration } from "@/components/content/learn-more-illustrations";
 import { useLanguage } from "@/components/providers/language-provider";
 import { BrandLockup } from "@/components/shared/brand-lockup";
 import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
@@ -32,73 +27,63 @@ export function LoginScreen() {
   const auth = useAuthController();
   const { language, setLanguage, t } = useLanguage();
 
-  async function handleGoogleLogin() {
-    await auth.signInWithGoogle();
-  }
-
   return (
     <Box
       component="main"
       sx={{
         bgcolor: "background.default",
-        display: "flex",
         minHeight: "100dvh",
-        overflow: "hidden",
-        position: "relative",
       }}
     >
-      <Box
-        aria-hidden
-        sx={{
-          bgcolor: "primary.main",
-          borderRadius: "50%",
-          filter: "blur(2px)",
-          height: 360,
-          opacity: 0.045,
-          position: "absolute",
-          right: -150,
-          top: -160,
-          width: 360,
-        }}
-      />
-
       <Container
-        maxWidth="lg"
+        maxWidth={false}
         sx={{
-          display: "flex",
-          flex: 1,
-          flexDirection: "column",
-          minWidth: 0,
-          py: { xs: 2.25, sm: 3, md: 4 },
+          display: "grid",
+          gridTemplateRows: "auto 1fr auto",
+          minHeight: "100dvh",
+          px: { xs: 2.25, sm: 3.5 },
+          py: { xs: 2, sm: 2.5 },
         }}
       >
         <Stack
           component="header"
           direction="row"
-          sx={{ alignItems: "center", justifyContent: "space-between" }}
+          sx={{
+            alignItems: "center",
+            justifyContent: "space-between",
+            minHeight: 42,
+          }}
         >
           <BrandLockup
             priority
-            symbolSize={36}
-            textSize={{ xs: "1.06rem", sm: "1.16rem" }}
+            symbolSize={30}
+            textSize={{ xs: ".96rem", sm: "1rem" }}
           />
 
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
             <ThemeModeSelect compact />
             <TranslateRoundedIcon
-              sx={{ color: "text.secondary", display: { xs: "none", sm: "block" }, fontSize: 18 }}
+              aria-hidden
+              sx={{
+                color: "text.secondary",
+                display: { xs: "none", sm: "block" },
+                fontSize: 17,
+              }}
             />
             <Select
               value={language}
-              onChange={(event) => setLanguage(event.target.value as "en" | "sw")}
+              onChange={(event) =>
+                setLanguage(event.target.value as "en" | "sw")
+              }
               size="small"
               inputProps={{ "aria-label": t("Language", "Lugha") }}
               sx={{
                 bgcolor: "background.paper",
-                fontSize: ".78rem",
+                borderRadius: 1,
+                fontSize: ".75rem",
                 fontWeight: 700,
-                minWidth: { xs: 66, sm: 96 },
-                "& .MuiSelect-select": { py: .75 },
+                minWidth: 64,
+                "& .MuiSelect-select": { py: 0.7 },
               }}
             >
               <MenuItem value="en">EN</MenuItem>
@@ -110,184 +95,136 @@ export function LoginScreen() {
         <Box
           sx={{
             alignItems: "center",
-            display: "grid",
-            flex: 1,
-            gap: { xs: 4, sm: 5, md: 8 },
-            gridTemplateColumns: {
-              xs: "minmax(0,1fr)",
-              md: "minmax(0,1.05fr) minmax(360px,.7fr)",
-            },
-            py: { xs: 4, sm: 5, md: 3 },
+            display: "flex",
+            justifyContent: "center",
+            py: { xs: 5, sm: 7 },
           }}
         >
-          <Stack spacing={{ xs: 2.5, md: 3 }} sx={{ minWidth: 0 }}>
-            <Box sx={{ maxWidth: 630 }}>
-              <Typography
-                color="primary.main"
-                variant="overline"
-                sx={{ fontWeight: 800, letterSpacing: ".12em" }}
-              >
-                {t("HOSPITALITY OPERATIONS", "USIMAMIZI WA MALAZI")}
-              </Typography>
+          <Stack
+            component="section"
+            spacing={3.5}
+            sx={{
+              maxWidth: 420,
+              textAlign: "center",
+              width: "100%",
+            }}
+          >
+            <Box>
               <Typography
                 component="h1"
-                variant="h2"
                 sx={{
-                  fontSize: { xs: "2.35rem", sm: "3.25rem", md: "3.75rem" },
-                  lineHeight: { xs: 1.08, md: 1.04 },
-                  mt: 1,
+                  color: "text.primary",
+                  fontSize: { xs: "2rem", sm: "2.4rem" },
+                  fontWeight: 700,
+                  letterSpacing: "-.045em",
+                  lineHeight: 1.08,
                 }}
               >
-                {t(
-                  "Run your property with clarity.",
-                  "Simamia jengo lako kwa uwazi.",
-                )}
+                {t("Welcome back", "Karibu tena")}
               </Typography>
               <Typography
                 color="text.secondary"
                 sx={{
-                  fontSize: { xs: "1rem", sm: "1.1rem" },
-                  lineHeight: 1.7,
-                  maxWidth: 570,
-                  mt: 2,
+                  fontSize: { xs: ".95rem", sm: "1rem" },
+                  lineHeight: 1.65,
+                  mt: 1.25,
                 }}
               >
                 {t(
-                  "Rooms, bookings, guests and your team—organized in one focused workspace.",
-                  "Vyumba, uhifadhi, wageni na timu yako—vimepangwa katika eneo moja la kazi.",
+                  "Sign in to manage your property.",
+                  "Ingia ili kusimamia jengo lako.",
                 )}
               </Typography>
             </Box>
 
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={{ xs: 1, sm: 2.5 }}
-            >
-              {[
-                t("Live room status", "Hali ya vyumba mubashara"),
-                t("Faster check-ins", "Uingizaji wa haraka"),
-                t("Secure team access", "Ufikiaji salama wa timu"),
-              ].map((label) => (
-                <Stack key={label} direction="row" spacing={.75} sx={{ alignItems: "center" }}>
-                  <CheckCircleRoundedIcon color="success" sx={{ fontSize: 18 }} />
-                  <Typography color="text.secondary" variant="body2" sx={{ fontWeight: 600 }}>
-                    {label}
-                  </Typography>
-                </Stack>
-              ))}
-            </Stack>
-
-            <HospitalityHeroIllustration
+            <Button
+              disabled={auth.loading}
+              fullWidth
+              onClick={() => void auth.signInWithGoogle()}
+              size="large"
+              startIcon={
+                auth.loading ? (
+                  <CircularProgress color="inherit" size={19} />
+                ) : (
+                  <GoogleMark />
+                )
+              }
               sx={{
-                display: { xs: "none", md: "block" },
-                maxWidth: 430,
-                mt: 1,
+                bgcolor: "background.paper",
+                borderColor: "divider",
+                borderRadius: 1,
+                color: "text.primary",
+                fontSize: ".92rem",
+                fontWeight: 600,
+                minHeight: 52,
+                textTransform: "none",
+                transition:
+                  "border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  borderColor: "text.secondary",
+                  boxShadow: "0 4px 14px rgba(15, 23, 42, .06)",
+                },
               }}
-            />
-          </Stack>
+              variant="outlined"
+            >
+              {auth.loading
+                ? t("Signing in…", "Inaingia…")
+                : t("Continue with Google", "Endelea na Google")}
+            </Button>
 
-          <Paper
-            component="section"
-            variant="outlined"
-            sx={{
-              bgcolor: "background.paper",
-              borderColor: "divider",
-              borderRadius: 1,
-              boxShadow: "0 24px 70px rgba(15,23,42,.09)",
-              mx: { xs: "auto", md: 0 },
-              overflow: "hidden",
-              p: { xs: 2.5, sm: 3.5, md: 4 },
-              width: "100%",
-            }}
-          >
-            <Stack spacing={3}>
-              <Box>
-                <Typography
-                  color="primary.main"
-                  variant="caption"
-                  sx={{ fontWeight: 800, letterSpacing: ".1em" }}
-                >
-                  {t("YOUR WORKSPACE", "ENEO LAKO LA KAZI")}
-                </Typography>
-                <Typography component="h2" variant="h5" sx={{ mt: .75 }}>
-                  {t("Welcome back", "Karibu tena")}
-                </Typography>
-                <Typography color="text.secondary" sx={{ lineHeight: 1.6, mt: .75 }}>
-                  {t(
-                    "Use your business Google account to continue.",
-                    "Tumia akaunti yako ya Google ya biashara kuendelea.",
-                  )}
-                </Typography>
-              </Box>
-
-              <Button
-                disabled={auth.loading}
-                fullWidth
-                onClick={() => void handleGoogleLogin()}
-                size="large"
-                startIcon={
-                  auth.loading ? (
-                    <CircularProgress color="inherit" size={20} />
-                  ) : (
-                    <GoogleMark />
-                  )
-                }
-                sx={{
-                  bgcolor: "background.paper",
-                  borderColor: "divider",
-                  color: "text.primary",
-                  fontWeight: 700,
-                  minHeight: 54,
-                  "&:hover": {
-                    bgcolor: "action.hover",
-                    borderColor: "primary.main",
-                  },
-                }}
-                variant="outlined"
-              >
-                {auth.loading
-                  ? t("Connecting…", "Inaunganisha…")
-                  : t("Continue with Google", "Endelea na Google")}
-              </Button>
-
-              <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
-                <LockOutlinedIcon sx={{ color: "success.main", fontSize: 17, mt: .15 }} />
-                <Typography color="text.secondary" variant="caption" sx={{ lineHeight: 1.55 }}>
-                  {t(
-                    "Secure authentication. Loji never receives or stores your Google password.",
-                    "Uthibitishaji salama. Loji haipokei wala kuhifadhi nenosiri lako la Google.",
-                  )}
-                </Typography>
-              </Stack>
-
-              <Divider />
-
-              <Typography color="text.secondary" variant="caption" sx={{ lineHeight: 1.65 }}>
-                {t("By continuing, you agree to our", "Kwa kuendelea, unakubali")}{" "}
-                <Link component={NextLink} href="/terms" underline="hover" sx={{ fontWeight: 700 }}>
-                  {t("Terms of Use", "Masharti ya matumizi")}
-                </Link>{" "}
-                {t("and", "na")}{" "}
-                <Link component={NextLink} href="/privacy" underline="hover" sx={{ fontWeight: 700 }}>
-                  {t("Privacy Policy", "Sera ya faragha")}
-                </Link>.
-              </Typography>
-
-              <Button
+            <Typography
+              color="text.secondary"
+              variant="caption"
+              sx={{ lineHeight: 1.65, px: { xs: 1, sm: 2 } }}
+            >
+              {t("By continuing, you agree to the", "Kwa kuendelea, unakubali")}{" "}
+              <Link
                 component={NextLink}
-                href="/learn-more"
-                color="inherit"
-                size="small"
-                sx={{ alignSelf: "center", color: "text.secondary" }}
+                href="/terms"
+                underline="hover"
+                sx={{ color: "text.primary", fontWeight: 600 }}
               >
-                {t("Explore Loji Business", "Fahamu Loji Business")}
-              </Button>
-            </Stack>
-          </Paper>
+                {t("Terms", "Masharti")}
+              </Link>{" "}
+              {t("and", "na")}{" "}
+              <Link
+                component={NextLink}
+                href="/privacy"
+                underline="hover"
+                sx={{ color: "text.primary", fontWeight: 600 }}
+              >
+                {t("Privacy Policy", "Sera ya faragha")}
+              </Link>
+              .
+            </Typography>
+
+            <Link
+              component={NextLink}
+              href="/learn-more"
+              underline="hover"
+              sx={{
+                alignSelf: "center",
+                color: "text.secondary",
+                fontSize: ".78rem",
+                fontWeight: 600,
+              }}
+            >
+              {t("Learn more", "Fahamu zaidi")}
+            </Link>
+          </Stack>
         </Box>
 
-        <Typography color="text.secondary" variant="caption">
-          © {new Date().getFullYear()} Loji · {t("Hospitality operations, simplified.", "Usimamizi wa malazi, umerahisishwa.")}
+        <Typography
+          color="text.secondary"
+          component="footer"
+          sx={{
+            fontSize: ".72rem",
+            pb: { xs: 0.5, sm: 0 },
+            textAlign: "center",
+          }}
+        >
+          © {new Date().getFullYear()} Loji
         </Typography>
       </Container>
 
