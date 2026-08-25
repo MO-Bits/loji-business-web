@@ -105,7 +105,11 @@ export function useAppSession(): AppSessionState {
       }, 0);
     });
 
+    const handlePropertyChange = () => void refresh();
+    window.addEventListener("loji:property-change", handlePropertyChange);
+
     return () => {
+      window.removeEventListener("loji:property-change", handlePropertyChange);
       window.clearTimeout(initialRefresh);
       subscription.unsubscribe();
     };
