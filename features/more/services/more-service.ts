@@ -43,15 +43,23 @@ export async function updateStaffStatus(supabase: SupabaseClient<Database>, prop
 
 export async function changeStaffRole(
   supabase: SupabaseClient<Database>,
-  propertyId: string,
-  staffUserId: string,
+  propertyUserId: string,
   role: "manager" | "receptionist",
 ) {
+  const { data: membership, error: membershipError } = await supabase
+    .from("property_users")
+    .select("property_id,user_id")
+    .eq("id", propertyUserId)
+    .single();
+
+  if (membershipError) throw new Error(membershipError.message);
+
   const { data, error } = await supabase.rpc("change_staff_role", {
-    p_property_id: propertyId,
-    p_staff_user_id: staffUserId,
+    p_property_id: membership.property_id,
+    p_staff_user_id: membership.user_id,
     p_role: role,
   } as never);
+
   if (error) throw new Error(error.message);
   return data;
 }
