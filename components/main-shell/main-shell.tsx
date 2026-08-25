@@ -244,21 +244,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               sx={{ alignItems: "center", flexShrink: 0 }}
             >
               <TopBarLanguageSwitch />
-              <IconButton
-                aria-label={t("Open navigation", "Fungua menyu")}
-                onClick={() => setMobileOpen(true)}
-                sx={{
-                  color: "primary.main",
-                  display: { xs: "inline-flex", lg: "none" },
-                  height: 48,
-                  width: 48,
-                  "& .MuiSvgIcon-root": {
-                    fontSize: 32,
-                  },
-                }}
-              >
-                <MenuRoundedIcon />
-              </IconButton>
             </Stack>
           </Box>
 
