@@ -1,7 +1,6 @@
 "use client";
 
 import NextLink from "next/link";
-import FacebookRoundedIcon from "@mui/icons-material/FacebookRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import {
   Alert,
@@ -123,48 +122,6 @@ export function LoginScreen() {
                 {auth.activeAction === "google"
                   ? t("Signing in…", "Inaingia…")
                   : t("Continue with Google", "Endelea na Google")}
-              </Button>
-
-              <Button
-                disabled={auth.loading}
-                fullWidth
-                onClick={() => void auth.signInWithFacebook()}
-                size="large"
-                startIcon={
-                  auth.activeAction === "facebook" ? (
-                    <CircularProgress color="inherit" size={19} />
-                  ) : (
-                    <FacebookRoundedIcon sx={{ fontSize: 22 }} />
-                  )
-                }
-                sx={{
-                  bgcolor: "#1877F2",
-                  border: "1px solid",
-                  borderColor: "#1877F2",
-                  borderRadius: 1,
-                  color: "common.white",
-                  fontSize: ".93rem",
-                  fontWeight: 650,
-                  minHeight: 54,
-                  textTransform: "none",
-                  transition:
-                    "background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
-                  "&:hover": {
-                    bgcolor: "#166FE5",
-                    borderColor: "#166FE5",
-                    boxShadow: "0 8px 24px rgba(15, 23, 42, .16)",
-                  },
-                  "&.Mui-disabled": {
-                    bgcolor: "action.disabledBackground",
-                    borderColor: "divider",
-                    color: "action.disabled",
-                  },
-                }}
-                variant="contained"
-              >
-                {auth.activeAction === "facebook"
-                  ? t("Signing in…", "Inaingia…")
-                  : t("Continue with Facebook", "Endelea na Facebook")}
               </Button>
 
               <Stack
