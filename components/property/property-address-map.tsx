@@ -233,6 +233,21 @@ function detailsFromGoogle(data: Record<string, unknown>): PlaceDetails {
   };
 }
 
+function distanceInMetres(a: LatLng, b: LatLng) {
+  const earthRadius = 6_371_000;
+  const radians = (value: number) => (value * Math.PI) / 180;
+  const latitudeDelta = radians(b.lat - a.lat);
+  const longitudeDelta = radians(b.lng - a.lng);
+  const latitudeA = radians(a.lat);
+  const latitudeB = radians(b.lat);
+  const value =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(latitudeA) *
+      Math.cos(latitudeB) *
+      Math.sin(longitudeDelta / 2) ** 2;
+  return earthRadius * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
+}
+
 function detailsFromGeocode(
   data: Record<string, unknown>,
   position: LatLng,
@@ -240,24 +255,85 @@ function detailsFromGeocode(
   const results = Array.isArray(data.results)
     ? (data.results as Record<string, unknown>[])
     : [];
-  const result = [...results].sort(
+  const geocodeResult = [...results].sort(
     (a, b) => geocodeScore(b) - geocodeScore(a),
   )[0];
-  if (!result) return null;
 
-  const components = (result.address_components ?? []) as Array<{
+  const nearbyPlaces = Array.isArray(data.nearbyPlaces)
+    ? (data.nearbyPlaces as Record<string, unknown>[])
+    : [];
+
+  const nearbyPlace = nearbyPlaces
+    .map((place) => {
+      const displayName = (place.displayName ?? {}) as { text?: string };
+      const location = (place.location ?? {}) as {
+        latitude?: number;
+        longitude?: number;
+      };
+      const name = displayName.text?.trim() ?? "";
+      const latitude = Number(location.latitude);
+      const longitude = Number(location.longitude);
+      if (
+        !name ||
+        isPlusCode(name) ||
+        !Number.isFinite(latitude) ||
+        !Number.isFinite(longitude)
+      ) {
+        return null;
+      }
+      return {
+        place,
+        name,
+        distance: distanceInMetres(position, {
+          lat: latitude,
+          lng: longitude,
+        }),
+      };
+    })
+    .filter(
+      (
+        item,
+      ): item is {
+        place: Record<string, unknown>;
+        name: string;
+        distance: number;
+      } => Boolean(item),
+    )
+    .filter((item) => item.distance <= 120)
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  if (!geocodeResult && !nearbyPlace) return null;
+
+  const geocodeComponents = (geocodeResult?.address_components ?? []) as Array<{
     long_name?: string;
     short_name?: string;
     types?: string[];
   }>;
-  const parts = parseComponents(
-    components.map((item) => ({
+  const geocodeParts = parseComponents(
+    geocodeComponents.map((item) => ({
       longText: item.long_name,
       shortText: item.short_name,
       types: item.types,
     })),
   );
-  const name =
+
+  const nearbyParts = parseComponents(
+    (nearbyPlace?.place.addressComponents ?? []) as AddressComponent[],
+  );
+
+  const parts: AddressParts = {
+    country: nearbyParts.country || geocodeParts.country,
+    countryCode: nearbyParts.countryCode || geocodeParts.countryCode,
+    region: nearbyParts.region || geocodeParts.region,
+    district: nearbyParts.district || geocodeParts.district,
+    ward: nearbyParts.ward || geocodeParts.ward,
+    locality: nearbyParts.locality || geocodeParts.locality,
+    street: nearbyParts.street || geocodeParts.street,
+    premise: nearbyParts.premise || geocodeParts.premise,
+  };
+
+  const googlePlaceName = nearbyPlace?.name ?? "";
+  const fallbackName =
     parts.premise ||
     parts.street ||
     parts.ward ||
@@ -265,16 +341,23 @@ function detailsFromGeocode(
     parts.district ||
     parts.region ||
     "Selected location";
+  const name = googlePlaceName || fallbackName;
 
   return {
     name,
-    placeId: String(result.place_id ?? ""),
+    placeId: String(
+      nearbyPlace?.place.id ?? geocodeResult?.place_id ?? "",
+    ),
     formattedAddress: localAddress(parts, name),
     country: parts.country,
     region: parts.region,
     district: parts.district || parts.locality,
     ward: parts.ward,
-    street: parts.street || parts.premise,
+    street:
+      nearbyParts.street ||
+      googlePlaceName ||
+      geocodeParts.street ||
+      parts.premise,
     latitude: position.lat,
     longitude: position.lng,
   };
