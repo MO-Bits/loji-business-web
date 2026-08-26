@@ -11,6 +11,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ['/faq', 'monthly', 0.75],
     ['/privacy', 'yearly', 0.4],
     ['/terms', 'yearly', 0.4],
+    ['/data-deletion', 'yearly', 0.3],
   ] as const;
 
   return pages.map(([path, changeFrequency, priority]) => ({
