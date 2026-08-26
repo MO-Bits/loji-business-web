@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  signInWithApple,
   signInWithEmail,
+  signInWithFacebook,
   signInWithGoogle,
   signOut,
 } from "../services/auth-service";
 
 type AsyncAction = () => Promise<void>;
-export type AuthAction = "google" | "apple" | "email" | "signOut";
+export type AuthAction = "google" | "facebook" | "email" | "signOut";
 
 export function useAuthController() {
   const supabase = useMemo(() => createClient(), []);
@@ -45,7 +45,8 @@ export function useAuthController() {
     error,
     clearError: () => setError(null),
     signInWithGoogle: () => run("google", () => signInWithGoogle(supabase)),
-    signInWithApple: () => run("apple", () => signInWithApple(supabase)),
+    signInWithFacebook: () =>
+      run("facebook", () => signInWithFacebook(supabase)),
     signInWithEmail: (email: string) =>
       run("email", () => signInWithEmail(supabase, email)),
     signOut: () => run("signOut", () => signOut(supabase)),
