@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   endpoint.searchParams.set("latlng", `${lat},${lng}`);
   endpoint.searchParams.set("key", key);
   endpoint.searchParams.set("language", "en");
+  endpoint.searchParams.set("region", "tz");
   const response = await fetch(endpoint);
   return NextResponse.json(await response.json(), { status: response.status });
 }
