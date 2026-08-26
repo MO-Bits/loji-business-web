@@ -1,24 +1,27 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
 import { createClient } from "@/lib/supabase/client";
-
 import {
+  signInWithApple,
   signInWithEmail,
   signInWithGoogle,
   signOut,
 } from "../services/auth-service";
 
 type AsyncAction = () => Promise<void>;
+export type AuthAction = "google" | "apple" | "email" | "signOut";
 
 export function useAuthController() {
   const supabase = useMemo(() => createClient(), []);
-  const [loading, setLoading] = useState(false);
+  const [activeAction, setActiveAction] = useState<AuthAction | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(action: AsyncAction): Promise<string | null> {
-    setLoading(true);
+  async function run(
+    actionName: AuthAction,
+    action: AsyncAction,
+  ): Promise<string | null> {
+    setActiveAction(actionName);
     setError(null);
 
     try {
@@ -29,21 +32,22 @@ export function useAuthController() {
         caughtError instanceof Error
           ? caughtError.message
           : "Something went wrong.";
-
       setError(message);
       return message;
     } finally {
-      setLoading(false);
+      setActiveAction(null);
     }
   }
 
   return {
-    loading,
+    activeAction,
+    loading: activeAction !== null,
     error,
     clearError: () => setError(null),
-    signInWithGoogle: () => run(() => signInWithGoogle(supabase)),
+    signInWithGoogle: () => run("google", () => signInWithGoogle(supabase)),
+    signInWithApple: () => run("apple", () => signInWithApple(supabase)),
     signInWithEmail: (email: string) =>
-      run(() => signInWithEmail(supabase, email)),
-    signOut: () => run(() => signOut(supabase)),
+      run("email", () => signInWithEmail(supabase, email)),
+    signOut: () => run("signOut", () => signOut(supabase)),
   };
 }
