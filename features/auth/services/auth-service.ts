@@ -21,6 +21,21 @@ export async function signInWithGoogle(
   }
 }
 
+export async function signInWithApple(
+  supabase: SupabaseClient<Database>,
+): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "apple",
+    options: {
+      redirectTo: callbackUrl(),
+    },
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function signInWithEmail(
   supabase: SupabaseClient<Database>,
   email: string,
