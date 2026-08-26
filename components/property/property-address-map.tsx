@@ -68,61 +68,107 @@ function createSessionToken() {
   );
 }
 
-function parseComponents(
-  items: Array<{
-    longText?: string;
-    shortText?: string;
-    types?: string[];
-  }> = [],
-) {
-  const find = (...types: string[]) =>
-    items.find((item) => types.some((type) => item.types?.includes(type)))
-      ?.longText ?? "";
+type AddressComponent = {
+  longText?: string;
+  shortText?: string;
+  types?: string[];
+};
+
+type AddressParts = {
+  country: string;
+  countryCode: string;
+  region: string;
+  district: string;
+  ward: string;
+  locality: string;
+  street: string;
+  premise: string;
+};
+
+const PLUS_CODE_PATTERN =
+  /\\b[23456789CFGHJMPQRVWX]{4,8}\\+[23456789CFGHJMPQRVWX]{2,3}\\b/i;
+
+function isPlusCode(value = "") {
+  return PLUS_CODE_PATTERN.test(value);
+}
+
+function parseComponents(items: AddressComponent[] = []): AddressParts {
+  const component = (...types: string[]) => {
+    for (const type of types) {
+      const match = items.find((item) => item.types?.includes(type));
+      if (match) return match;
+    }
+    return undefined;
+  };
+  const text = (...types: string[]) => component(...types)?.longText ?? "";
+
+  const country = component("country");
+  const route = text("route");
+  const streetNumber = text("street_number");
+
   return {
-    country: find("country"),
-    region: find("administrative_area_level_1"),
-    district: find("administrative_area_level_2"),
-    ward: find(
+    country: country?.longText ?? "",
+    countryCode: country?.shortText?.toUpperCase() ?? "",
+    region: text("administrative_area_level_1"),
+    district: text("administrative_area_level_2"),
+    ward: text(
       "neighborhood",
-      "sublocality",
       "sublocality_level_1",
+      "sublocality",
       "administrative_area_level_3",
       "administrative_area_level_4",
     ),
-    street: [find("street_number"), find("route")].filter(Boolean).join(" "),
+    locality: text("locality", "postal_town"),
+    street: [streetNumber, route].filter(Boolean).join(" "),
+    premise: text("premise", "subpremise", "establishment", "point_of_interest"),
   };
 }
 
-function detailsFromGoogle(data: Record<string, unknown>): PlaceDetails {
-  const location = (data.location ?? {}) as {
-    latitude?: number;
-    longitude?: number;
-  };
-  const displayName = (data.displayName ?? {}) as { text?: string };
-  const parts = parseComponents(
-    (data.addressComponents ?? []) as Array<{
-      longText?: string;
-      types?: string[];
-    }>,
-  );
-  return {
-    name: displayName.text ?? "Selected location",
-    placeId: String(data.id ?? ""),
-    formattedAddress: String(data.formattedAddress ?? ""),
-    ...parts,
-    latitude: location.latitude ?? DEFAULT_POSITION.lat,
-    longitude: location.longitude ?? DEFAULT_POSITION.lng,
-  };
+function uniqueAddressParts(values: string[]) {
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const clean = value.trim();
+    if (!clean || isPlusCode(clean)) return false;
+    const key = clean.toLocaleLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
-function detailsFromGeocode(
-  data: Record<string, unknown>,
-  position: LatLng,
-): PlaceDetails | null {
-  const result = Array.isArray(data.results)
-    ? (data.results[0] as Record<string, unknown> | undefined)
-    : undefined;
-  if (!result) return null;
+function localAddress(parts: AddressParts, preferredName = "") {
+  const name = isPlusCode(preferredName) ? "" : preferredName.trim();
+  const primary =
+    name ||
+    parts.premise ||
+    parts.street ||
+    parts.ward ||
+    parts.locality ||
+    parts.district ||
+    parts.region ||
+    "Selected location";
+
+  const city =
+    parts.locality &&
+    parts.locality.toLocaleLowerCase() !== primary.toLocaleLowerCase()
+      ? parts.locality
+      : parts.district;
+
+  return uniqueAddressParts([
+    primary,
+    parts.street,
+    parts.ward,
+    city,
+    parts.region,
+    parts.countryCode || (parts.country === "Tanzania" ? "TZ" : parts.country),
+  ]).join(", ");
+}
+
+function geocodeScore(result: Record<string, unknown>) {
+  const formatted = String(result.formatted_address ?? "");
+  const types = Array.isArray(result.types)
+    ? result.types.map(String)
+    : [];
   const components = (result.address_components ?? []) as Array<{
     long_name?: string;
     short_name?: string;
@@ -135,11 +181,100 @@ function detailsFromGeocode(
       types: item.types,
     })),
   );
+
+  let score = 0;
+  if (types.includes("street_address")) score += 100;
+  if (types.includes("premise")) score += 90;
+  if (types.includes("route")) score += 75;
+  if (types.includes("intersection")) score += 70;
+  if (types.includes("neighborhood")) score += 65;
+  if (types.some((type) => type.startsWith("sublocality"))) score += 60;
+  if (types.includes("locality")) score += 30;
+  if (parts.premise) score += 45;
+  if (parts.street) score += 40;
+  if (parts.ward) score += 35;
+  if (parts.locality) score += 15;
+  if (types.includes("plus_code") || isPlusCode(formatted)) score -= 200;
+  if (types.includes("country") || types.includes("postal_code")) score -= 50;
+  return score;
+}
+
+function detailsFromGoogle(data: Record<string, unknown>): PlaceDetails {
+  const location = (data.location ?? {}) as {
+    latitude?: number;
+    longitude?: number;
+  };
+  const displayName = (data.displayName ?? {}) as { text?: string };
+  const parts = parseComponents(
+    (data.addressComponents ?? []) as AddressComponent[],
+  );
+  const name =
+    !isPlusCode(displayName.text)
+      ? displayName.text?.trim() || ""
+      : "";
+
   return {
-    name: parts.street || parts.ward || "Selected location",
+    name:
+      name ||
+      parts.premise ||
+      parts.street ||
+      parts.ward ||
+      parts.locality ||
+      "Selected location",
+    placeId: String(data.id ?? ""),
+    formattedAddress: localAddress(parts, name),
+    country: parts.country,
+    region: parts.region,
+    district: parts.district || parts.locality,
+    ward: parts.ward,
+    street: parts.street || parts.premise,
+    latitude: location.latitude ?? DEFAULT_POSITION.lat,
+    longitude: location.longitude ?? DEFAULT_POSITION.lng,
+  };
+}
+
+function detailsFromGeocode(
+  data: Record<string, unknown>,
+  position: LatLng,
+): PlaceDetails | null {
+  const results = Array.isArray(data.results)
+    ? (data.results as Record<string, unknown>[])
+    : [];
+  const result = [...results].sort(
+    (a, b) => geocodeScore(b) - geocodeScore(a),
+  )[0];
+  if (!result) return null;
+
+  const components = (result.address_components ?? []) as Array<{
+    long_name?: string;
+    short_name?: string;
+    types?: string[];
+  }>;
+  const parts = parseComponents(
+    components.map((item) => ({
+      longText: item.long_name,
+      shortText: item.short_name,
+      types: item.types,
+    })),
+  );
+  const name =
+    parts.premise ||
+    parts.street ||
+    parts.ward ||
+    parts.locality ||
+    parts.district ||
+    parts.region ||
+    "Selected location";
+
+  return {
+    name,
     placeId: String(result.place_id ?? ""),
-    formattedAddress: String(result.formatted_address ?? ""),
-    ...parts,
+    formattedAddress: localAddress(parts, name),
+    country: parts.country,
+    region: parts.region,
+    district: parts.district || parts.locality,
+    ward: parts.ward,
+    street: parts.street || parts.premise,
     latitude: position.lat,
     longitude: position.lng,
   };
@@ -297,7 +432,9 @@ export function PropertyAddressMap() {
                 "",
               secondaryText: item?.structuredFormat?.secondaryText?.text ?? "",
             }))
-            .filter((item) => item.placeId),
+            .filter(
+              (item) => item.placeId && !isPlusCode(item.primaryText),
+            ),
         );
       } catch (cause) {
         setMapError(
