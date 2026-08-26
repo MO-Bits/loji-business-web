@@ -1,6 +1,7 @@
 "use client";
 
 import NextLink from "next/link";
+import AppleIcon from "@mui/icons-material/Apple";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import {
   Alert,
@@ -94,7 +95,7 @@ export function LoginScreen() {
                 onClick={() => void auth.signInWithGoogle()}
                 size="large"
                 startIcon={
-                  auth.loading ? (
+                  auth.activeAction === "google" ? (
                     <CircularProgress color="inherit" size={19} />
                   ) : (
                     <GoogleMark />
@@ -119,9 +120,51 @@ export function LoginScreen() {
                 }}
                 variant="outlined"
               >
-                {auth.loading
+                {auth.activeAction === "google"
                   ? t("Signing in…", "Inaingia…")
                   : t("Continue with Google", "Endelea na Google")}
+              </Button>
+
+              <Button
+                disabled={auth.loading}
+                fullWidth
+                onClick={() => void auth.signInWithApple()}
+                size="large"
+                startIcon={
+                  auth.activeAction === "apple" ? (
+                    <CircularProgress color="inherit" size={19} />
+                  ) : (
+                    <AppleIcon sx={{ fontSize: 22 }} />
+                  )
+                }
+                sx={{
+                  bgcolor: "common.black",
+                  border: "1px solid",
+                  borderColor: "common.black",
+                  borderRadius: 1,
+                  color: "common.white",
+                  fontSize: ".93rem",
+                  fontWeight: 650,
+                  minHeight: 54,
+                  textTransform: "none",
+                  transition:
+                    "background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
+                  "&:hover": {
+                    bgcolor: "#1d1d1f",
+                    borderColor: "#1d1d1f",
+                    boxShadow: "0 8px 24px rgba(15, 23, 42, .16)",
+                  },
+                  "&.Mui-disabled": {
+                    bgcolor: "action.disabledBackground",
+                    borderColor: "divider",
+                    color: "action.disabled",
+                  },
+                }}
+                variant="contained"
+              >
+                {auth.activeAction === "apple"
+                  ? t("Signing in…", "Inaingia…")
+                  : t("Continue with Apple", "Endelea na Apple")}
               </Button>
 
               <Stack
