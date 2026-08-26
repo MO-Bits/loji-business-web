@@ -21,13 +21,14 @@ export async function signInWithGoogle(
   }
 }
 
-export async function signInWithApple(
+export async function signInWithFacebook(
   supabase: SupabaseClient<Database>,
 ): Promise<void> {
   const { error } = await supabase.auth.signInWithOAuth({
-    provider: "apple",
+    provider: "facebook",
     options: {
       redirectTo: callbackUrl(),
+      scopes: "email,public_profile",
     },
   });
 
