@@ -56,7 +56,7 @@ export function LoginScreen() {
               spacing={3}
               sx={{
                 background:
-                  "radial-gradient(circle at 82% 20%, rgba(82,139,255,.42), transparent 34%), #101828",
+                  "radial-gradient(circle at 82% 20%, rgba(103,173,143,.38), transparent 34%), #173A30",
                 borderRadius: { xs: "10px 10px 0 0", md: 2 },
                 color: "#F8FAFC",
                 display: { xs: "none", md: "flex" },

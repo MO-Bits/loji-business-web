@@ -21,23 +21,39 @@ export function PageHeader({
       direction={{ xs: "column", sm: "row" }}
       spacing={{ xs: 2, sm: 3 }}
       sx={{
-        alignItems: { sm: "flex-start" },
+        alignItems: { sm: "flex-end" },
         justifyContent: "space-between",
+        mb: { xs: 0.25, sm: 0.5 },
       }}
     >
       <Box sx={{ minWidth: 0 }}>
         {eyebrow ? (
           <Typography
-            color="primary.main"
+            color="text.secondary"
             component="p"
             variant="overline"
-            sx={{ display: "block", mb: 0.5 }}
+            sx={{
+              display: "block",
+              fontSize: ".625rem",
+              fontWeight: 750,
+              letterSpacing: ".09em",
+              mb: 0.5,
+            }}
           >
             {eyebrow}
           </Typography>
         ) : null}
 
-        <Typography component="h1" variant="h4" sx={{ maxWidth: 760 }}>
+        <Typography
+          component="h1"
+          sx={{
+            fontSize: { xs: "1.4rem", sm: "1.6rem" },
+            fontWeight: 700,
+            letterSpacing: "-.03em",
+            lineHeight: 1.2,
+            maxWidth: 760,
+          }}
+        >
           {title}
         </Typography>
 
