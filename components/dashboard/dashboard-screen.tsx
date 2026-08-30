@@ -71,7 +71,7 @@ export function DashboardScreen() {
     <Box sx={{ minHeight: "100dvh", pb: { xs: 10, md: 5 } }}>
       <Container
         maxWidth="lg"
-        sx={{ px: { xs: 1, sm: 2.5 }, py: { xs: 1, sm: 2.5, lg: 3 } }}
+        sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}
       >
         <Paper
           variant="outlined"
@@ -174,8 +174,11 @@ function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
         </Typography>
       </Box>
       <Stack direction="row" spacing={1}>
-        <Tooltip title="Refresh dashboard">
-          <IconButton aria-label="Refresh dashboard" onClick={onRefresh}>
+        <Tooltip title={t("Refresh dashboard", "Sasisha dashibodi")}>
+          <IconButton
+            aria-label={t("Refresh dashboard", "Sasisha dashibodi")}
+            onClick={onRefresh}
+          >
             <RefreshRoundedIcon />
           </IconButton>
         </Tooltip>
@@ -680,7 +683,15 @@ function DashboardSkeleton() {
           <Skeleton height={24} width="30%" />
         </Box>
         <Divider />
-        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)" }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(4, minmax(0, 1fr))",
+            },
+          }}
+        >
           {[0, 1, 2, 3].map((value) => (
             <Skeleton key={value} height={110} variant="rectangular" />
           ))}
