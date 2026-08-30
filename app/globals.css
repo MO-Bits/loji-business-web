@@ -9,6 +9,16 @@ body {
   overflow-x: hidden;
 }
 
+@media (max-width: 767px) {
+  .MuiInputBase-input,
+  .MuiSelect-select,
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 html {
   scrollbar-gutter: stable;
 }

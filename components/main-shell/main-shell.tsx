@@ -51,7 +51,7 @@ import {
 import { PropertySwitcher } from "./property-switcher";
 import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 
-const drawerWidth = 240;
+const drawerWidth = 248;
 
 function getLocationLabel(
   pathname: string,
@@ -171,7 +171,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flexShrink: 0,
           width: drawerWidth,
           "& .MuiDrawer-paper": {
-            bgcolor: "#101828",
+            bgcolor: "#173A30",
             borderRight: 0,
             boxSizing: "border-box",
             color: "#F8FAFC",
@@ -189,7 +189,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
-            bgcolor: "#101828",
+            bgcolor: "#173A30",
             boxSizing: "border-box",
             color: "#F8FAFC",
             width: "min(88vw, 300px)",

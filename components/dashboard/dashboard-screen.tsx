@@ -1,11 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import {
@@ -89,22 +92,26 @@ export function DashboardScreen() {
             }}
           >
             <Metric
+              icon={<HotelRoundedIcon fontSize="small" />}
               label={t("Occupancy rate", "Kiwango cha matumizi")}
               value={`${occupancy}%`}
             />
             <Metric
+              icon={<LoginRoundedIcon fontSize="small" />}
               label={t("Check-ins today", "Wanaoingia leo")}
               value={String(dashboard.arrivals)}
               suffix={dashboard.arrivals === 1 ? "room" : "rooms"}
               href="/bookings?view=checkins&date=today"
             />
             <Metric
+              icon={<LogoutRoundedIcon fontSize="small" />}
               label={t("Check-outs today", "Wanaotoka leo")}
               value={String(dashboard.departures)}
               suffix={dashboard.departures === 1 ? "room" : "rooms"}
               href="/bookings?view=checkouts&date=today"
             />
             <Metric
+              icon={<PaymentsRoundedIcon fontSize="small" />}
               label={t("Today’s revenue", "Mapato ya leo")}
               value={money.format(dashboard.todayRevenue)}
               positive
@@ -149,6 +156,9 @@ function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
       spacing={1}
       sx={{
         alignItems: { sm: "center" },
+        background:
+          "radial-gradient(circle at 88% 16%, rgba(103,173,143,.32), transparent 28%), #173A30",
+        color: "#F8FAFC",
         justifyContent: "space-between",
         p: { xs: 1.5, sm: 2 },
       }}
@@ -161,7 +171,7 @@ function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
         >
           {t("Home", "Nyumbani")}
         </Typography>
-        <Typography color="text.secondary" sx={{ mt: 0.45 }}>
+        <Typography sx={{ color: "rgba(226,232,240,.68)", mt: 0.45 }}>
           {new Date().toLocaleDateString(
             language === "sw" ? "sw-TZ" : "en-TZ",
             {
@@ -178,6 +188,11 @@ function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
           <IconButton
             aria-label={t("Refresh dashboard", "Sasisha dashibodi")}
             onClick={onRefresh}
+            sx={{
+              border: "1px solid rgba(255,255,255,.18)",
+              color: "#F8FAFC",
+              "&:hover": { bgcolor: "rgba(255,255,255,.1)" },
+            }}
           >
             <RefreshRoundedIcon />
           </IconButton>
@@ -188,12 +203,14 @@ function DashboardHeader({ onRefresh }: { onRefresh: () => void }) {
 }
 
 function Metric({
+  icon,
   label,
   value,
   suffix,
   positive = false,
   href,
 }: {
+  icon: ReactNode;
   label: string;
   value: string;
   suffix?: string;
@@ -210,9 +227,9 @@ function Metric({
         borderColor: "divider",
         color: "inherit",
         minWidth: 0,
-        px: { xs: 0.75, sm: 2 },
+        px: { xs: 1.25, sm: 2 },
         py: { xs: 1.35, sm: 1.8 },
-        textAlign: "center",
+        textAlign: "left",
         textDecoration: "none",
         transition: "background-color 150ms ease",
         ...(href && {
@@ -220,7 +237,23 @@ function Metric({
           "&:hover": { bgcolor: "action.hover" },
         }),
       }}
-    >
+      >
+      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+        <Box
+          sx={{
+            alignItems: "center",
+            bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
+            borderRadius: "7px",
+            color: "primary.main",
+            display: "inline-flex",
+            height: 32,
+            justifyContent: "center",
+            width: 32,
+          }}
+        >
+          {icon}
+        </Box>
+      </Stack>
       <Typography
         color="text.secondary"
         sx={{
@@ -238,7 +271,7 @@ function Metric({
           fontWeight: 700,
           letterSpacing: "-.025em",
           lineHeight: 1.2,
-          mt: 0.65,
+          mt: 0.55,
           overflowWrap: "anywhere",
         }}
       >
