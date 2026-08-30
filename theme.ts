@@ -52,7 +52,7 @@ export const theme = createTheme({
       },
     },
   },
-  shape: { borderRadius: 8 },
+  shape: { borderRadius: 10 },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
@@ -157,17 +157,17 @@ export const theme = createTheme({
       styleOverrides: {
         root: ({ ownerState }) => ({
           backgroundImage: "none",
-          borderRadius: ownerState.square ? 0 : 8,
+          borderRadius: ownerState.square ? 0 : 10,
         }),
-        rounded: { borderRadius: "8px !important" },
+        rounded: { borderRadius: "10px !important" },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
-          boxShadow: "0 1px 3px rgba(16,24,40,.035)",
+          boxShadow: "0 1px 2px rgba(16,24,40,.025)",
         },
       },
     },
     MuiCard: {
-      styleOverrides: { root: { borderRadius: "8px !important" } },
+      styleOverrides: { root: { borderRadius: "10px !important" } },
     },
     MuiChip: {
       styleOverrides: {
@@ -333,7 +333,17 @@ export const theme = createTheme({
     },
     MuiInputBase: {
       styleOverrides: {
-        root: { fontSize: ".875rem" },
+        root: {
+          fontSize: ".875rem",
+          "&.MuiOutlinedInput-root": {
+            backgroundColor: "var(--mui-palette-background-paper)",
+            borderRadius: 8,
+            transition: "box-shadow 150ms ease, border-color 150ms ease",
+            "&.Mui-focused": {
+              boxShadow: "0 0 0 3px color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)",
+            },
+          },
+        },
       },
     },
     MuiBottomNavigationAction: {

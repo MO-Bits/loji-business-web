@@ -171,9 +171,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flexShrink: 0,
           width: drawerWidth,
           "& .MuiDrawer-paper": {
-            bgcolor: "background.paper",
-            borderRightColor: "divider",
+            bgcolor: "#101828",
+            borderRight: 0,
             boxSizing: "border-box",
+            color: "#F8FAFC",
             width: drawerWidth,
           },
         }}
@@ -188,8 +189,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
-            bgcolor: "background.paper",
+            bgcolor: "#101828",
             boxSizing: "border-box",
+            color: "#F8FAFC",
             width: "min(88vw, 300px)",
           },
         }}
@@ -216,7 +218,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       >
         <Box
           sx={{
-            bgcolor: "background.paper",
+            backdropFilter: "saturate(145%) blur(18px)",
+            bgcolor:
+              "color-mix(in srgb, var(--mui-palette-background-paper) 92%, transparent)",
             borderBottom: 1,
             borderColor: "divider",
             left: { xs: 0, md: `${drawerWidth}px` },
@@ -432,13 +436,19 @@ function SidebarContent({
   const [preferencesOpen, setPreferencesOpen] = useState(false);
 
   return (
-    <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flex: 1,
+        flexDirection: "column",
+        minHeight: 0,
+      }}
+    >
       <Stack
         direction="row"
         sx={{
           alignItems: "center",
-          borderBottom: "1px solid",
-          borderColor: "divider",
+          borderBottom: "1px solid rgba(255,255,255,.11)",
           height: 64,
           justifyContent: "space-between",
           px: 1.5,
@@ -451,13 +461,16 @@ function SidebarContent({
           onClick={onClose}
           sx={{ display: "inline-flex", p: 0.5 }}
         >
-          <BrandLockup symbolSize={28} textSize=".92rem" />
+          <BrandLockup color="#F8FAFC" symbolSize={28} textSize=".92rem" />
         </Box>
         <IconButton
           aria-label={t("Close navigation", "Funga menyu")}
           onClick={onClose}
           size="small"
-          sx={{ display: { xs: "inline-flex", md: "none" } }}
+          sx={{
+            color: "rgba(248,250,252,.78)",
+            display: { xs: "inline-flex", md: "none" },
+          }}
         >
           <CloseRoundedIcon fontSize="small" />
         </IconButton>
@@ -481,10 +494,9 @@ function SidebarContent({
         {canManage ? (
           <Box sx={{ mt: 2 }}>
             <Typography
-              color="text.secondary"
               component="p"
               variant="overline"
-              sx={{ px: 1.25, pb: 0.75 }}
+              sx={{ color: "rgba(226,232,240,.5)", px: 1.25, pb: 0.75 }}
             >
               {t("Manage", "Usimamizi")}
             </Typography>
@@ -496,18 +508,24 @@ function SidebarContent({
           <ListItemButton
             aria-expanded={preferencesOpen}
             onClick={() => setPreferencesOpen((open) => !open)}
-            sx={{ borderRadius: 1, minHeight: 40, px: 1.25 }}
+            sx={{
+              borderRadius: 1,
+              color: "rgba(226,232,240,.78)",
+              minHeight: 40,
+              px: 1.25,
+              "&:hover": { bgcolor: "rgba(255,255,255,.07)" },
+            }}
           >
             <ListItemIcon sx={{ minWidth: 26 }}>
-              <TuneRoundedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
+              <TuneRoundedIcon sx={{ color: "rgba(226,232,240,.62)", fontSize: 17 }} />
             </ListItemIcon>
             <ListItemText
               primary={t("Preferences", "Mapendeleo")}
-              slotProps={{ primary: { variant: "caption", color: "text.secondary" } }}
+              slotProps={{ primary: { variant: "caption", sx: { color: "rgba(226,232,240,.72)" } } }}
             />
             <ExpandMoreRoundedIcon
               sx={{
-                color: "text.secondary",
+                color: "rgba(226,232,240,.62)",
                 fontSize: 18,
                 transform: preferencesOpen ? "rotate(180deg)" : "none",
                 transition: "transform 160ms ease",
@@ -519,9 +537,8 @@ function SidebarContent({
             <Stack
               spacing={1.25}
               sx={{
-                bgcolor: "action.hover",
-                border: "1px solid",
-                borderColor: "divider",
+                bgcolor: "rgba(255,255,255,.06)",
+                border: "1px solid rgba(255,255,255,.1)",
                 borderRadius: 1,
                 mt: 0.5,
                 p: 1.25,
@@ -529,9 +546,8 @@ function SidebarContent({
             >
               <Box>
                 <Typography
-                  color="text.secondary"
                   variant="caption"
-                  sx={{ display: "block", fontWeight: 500, mb: 0.6 }}
+                  sx={{ color: "rgba(226,232,240,.62)", display: "block", fontWeight: 500, mb: 0.6 }}
                 >
                   {t("Appearance", "Mwonekano")}
                 </Typography>
@@ -542,7 +558,7 @@ function SidebarContent({
         </Box>
 
         <Box sx={{ flex: 1, minHeight: 24 }} />
-        <Divider sx={{ mb: 1 }} />
+        <Divider sx={{ borderColor: "rgba(255,255,255,.11)", mb: 1 }} />
 
         <Stack
           direction="row"
@@ -553,7 +569,7 @@ function SidebarContent({
             minHeight: 48,
             px: 1,
             py: 0.75,
-            "&:hover": { bgcolor: "action.hover" },
+            "&:hover": { bgcolor: "rgba(255,255,255,.07)" },
           }}
         >
           <Stack
@@ -580,14 +596,13 @@ function SidebarContent({
               {name[0]?.toUpperCase()}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography noWrap variant="body2" sx={{ fontWeight: 500 }}>
+              <Typography noWrap variant="body2" sx={{ color: "#F8FAFC", fontWeight: 600 }}>
                 {name}
               </Typography>
               <Typography
                 noWrap
-                color="text.secondary"
                 variant="caption"
-                sx={{ textTransform: "capitalize" }}
+                sx={{ color: "rgba(226,232,240,.6)", textTransform: "capitalize" }}
               >
                 {role}
               </Typography>
@@ -596,7 +611,7 @@ function SidebarContent({
           <Tooltip title={t("Sign out", "Ondoka")}>
             <IconButton
               aria-label={t("Sign out", "Ondoka")}
-              color="inherit"
+              sx={{ color: "rgba(248,250,252,.78)" }}
               onClick={() => void onSignOut()}
               size="small"
             >
@@ -646,16 +661,18 @@ function NavigationList({
               mb: 0.25,
               minHeight: 40,
               px: 1.25,
+              color: "rgba(226,232,240,.78)",
+              "&:hover": { bgcolor: "rgba(255,255,255,.07)" },
               "&.Mui-selected": {
-                bgcolor: "action.selected",
-                color: "text.primary",
-                "&:hover": { bgcolor: "action.selected" },
+                bgcolor: "rgba(255,255,255,.13)",
+                color: "#FFFFFF",
+                "&:hover": { bgcolor: "rgba(255,255,255,.17)" },
               },
             }}
           >
             <ListItemIcon
               sx={{
-                color: selected ? "text.primary" : "text.secondary",
+                color: selected ? "#FFFFFF" : "rgba(226,232,240,.62)",
                 alignItems: "center",
                 justifyContent: "center",
                 minWidth: 20,
@@ -670,7 +687,11 @@ function NavigationList({
               sx={{ m: 0 }}
               slotProps={{
                 primary: {
-                  sx: { fontSize: "0.875rem", fontWeight: selected ? 500 : 400 },
+                  sx: {
+                    color: selected ? "#FFFFFF" : "rgba(226,232,240,.78)",
+                    fontSize: "0.875rem",
+                    fontWeight: selected ? 600 : 450,
+                  },
                 },
               }}
             />

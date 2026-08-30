@@ -3,6 +3,7 @@ import { Stack, Typography, type SxProps, type Theme } from "@mui/material";
 import { BrandSymbol } from "@/components/shared/brand-symbol";
 
 type BrandLockupProps = {
+  color?: string;
   priority?: boolean;
   symbolSize?: number;
   textSize?: string | { xs: string; sm?: string; md?: string };
@@ -10,6 +11,7 @@ type BrandLockupProps = {
 };
 
 export function BrandLockup({
+  color,
   priority = false,
   symbolSize = 32,
   textSize = "1rem",
@@ -33,7 +35,7 @@ export function BrandLockup({
         component="span"
         noWrap
         sx={{
-          color: "text.primary",
+          color: color ?? "text.primary",
           fontSize: textSize,
           fontWeight: 750,
           letterSpacing: "-.025em",
