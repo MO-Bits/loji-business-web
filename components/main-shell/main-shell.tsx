@@ -40,6 +40,7 @@ import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { AppStatus } from "@/features/session/models/app-status";
+import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/components/providers/language-provider";
 import {
@@ -106,9 +107,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     return <FullPageLoader />;
   }
 
-  const canManage = ["owner", "manager"].includes(
-    session.activeRole?.toLowerCase() ?? "",
-  );
+  const capabilities = getWorkspaceCapabilities(session.activeRole);
+  const canManage =
+    capabilities.canManageProperty || capabilities.canManageStaff;
   const name = String(
     session.user?.user_metadata?.full_name ??
       session.user?.user_metadata?.name ??

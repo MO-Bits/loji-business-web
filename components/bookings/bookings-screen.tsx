@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
+import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
+import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import {
@@ -32,6 +34,7 @@ import {
 import { formatLocalDate, localDateKey } from "@/lib/date-time";
 import { useLanguage } from "@/components/providers/language-provider";
 import { PageHeader } from "@/components/shared/page-header";
+import { getWorkspaceCapabilities } from "@/features/session/permissions";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -54,6 +57,7 @@ export function BookingsScreen() {
   const { session } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const propertyId = session?.activePropertyId;
+  const capabilities = getWorkspaceCapabilities(session?.activeRole);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,94 +119,127 @@ export function BookingsScreen() {
         item.phone.includes(query))
     );
   });
+  const activeBookings = visible.filter((booking) =>
+    ["confirmed", "reserved", "checked_in"].includes(booking.status),
+  );
+  const arrivalsToday = visible.filter(
+    (booking) => localDateKey(booking.checkIn) === today,
+  ).length;
+  const outstanding = visible.reduce(
+    (sum, booking) => sum + booking.balanceDue,
+    0,
+  );
 
   return (
     <>
       <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <PageHeader
+            eyebrow={t("Guest operations", "Uendeshaji wa wageni")}
             title={t("Bookings", "Uhifadhi")}
             description={t(
-              "Search, review and manage every guest stay from one reliable list.",
-              "Tafuta, kagua na simamia ukaaji wote wa wageni kutoka orodha moja.",
+              "A clear live register for arrivals, in-house guests, and planned departures.",
+              "Orodha ya moja kwa moja ya wanaoingia, waliopo, na wanaotarajiwa kuondoka.",
             )}
+            action={
+              capabilities.canCreateBooking ? (
+                <Button
+                  component={Link}
+                  href="/bookings/new"
+                  startIcon={<AddRoundedIcon />}
+                  variant="contained"
+                >
+                  {t("New booking", "Uhifadhi mpya")}
+                </Button>
+              ) : undefined
+            }
+          />
+
+          <BookingSummary
+            active={activeBookings.length}
+            arrivals={arrivalsToday}
+            outstanding={outstanding}
+            showFinance={capabilities.canViewFinance}
+            total={visible.length}
           />
 
           <Paper
             variant="outlined"
-            sx={{ borderRadius: 1, p: { xs: 1.75, sm: 2.5 } }}
+            sx={{ overflow: "hidden" }}
           >
-            <Stack direction={{ xs: "column", md: "row" }} spacing={1.5}>
-              <TextField
-                placeholder={t(
-                  "Search guest, booking number or phone",
-                  "Tafuta mgeni, namba ya uhifadhi au simu",
-                )}
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchRoundedIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-              <TextField
-                select
-                value={filter}
-                onChange={(event) => setFilter(event.target.value)}
-                sx={{ minWidth: { md: 220 }, maxWidth: { md: 280 } }}
-              >
-                {[
-                  "all",
-                  "confirmed",
-                  "reserved",
-                  "checked_in",
-                  "checked_out",
-                  "cancelled",
-                ].map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item === "all"
-                      ? t("All booking statuses", "Hali zote za uhifadhi")
-                      : bookingStatusLabel(item)}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Stack>
-            {todayView && (
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: "center", mt: 1.5 }}
-              >
-                <Chip
-                  color="primary"
-                  label={
-                    todayView === "checkins"
-                      ? t("Check-ins today", "Wanaoingia leo")
-                      : t("Check-outs today", "Wanaotoka leo")
-                  }
-                  onDelete={() => {
-                    setTodayView(null);
-                    window.history.replaceState({}, "", "/bookings");
+            <Box sx={{ p: { xs: 1.25, sm: 1.75 } }}>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={1.25}>
+                <TextField
+                  placeholder={t(
+                    "Search guest, booking number or phone",
+                    "Tafuta mgeni, namba ya uhifadhi au simu",
+                  )}
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchRoundedIcon color="action" />
+                        </InputAdornment>
+                      ),
+                    },
                   }}
                 />
-                <Typography color="text.secondary" variant="caption">
-                  {todayView === "checkins"
-                    ? t(
-                        "Showing today’s arrivals.",
-                        "Inaonyesha wanaoingia leo.",
-                      )
-                    : t(
-                        "Showing today’s departures.",
-                        "Inaonyesha wanaotoka leo.",
-                      )}
-                </Typography>
+                <TextField
+                  select
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value)}
+                  sx={{ minWidth: { md: 220 }, maxWidth: { md: 280 } }}
+                >
+                  {[
+                    "all",
+                    "confirmed",
+                    "reserved",
+                    "checked_in",
+                    "checked_out",
+                    "cancelled",
+                  ].map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item === "all"
+                        ? t("All booking statuses", "Hali zote za uhifadhi")
+                        : bookingStatusLabel(item)}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Stack>
-            )}
+              {todayView && (
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={0.75}
+                  sx={{ alignItems: { sm: "center" }, mt: 1.25 }}
+                >
+                  <Chip
+                    color="primary"
+                    label={
+                      todayView === "checkins"
+                        ? t("Check-ins today", "Wanaoingia leo")
+                        : t("Check-outs today", "Wanaotoka leo")
+                    }
+                    onDelete={() => {
+                      setTodayView(null);
+                      window.history.replaceState({}, "", "/bookings");
+                    }}
+                  />
+                  <Typography color="text.secondary" variant="caption">
+                    {todayView === "checkins"
+                      ? t(
+                          "Showing today’s arrivals.",
+                          "Inaonyesha wanaoingia leo.",
+                        )
+                      : t(
+                          "Showing today’s departures.",
+                          "Inaonyesha wanaotoka leo.",
+                        )}
+                  </Typography>
+                </Stack>
+              )}
+            </Box>
           </Paper>
 
           {loading ? (
@@ -229,30 +266,89 @@ export function BookingsScreen() {
           ) : visible.length === 0 ? (
             <EmptyBookings />
           ) : (
-            <BookingTable bookings={visible} />
+            <BookingTable bookings={visible} showFinance={capabilities.canViewFinance} />
           )}
         </Stack>
       </Container>
-      <Fab
-        component={Link}
-        href="/bookings/new"
-        color="primary"
-        variant="extended"
-        sx={{
-          bottom: { xs: 20, sm: 28 },
-          position: "fixed",
-          right: { xs: 18, sm: 28 },
-          zIndex: (theme) => theme.zIndex.speedDial,
-        }}
-      >
-        <AddRoundedIcon sx={{ mr: 1 }} />
-        {t("New booking", "Uhifadhi mpya")}
-      </Fab>
+      {capabilities.canCreateBooking ? (
+        <Fab
+          component={Link}
+          href="/bookings/new"
+          color="primary"
+          sx={{
+            bottom: { xs: 20, sm: 28 },
+            display: { xs: "inline-flex", sm: "none" },
+            position: "fixed",
+            right: { xs: 18, sm: 28 },
+            zIndex: (theme) => theme.zIndex.speedDial,
+          }}
+        >
+          <AddRoundedIcon />
+        </Fab>
+      ) : null}
     </>
   );
 }
 
-function BookingTable({ bookings }: { bookings: Booking[] }) {
+function BookingSummary({
+  active,
+  arrivals,
+  outstanding,
+  showFinance,
+  total,
+}: {
+  active: number;
+  arrivals: number;
+  outstanding: number;
+  showFinance: boolean;
+  total: number;
+}) {
+  const { t } = useLanguage();
+  const cards = showFinance
+    ? [
+        { icon: <EventAvailableRoundedIcon fontSize="small" />, label: t("Bookings in view", "Uhifadhi unaoonekana"), value: String(total) },
+        { icon: <GroupsRoundedIcon fontSize="small" />, label: t("Active stays", "Ukaaji unaoendelea"), value: String(active) },
+        { icon: <EventAvailableRoundedIcon fontSize="small" />, label: t("Arriving today", "Wanaowasili leo"), value: String(arrivals) },
+        { icon: <PaymentsRoundedIcon fontSize="small" />, label: t("Open balances", "Madeni yaliyobaki"), value: money.format(outstanding) },
+      ]
+    : [
+        { icon: <EventAvailableRoundedIcon fontSize="small" />, label: t("Bookings in view", "Uhifadhi unaoonekana"), value: String(total) },
+        { icon: <GroupsRoundedIcon fontSize="small" />, label: t("Active stays", "Ukaaji unaoendelea"), value: String(active) },
+        { icon: <EventAvailableRoundedIcon fontSize="small" />, label: t("Arriving today", "Wanaowasili leo"), value: String(arrivals) },
+      ];
+
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gap: 1,
+        gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", md: `repeat(${cards.length},minmax(0,1fr))` },
+      }}
+    >
+      {cards.map((card) => (
+        <Paper key={card.label} variant="outlined" sx={{ minWidth: 0, p: { xs: 1.25, sm: 1.5 } }}>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", color: "primary.main" }}>
+            {card.icon}
+            <Typography color="text.secondary" sx={{ fontSize: ".68rem", fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase" }}>
+              {card.label}
+            </Typography>
+          </Stack>
+          <Typography sx={{ fontSize: { xs: "1.1rem", sm: "1.35rem" }, fontVariantNumeric: "tabular-nums", fontWeight: 700, letterSpacing: "-.025em", mt: 0.7, overflowWrap: "anywhere" }}>
+            {card.value}
+          </Typography>
+        </Paper>
+      ))}
+    </Box>
+  );
+}
+
+function BookingTable({
+  bookings,
+  showFinance,
+}: {
+  bookings: Booking[];
+  showFinance: boolean;
+}) {
   return (
     <Paper variant="outlined" sx={{ borderRadius: 1, overflow: "hidden" }}>
       <Box
@@ -262,8 +358,9 @@ function BookingTable({ bookings }: { bookings: Booking[] }) {
           borderColor: "divider",
           display: { xs: "none", lg: "grid" },
           gap: 2,
-          gridTemplateColumns:
-            "minmax(210px,1.3fr) minmax(140px,.8fr) minmax(180px,1fr) 120px 140px",
+          gridTemplateColumns: showFinance
+            ? "minmax(220px,1.35fr) minmax(140px,.8fr) minmax(180px,1fr) 120px 148px"
+            : "minmax(240px,1.5fr) minmax(160px,.9fr) minmax(190px,1fr) 130px",
           px: 2.5,
           py: 1.4,
         }}
@@ -272,13 +369,14 @@ function BookingTable({ bookings }: { bookings: Booking[] }) {
         <TableLabel>Room</TableLabel>
         <TableLabel>Stay</TableLabel>
         <TableLabel>Status</TableLabel>
-        <TableLabel align="right">Total</TableLabel>
+        {showFinance ? <TableLabel align="right">Payment</TableLabel> : null}
       </Box>
       {bookings.map((booking, index) => (
         <BookingRow
           key={booking.id}
           booking={booking}
           last={index === bookings.length - 1}
+          showFinance={showFinance}
         />
       ))}
     </Paper>
@@ -307,7 +405,15 @@ function TableLabel({
   );
 }
 
-function BookingRow({ booking, last }: { booking: Booking; last: boolean }) {
+function BookingRow({
+  booking,
+  last,
+  showFinance,
+}: {
+  booking: Booking;
+  last: boolean;
+  showFinance: boolean;
+}) {
   const initials = booking.guestName
     .split(/\s+/)
     .slice(0, 2)
@@ -325,7 +431,9 @@ function BookingRow({ booking, last }: { booking: Booking; last: boolean }) {
         display: { xs: "block", lg: "grid" },
         gap: 2,
         gridTemplateColumns: {
-          lg: "minmax(210px,1.3fr) minmax(140px,.8fr) minmax(180px,1fr) 120px 140px",
+          lg: showFinance
+            ? "minmax(220px,1.35fr) minmax(140px,.8fr) minmax(180px,1fr) 120px 148px"
+            : "minmax(240px,1.5fr) minmax(160px,.9fr) minmax(190px,1fr) 130px",
         },
         px: { xs: 1.5, sm: 2, lg: 2.5 },
         py: { xs: 1.75, lg: 1.6 },
@@ -385,7 +493,7 @@ function BookingRow({ booking, last }: { booking: Booking; last: boolean }) {
         </Typography>
       </Box>
       <Box sx={{ mt: { xs: 0.7, lg: 0 } }}>
-        <Typography variant="body2" sx={{ fontWeight: 650 }}>
+        <Typography variant="body2" sx={{ fontWeight: 700 }}>
           {formatLocalDate(booking.checkIn, { day: "numeric", month: "short" })}{" "}
           →{" "}
           {formatLocalDate(booking.checkOut, {
@@ -405,36 +513,40 @@ function BookingRow({ booking, last }: { booking: Booking; last: boolean }) {
           size="small"
         />
       </Box>
-      <Box
-        sx={{
-          alignSelf: "center",
-          borderTop: { xs: "1px solid", lg: 0 },
-          borderColor: "divider",
-          display: { xs: "flex", lg: "block" },
-          justifyContent: "space-between",
-          mt: { xs: 1.2, lg: 0 },
-          pt: { xs: 1.1, lg: 0 },
-          textAlign: { lg: "right" },
-        }}
-      >
-        <Typography
-          color="text.secondary"
-          variant="caption"
-          sx={{ display: { lg: "none" } }}
+      {showFinance ? (
+        <Box
+          sx={{
+            alignSelf: "center",
+            borderTop: { xs: "1px solid", lg: 0 },
+            borderColor: "divider",
+            display: { xs: "flex", lg: "block" },
+            justifyContent: "space-between",
+            mt: { xs: 1.2, lg: 0 },
+            pt: { xs: 1.1, lg: 0 },
+            textAlign: { lg: "right" },
+          }}
         >
-          Booking total
-        </Typography>
-        <Box>
-          <Typography sx={{ fontWeight: 700 }}>
-            {money.format(booking.totalPrice)}
+          <Typography
+            color="text.secondary"
+            variant="caption"
+            sx={{ display: { lg: "none" } }}
+          >
+            Booking total
           </Typography>
-          {booking.balanceDue > 0 && (
-            <Typography color="warning.main" variant="caption">
-              {money.format(booking.balanceDue)} due
+          <Box>
+            <Typography sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>
+              {money.format(booking.totalPrice)}
             </Typography>
-          )}
+            {booking.balanceDue > 0 ? (
+              <Typography color="warning.main" variant="caption">
+                {money.format(booking.balanceDue)} due
+              </Typography>
+            ) : (
+              <Typography color="success.main" variant="caption">Paid</Typography>
+            )}
+          </Box>
         </Box>
-      </Box>
+      ) : null}
     </Box>
   );
 }

@@ -59,6 +59,8 @@ import { formatLocalDateTime } from "@/lib/date-time";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import { useLanguage } from "@/components/providers/language-provider";
 import { trackEvent } from "@/lib/analytics";
+import { PageHeader } from "@/components/shared/page-header";
+import { getWorkspaceCapabilities } from "@/features/session/permissions";
 
 export function StaffManagement() {
   const { t } = useLanguage();
@@ -67,6 +69,7 @@ export function StaffManagement() {
   const propertyId = session?.activePropertyId;
   const currentRole = session?.activeRole ?? "";
   const currentUserId = session?.user?.id ?? "";
+  const capabilities = getWorkspaceCapabilities(currentRole);
   const [tab, setTab] = useState(0);
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [invitations, setInvitations] = useState<StaffInvitation[]>([]);
@@ -116,13 +119,48 @@ export function StaffManagement() {
       setError(cause instanceof Error ? cause.message : "Action failed.");
     }
   };
+  const activeCount = staff.filter((member) => member.status === "active").length;
+  const managerCount = staff.filter((member) => member.role.toLowerCase() === "manager").length;
+
+  if (!capabilities.canManageStaff) {
+    return (
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 8 } }}>
+        <Alert severity="info">
+          {t(
+            "Staff management is available to property owners and managers.",
+            "Usimamizi wa wafanyakazi unapatikana kwa wamiliki na mameneja wa jengo.",
+          )}
+        </Alert>
+      </Container>
+    );
+  }
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
       <Stack spacing={{ xs: 1.5, sm: 2 }}>
-        <Typography component="h1" variant="h4">
-          {t("Staff", "Wafanyakazi")}
-        </Typography>
-        <Paper variant="outlined">
+        <PageHeader
+          eyebrow={t("Property management", "Usimamizi wa jengo")}
+          title={t("Staff & access", "Wafanyakazi na ruhusa")}
+          description={t(
+            "Keep the right people in the right roles, with a clear view of access across the property.",
+            "Weka watu sahihi kwenye majukumu sahihi na uone ruhusa za jengo kwa uwazi.",
+          )}
+          action={
+            <Button
+              onClick={() => setInviteOpen(true)}
+              startIcon={<AddRoundedIcon />}
+              variant="contained"
+            >
+              {t("Invite staff", "Alika mfanyakazi")}
+            </Button>
+          }
+        />
+        <StaffSummary
+          active={activeCount}
+          invitations={invitations.filter((invitation) => invitation.status.toLowerCase() === "pending").length}
+          managers={managerCount}
+          total={staff.length}
+        />
+        <Paper variant="outlined" sx={{ overflow: "hidden" }}>
           <Tabs
             value={tab}
             onChange={(_, value) => setTab(value)}
@@ -253,24 +291,41 @@ export function StaffManagement() {
       >
         <AddRoundedIcon />
       </Fab>
-      <Fab
-        aria-label={t("Invite staff", "Alika mfanyakazi")}
-        color="primary"
-        variant="extended"
-        disabled={!propertyId}
-        onClick={() => setInviteOpen(true)}
-        sx={{
-          bottom: 28,
-          display: { xs: "none", sm: "inline-flex" },
-          position: "fixed",
-          right: 28,
-          zIndex: (theme) => theme.zIndex.speedDial,
-        }}
-      >
-        <AddRoundedIcon sx={{ mr: 1 }} />
-        {t("Invite staff", "Alika mfanyakazi")}
-      </Fab>
     </Container>
+  );
+}
+
+function StaffSummary({
+  active,
+  invitations,
+  managers,
+  total,
+}: {
+  active: number;
+  invitations: number;
+  managers: number;
+  total: number;
+}) {
+  const { t } = useLanguage();
+  const values = [
+    { label: t("Team members", "Wafanyakazi"), value: total },
+    { label: t("Active access", "Ruhusa hai"), value: active },
+    { label: t("Managers", "Mameneja"), value: managers },
+    { label: t("Pending invitations", "Mialiko inayosubiri"), value: invitations },
+  ];
+  return (
+    <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", md: "repeat(4,minmax(0,1fr))" } }}>
+      {values.map((item) => (
+        <Paper key={item.label} variant="outlined" sx={{ minWidth: 0, p: { xs: 1.2, sm: 1.5 } }}>
+          <Typography color="text.secondary" sx={{ fontSize: ".68rem", fontWeight: 700, letterSpacing: ".065em", textTransform: "uppercase" }}>
+            {item.label}
+          </Typography>
+          <Typography sx={{ fontSize: { xs: "1.15rem", sm: "1.4rem" }, fontVariantNumeric: "tabular-nums", fontWeight: 700, letterSpacing: "-.025em", mt: 0.65 }}>
+            {item.value}
+          </Typography>
+        </Paper>
+      ))}
+    </Box>
   );
 }
 

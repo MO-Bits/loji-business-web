@@ -1,48 +1,78 @@
 import { parseDatabaseDate } from "@/lib/date-time";
 
+export type DashboardCapabilities = {
+  createBooking: boolean;
+  manageRooms: boolean;
+  recordPayment: boolean;
+  checkOut: boolean;
+  updateBooking: boolean;
+  viewFinance: boolean;
+};
+
+export type DashboardSummary = {
+  arrivalsDue: number;
+  attentionRooms: number;
+  departuresDue: number;
+  occupiedRooms: number;
+  overdueArrivals: number;
+  overdueDepartures: number;
+  readyRooms: number;
+  totalActiveRooms: number;
+};
+
 export type DashboardBooking = {
   id: string;
+  bookingNumber: string;
   guestName: string;
+  guests: number;
   roomId: string;
   roomName: string;
   roomType: string;
   checkIn: Date;
   checkOut: Date;
   status: string;
+  isOverdue: boolean;
   amountPaid: number;
   balanceDue: number;
+  paymentStatus: string;
 };
 
-export type DashboardRoom = {
+export type DashboardHousekeepingRoom = {
   id: string;
   name: string;
   roomType: string;
-  capacity: number;
-  bedCount: number;
-  pricePerNight: number;
-  isActive: boolean;
-  images: string[];
-  housekeepingStatus: "ready" | "needs_cleaning" | "cleaning" | "out_of_service";
+  operationalStatus: string;
+  housekeepingStatus: string;
+  notes: string;
+  updatedAt: Date | null;
+};
+
+export type DashboardFinance = {
+  todayCollected: number;
+  todayPaymentCount: number;
+  outstandingBalance: number;
+  openBalanceCount: number;
 };
 
 export type HomeDashboard = {
-  arrivals: number;
-  departures: number;
-  stayingGuests: number;
-  totalRooms: number;
-  availableRooms: number;
-  todayArrivals: DashboardBooking[];
-  todayDepartures: DashboardBooking[];
-  currentGuests: DashboardBooking[];
-  availableRoomsList: DashboardRoom[];
-  occupiedRoomsList: DashboardRoom[];
-  unavailableRoomsList: DashboardRoom[];
-  todayRevenue: number;
-  pendingPayments: number;
-  totalOutstanding: number;
+  businessDate: Date;
+  timezone: string;
+  role: string;
+  capabilities: DashboardCapabilities;
+  summary: DashboardSummary;
+  arrivals: DashboardBooking[];
+  departures: DashboardBooking[];
+  housekeeping: DashboardHousekeepingRoom[];
+  finance: DashboardFinance | null;
 };
 
 type Raw = Record<string, unknown>;
+
+function object(value: unknown): Raw {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Raw)
+    : {};
+}
 
 function text(raw: Raw, ...keys: string[]) {
   for (const key of keys) {
@@ -57,45 +87,105 @@ function number(raw: Raw, ...keys: string[]) {
   return Number.isFinite(value) ? value : 0;
 }
 
+function boolean(raw: Raw, ...keys: string[]) {
+  for (const key of keys) {
+    const value = raw[key];
+    if (value === true || value === "true") return true;
+  }
+  return false;
+}
+
 function date(raw: Raw, ...keys: string[]) {
   const parsed = parseDatabaseDate(text(raw, ...keys));
   return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
 }
 
-export function parseBooking(raw: Raw): DashboardBooking {
+function optionalDate(raw: Raw, ...keys: string[]) {
+  const value = text(raw, ...keys);
+  if (!value) return null;
+  const parsed = parseDatabaseDate(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function parseDashboardBooking(value: unknown): DashboardBooking {
+  const raw = object(value);
   return {
-    id: text(raw, "id", "booking_id"),
-    guestName: text(raw, "guest_name", "guestName", "full_name") || "Guest",
+    id: text(raw, "booking_id", "id"),
+    bookingNumber: text(raw, "booking_number", "bookingNumber"),
+    guestName: text(raw, "guest_name", "guestName") || "Guest",
+    guests: number(raw, "guests", "total_guests"),
     roomId: text(raw, "room_id", "roomId"),
     roomName: text(raw, "room_name", "roomName") || "Room",
     roomType: text(raw, "room_type", "roomType"),
-    checkIn: date(raw, "check_in", "checkIn", "check_in_date"),
-    checkOut: date(raw, "check_out", "checkOut", "check_out_date"),
+    checkIn: date(raw, "check_in", "checkIn"),
+    checkOut: date(raw, "check_out", "checkOut"),
     status: text(raw, "status").toLowerCase(),
+    isOverdue: boolean(raw, "is_overdue", "isOverdue"),
     amountPaid: number(raw, "amount_paid", "amountPaid"),
     balanceDue: number(raw, "balance_due", "balanceDue"),
+    paymentStatus: text(raw, "payment_status", "paymentStatus").toLowerCase(),
   };
 }
 
-export function parseRoom(raw: Raw): DashboardRoom {
-  const rawImages = Array.isArray(raw.images) ? raw.images : [];
-  const images = rawImages
-    .map((image) => typeof image === "string" ? image : image && typeof image === "object" ? text(image as Raw, "url", "image_url") : "")
-    .filter(Boolean);
-  const active = raw.is_active ?? raw.isActive ?? raw.status;
-  const rawHousekeepingStatus = text(raw, "housekeeping_status", "housekeepingStatus");
-  const housekeepingStatus = ["ready", "needs_cleaning", "cleaning", "out_of_service"].includes(rawHousekeepingStatus)
-    ? rawHousekeepingStatus as DashboardRoom["housekeepingStatus"]
-    : "ready";
+export function parseHousekeepingRoom(
+  value: unknown,
+): DashboardHousekeepingRoom {
+  const raw = object(value);
   return {
-    id: text(raw, "id", "room_id"),
-    name: text(raw, "name", "room_name") || "Room",
-    roomType: text(raw, "room_type", "roomType", "type"),
-    capacity: number(raw, "capacity"),
-    bedCount: number(raw, "bed_count", "bedCount", "beds"),
-    pricePerNight: number(raw, "price_per_night", "pricePerNight", "price"),
-    isActive: active === true || active === "true" || active === "active",
-    images,
-    housekeepingStatus,
+    id: text(raw, "room_id", "id"),
+    name: text(raw, "room_name", "name") || "Room",
+    roomType: text(raw, "room_type", "roomType"),
+    operationalStatus: text(raw, "operational_status", "operationalStatus"),
+    housekeepingStatus: text(raw, "housekeeping_status", "housekeepingStatus"),
+    notes: text(raw, "notes"),
+    updatedAt: optionalDate(raw, "updated_at", "updatedAt"),
+  };
+}
+
+export function parseHomeDashboard(value: unknown): HomeDashboard {
+  const raw = object(value);
+  const property = object(raw.property);
+  const capabilityRaw = object(raw.capabilities);
+  const summaryRaw = object(raw.summary);
+  const queues = object(raw.queues);
+  const financeRaw = raw.finance === null || raw.finance === undefined
+    ? null
+    : object(raw.finance);
+  const list = (candidate: unknown) =>
+    Array.isArray(candidate) ? candidate : [];
+
+  return {
+    businessDate: date(property, "business_date", "businessDate"),
+    timezone: text(property, "timezone") || "UTC",
+    role: text(raw, "role") || "member",
+    capabilities: {
+      createBooking: boolean(capabilityRaw, "create_booking", "createBooking"),
+      manageRooms: boolean(capabilityRaw, "manage_rooms", "manageRooms"),
+      recordPayment: boolean(capabilityRaw, "record_payment", "recordPayment"),
+      checkOut: boolean(capabilityRaw, "check_out", "checkOut"),
+      updateBooking: boolean(capabilityRaw, "update_booking", "updateBooking"),
+      viewFinance: boolean(capabilityRaw, "view_finance", "viewFinance"),
+    },
+    summary: {
+      arrivalsDue: number(summaryRaw, "arrivals_due", "arrivalsDue"),
+      attentionRooms: number(summaryRaw, "attention_rooms", "attentionRooms"),
+      departuresDue: number(summaryRaw, "departures_due", "departuresDue"),
+      occupiedRooms: number(summaryRaw, "occupied_rooms", "occupiedRooms"),
+      overdueArrivals: number(summaryRaw, "overdue_arrivals", "overdueArrivals"),
+      overdueDepartures: number(summaryRaw, "overdue_departures", "overdueDepartures"),
+      readyRooms: number(summaryRaw, "ready_rooms", "readyRooms"),
+      totalActiveRooms: number(summaryRaw, "total_active_rooms", "totalActiveRooms"),
+    },
+    arrivals: list(queues.arrivals).map(parseDashboardBooking),
+    departures: list(queues.departures).map(parseDashboardBooking),
+    housekeeping: list(queues.housekeeping).map(parseHousekeepingRoom),
+    finance: financeRaw
+      ? {
+          todayCollected: number(financeRaw, "today_collected", "todayCollected"),
+          todayPaymentCount: number(financeRaw, "today_payment_count", "todayPaymentCount"),
+          outstandingBalance: number(financeRaw, "outstanding_balance", "outstandingBalance"),
+          openBalanceCount: number(financeRaw, "open_balance_count", "openBalanceCount"),
+        }
+      : null,
   };
 }

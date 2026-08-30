@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
@@ -42,6 +43,7 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { PageHeader } from "@/components/shared/page-header";
 import { trackEvent } from "@/lib/analytics";
+import { getWorkspaceCapabilities } from "@/features/session/permissions";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -63,7 +65,8 @@ export function RoomsScreen() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<RoomFilter>("all");
   const propertyId = session?.activePropertyId;
-  const canManage = ["owner", "manager"].includes(session?.activeRole?.toLowerCase() ?? "");
+  const capabilities = getWorkspaceCapabilities(session?.activeRole);
+  const canManage = capabilities.canManageRooms;
 
   const refresh = useCallback(async () => {
     if (!propertyId) return;
@@ -100,6 +103,40 @@ export function RoomsScreen() {
     return () => window.clearTimeout(timer);
   }, [refresh]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const requested = new URLSearchParams(window.location.search).get("status");
+      if (
+        requested === "all" ||
+        requested === "ready" ||
+        requested === "occupied" ||
+        requested === "checking_out_today" ||
+        requested === "needs_cleaning" ||
+        requested === "cleaning" ||
+        requested === "out_of_service" ||
+        requested === "inactive"
+      ) {
+        setStatus(requested);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const roomSummary = useMemo(() => {
+    const count = (value: RoomOperationalStatus) =>
+      rooms.filter(
+        (room) =>
+          (operationalStatuses[room.id] ?? (room.isActive ? "ready" : "inactive")) === value,
+      ).length;
+    return {
+      attention:
+        count("needs_cleaning") + count("cleaning") + count("out_of_service"),
+      occupied: count("occupied") + count("checking_out_today"),
+      ready: count("ready"),
+      total: rooms.length,
+    };
+  }, [operationalStatuses, rooms]);
+
   const updateActive = async (room: Room, active: boolean) => {
     if (!propertyId) return;
     try {
@@ -129,52 +166,69 @@ export function RoomsScreen() {
       <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
           <PageHeader
+            eyebrow={t("Property operations", "Uendeshaji wa jengo")}
             title={t("Rooms", "Vyumba")}
             description={t(
-              "Keep availability, housekeeping and room information accurate in real time.",
-              "Simamia upatikanaji, usafi na taarifa za vyumba kwa usahihi wa muda halisi.",
+              "A live room board for availability, housekeeping, and room readiness.",
+              "Ubao wa muda halisi wa upatikanaji, usafi, na utayari wa vyumba.",
             )}
+            action={
+              canManage ? (
+                <Button
+                  component={Link}
+                  href="/rooms/new"
+                  startIcon={<AddRoundedIcon />}
+                  variant="contained"
+                >
+                  {t("Add room", "Ongeza chumba")}
+                </Button>
+              ) : undefined
+            }
           />
 
-          <Stack spacing={1.25}>
-            <TextField
-              aria-label={t("Search rooms", "Tafuta vyumba")}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("Search rooms", "Tafuta vyumba")}
-              size="small"
-              sx={{ maxWidth: 420, width: "100%" }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchRoundedIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+          <RoomSummary summary={roomSummary} />
 
-            <Box sx={{ overflowX: "auto", pb: 0.25 }}>
-              <ToggleButtonGroup
-                exclusive
+          <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+            <Stack spacing={1.2} sx={{ p: { xs: 1.25, sm: 1.6 } }}>
+              <TextField
+                aria-label={t("Search rooms", "Tafuta vyumba")}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t("Search by room, type, or amenity", "Tafuta kwa chumba, aina au huduma")}
                 size="small"
-                value={status}
-                onChange={(_, value) => value && setStatus(value)}
-                aria-label={t("Filter rooms", "Chuja vyumba")}
-                sx={{ minWidth: "max-content" }}
-              >
-                <ToggleButton value="all">{t("All", "Vyote")}</ToggleButton>
-                <ToggleButton value="ready">{t("Ready", "Tayari")}</ToggleButton>
-                <ToggleButton value="occupied">{t("Occupied", "Vimekaliwa")}</ToggleButton>
-                <ToggleButton value="checking_out_today">{t("Checking out today", "Wanatoka leo")}</ToggleButton>
-                <ToggleButton value="needs_cleaning">{t("Needs cleaning", "Vinahitaji usafi")}</ToggleButton>
-                <ToggleButton value="cleaning">{t("Cleaning", "Vinasafishwa")}</ToggleButton>
-                <ToggleButton value="out_of_service">{t("Out of service", "Havitumiki")}</ToggleButton>
-                <ToggleButton value="inactive">{t("Inactive", "Vimezimwa")}</ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-          </Stack>
+                sx={{ maxWidth: 460, width: "100%" }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchRoundedIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+
+              <Box sx={{ overflowX: "auto", pb: 0.25 }}>
+                <ToggleButtonGroup
+                  exclusive
+                  size="small"
+                  value={status}
+                  onChange={(_, value) => value && setStatus(value)}
+                  aria-label={t("Filter rooms", "Chuja vyumba")}
+                  sx={{ minWidth: "max-content" }}
+                >
+                  <ToggleButton value="all">{t("All", "Vyote")}</ToggleButton>
+                  <ToggleButton value="ready">{t("Ready", "Tayari")}</ToggleButton>
+                  <ToggleButton value="occupied">{t("Occupied", "Vimekaliwa")}</ToggleButton>
+                  <ToggleButton value="checking_out_today">{t("Checking out today", "Wanatoka leo")}</ToggleButton>
+                  <ToggleButton value="needs_cleaning">{t("Needs cleaning", "Vinahitaji usafi")}</ToggleButton>
+                  <ToggleButton value="cleaning">{t("Cleaning", "Vinasafishwa")}</ToggleButton>
+                  <ToggleButton value="out_of_service">{t("Out of service", "Havitumiki")}</ToggleButton>
+                  <ToggleButton value="inactive">{t("Inactive", "Vimezimwa")}</ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+            </Stack>
+          </Paper>
 
           {loading ? (
             <Box
@@ -207,24 +261,35 @@ export function RoomsScreen() {
               <Typography color="text.secondary">{t("Try another search or status filter.", "Jaribu utafutaji au kichujio kingine.")}</Typography>
             </Paper>
           ) : (
-            <Box
-              sx={{
-                display: "grid",
-                gap: { xs: 1, sm: 1.5 },
-                gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))", lg: "repeat(3,minmax(0,1fr))", xl: "repeat(4,minmax(0,1fr))" },
-              }}
-            >
-              {visibleRooms.map((room) => (
-                <RoomCard
-                  key={room.id}
-                  room={room}
-                  status={operationalStatuses[room.id] ?? (room.isActive ? "ready" : "inactive")}
+            <>
+              <Box sx={{ display: { xs: "none", md: "block" } }}>
+                <RoomOperationsTable
                   canManage={canManage}
                   onUpdateActive={updateActive}
                   onUpdateHousekeeping={updateHousekeeping}
+                  rooms={visibleRooms}
+                  statuses={operationalStatuses}
                 />
-              ))}
-            </Box>
+              </Box>
+              <Box
+                sx={{
+                  display: { xs: "grid", md: "none" },
+                  gap: 1,
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" },
+                }}
+              >
+                {visibleRooms.map((room) => (
+                  <RoomCard
+                    key={room.id}
+                    room={room}
+                    status={operationalStatuses[room.id] ?? (room.isActive ? "ready" : "inactive")}
+                    canManage={canManage}
+                    onUpdateActive={updateActive}
+                    onUpdateHousekeeping={updateHousekeeping}
+                  />
+                ))}
+              </Box>
+            </>
           )}
         </Stack>
       </Container>
@@ -234,14 +299,137 @@ export function RoomsScreen() {
           component={Link}
           href="/rooms/new"
           color="primary"
-          variant="extended"
-          sx={{ bottom: { xs: 20, sm: 28 }, position: "fixed", right: { xs: 18, sm: 28 }, zIndex: (theme) => theme.zIndex.speedDial }}
+          aria-label={t("Add room", "Ongeza chumba")}
+          sx={{ bottom: { xs: 20, sm: 28 }, display: { xs: "inline-flex", sm: "none" }, position: "fixed", right: { xs: 18, sm: 28 }, zIndex: (theme) => theme.zIndex.speedDial }}
         >
-          <AddRoundedIcon sx={{ mr: 1 }} />
-          {t("Add room", "Ongeza chumba")}
+          <AddRoundedIcon />
         </Fab>
       )}
     </>
+  );
+}
+
+function RoomSummary({
+  summary,
+}: {
+  summary: { attention: number; occupied: number; ready: number; total: number };
+}) {
+  const { t } = useLanguage();
+  const values = [
+    { color: "text.primary", icon: <BedRoundedIcon fontSize="small" />, label: t("Total rooms", "Vyumba vyote"), value: summary.total },
+    { color: "success.main", icon: <CheckCircleRoundedIcon fontSize="small" />, label: t("Ready now", "Tayari sasa"), value: summary.ready },
+    { color: "info.main", icon: <BedRoundedIcon fontSize="small" />, label: t("Occupied", "Vimekaliwa"), value: summary.occupied },
+    { color: summary.attention > 0 ? "warning.main" : "text.primary", icon: <MoreVertRoundedIcon fontSize="small" />, label: t("Need attention", "Vinahitaji uangalizi"), value: summary.attention },
+  ];
+  return (
+    <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", md: "repeat(4,minmax(0,1fr))" } }}>
+      {values.map((item) => (
+        <Paper key={item.label} variant="outlined" sx={{ minWidth: 0, p: { xs: 1.2, sm: 1.5 } }}>
+          <Stack direction="row" spacing={0.65} sx={{ alignItems: "center", color: item.color }}>
+            {item.icon}
+            <Typography color="text.secondary" sx={{ fontSize: ".68rem", fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase" }}>
+              {item.label}
+            </Typography>
+          </Stack>
+          <Typography sx={{ color: item.color, fontSize: { xs: "1.15rem", sm: "1.4rem" }, fontVariantNumeric: "tabular-nums", fontWeight: 700, letterSpacing: "-.025em", mt: 0.65 }}>
+            {item.value}
+          </Typography>
+        </Paper>
+      ))}
+    </Box>
+  );
+}
+
+function getRoomStatusConfig(
+  t: (english: string, swahili: string) => string,
+): Record<RoomOperationalStatus, { label: string; color: "success" | "warning" | "error" | "info" | "default"; border: string }> {
+  return {
+    ready: { label: t("Ready", "Tayari"), color: "success", border: "success.main" },
+    occupied: { label: t("Occupied", "Kimekaliwa"), color: "info", border: "info.main" },
+    checking_out_today: { label: t("Checking out today", "Anatoka leo"), color: "warning", border: "warning.main" },
+    needs_cleaning: { label: t("Needs cleaning", "Kinahitaji usafi"), color: "warning", border: "warning.main" },
+    cleaning: { label: t("Cleaning", "Kinasafishwa"), color: "info", border: "info.main" },
+    out_of_service: { label: t("Out of service", "Hakitumiki"), color: "default", border: "text.disabled" },
+    inactive: { label: t("Inactive", "Kimezimwa"), color: "default", border: "divider" },
+  };
+}
+
+function RoomOperationsTable({
+  canManage,
+  onUpdateActive,
+  onUpdateHousekeeping,
+  rooms,
+  statuses,
+}: {
+  canManage: boolean;
+  onUpdateActive: (room: Room, active: boolean) => Promise<void>;
+  onUpdateHousekeeping: (room: Room, status: HousekeepingStatus) => Promise<void>;
+  rooms: Room[];
+  statuses: Record<string, RoomOperationalStatus>;
+}) {
+  const { t } = useLanguage();
+  const config = getRoomStatusConfig(t);
+  const columns = canManage
+    ? "minmax(220px,1.3fr) minmax(170px,.85fr) minmax(180px,.9fr) 150px 76px"
+    : "minmax(250px,1.45fr) minmax(180px,.9fr) minmax(190px,.95fr) 160px";
+  return (
+    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", p: 1.75 }}>
+        <Box>
+          <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 700 }}>
+            {t("Room inventory", "Orodha ya vyumba")}
+          </Typography>
+          <Typography color="text.secondary" variant="body2">
+            {t("Current operational status across your property.", "Hali ya sasa ya uendeshaji wa jengo lako.")}
+          </Typography>
+        </Box>
+        <Typography color="text.secondary" sx={{ fontSize: ".78rem", fontWeight: 500 }}>
+          {t(`${rooms.length} rooms`, `Vyumba ${rooms.length}`)}
+        </Typography>
+      </Stack>
+      <Box sx={{ bgcolor: "background.default", borderBlock: "1px solid", borderColor: "divider", display: "grid", gap: 1.5, gridTemplateColumns: columns, px: 2, py: 1.05 }}>
+        {[t("Room", "Chumba"), t("Type & capacity", "Aina na uwezo"), t("Operational state", "Hali ya uendeshaji"), t("Nightly rate", "Bei kwa usiku")].map((label) => (
+          <Typography key={label} color="text.secondary" sx={{ fontSize: ".68rem", fontWeight: 700, letterSpacing: ".07em", textTransform: "uppercase" }}>
+            {label}
+          </Typography>
+        ))}
+        {canManage ? <span aria-hidden /> : null}
+      </Box>
+      <Stack divider={<Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />}>
+        {rooms.map((room) => {
+          const status = statuses[room.id] ?? (room.isActive ? "ready" : "inactive");
+          const item = config[status];
+          return (
+            <Box key={room.id} sx={{ display: "grid", gap: 1.5, gridTemplateColumns: columns, minWidth: 0, px: 2, py: 1.3, "&:hover": { bgcolor: "action.hover" } }}>
+              <Box component={Link} href={`/rooms/${room.id}`} sx={{ color: "inherit", minWidth: 0, textDecoration: "none" }}>
+                <Typography noWrap sx={{ fontWeight: 700 }}>{room.name}</Typography>
+                <Typography color="text.secondary" noWrap variant="caption">{room.amenities.slice(0, 2).join(" · ") || t("No amenities listed", "Hakuna huduma zilizoorodheshwa")}</Typography>
+              </Box>
+              <Box>
+                <Typography noWrap variant="body2" sx={{ fontWeight: 500, textTransform: "capitalize" }}>{room.roomType}</Typography>
+                <Typography color="text.secondary" variant="caption">{room.capacity} {t("guests", "wageni")} · {room.bedCount} {t("beds", "vitanda")}</Typography>
+              </Box>
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", minWidth: 0 }}>
+                <Chip color={item.color} label={item.label} size="small" sx={{ border: "1px solid", borderColor: item.border }} />
+              </Stack>
+              <Typography sx={{ alignSelf: "center", color: "primary.dark", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>
+                {money.format(room.pricePerNight)}
+              </Typography>
+              {canManage ? (
+                <Box sx={{ display: "grid", placeItems: "center" }}>
+                  <RoomStatusActions
+                    onUpdateActive={onUpdateActive}
+                    onUpdateHousekeeping={onUpdateHousekeeping}
+                    room={room}
+                    status={status}
+                  />
+                </Box>
+              ) : null}
+            </Box>
+          );
+        })}
+      </Stack>
+    </Paper>
   );
 }
 
@@ -259,18 +447,7 @@ function RoomCard({
   onUpdateHousekeeping: (room: Room, status: HousekeepingStatus) => Promise<void>;
 }) {
   const { t } = useLanguage();
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-
-  const statusConfig: Record<RoomOperationalStatus, { label: string; color: "success" | "warning" | "error" | "info" | "default"; border: string }> = {
-    ready: { label: t("Ready", "Tayari"), color: "success", border: "success.main" },
-    occupied: { label: t("Occupied", "Kimekaliwa"), color: "info", border: "info.main" },
-    checking_out_today: { label: t("Checking out today", "Anatoka leo"), color: "warning", border: "warning.main" },
-    needs_cleaning: { label: t("Needs cleaning", "Kinahitaji usafi"), color: "warning", border: "warning.main" },
-    cleaning: { label: t("Cleaning", "Kinasafishwa"), color: "info", border: "info.main" },
-    out_of_service: { label: t("Out of service", "Hakitumiki"), color: "default", border: "text.disabled" },
-    inactive: { label: t("Inactive", "Kimezimwa"), color: "default", border: "divider" },
-  };
-  const config = statusConfig[status];
+  const config = getRoomStatusConfig(t)[status];
 
   return (
     <Paper variant="outlined" className="surface-hover" sx={{ borderRadius: 1, overflow: "hidden", position: "relative" }}>
@@ -335,63 +512,87 @@ function RoomCard({
         </Stack>
       </Box>
 
-      {canManage && (
-        <>
-          <IconButton
-            aria-label={t("Update status", "Badili hali")}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setAnchorEl(event.currentTarget);
-            }}
-            size="small"
-            sx={{ bottom: 12, position: "absolute", right: 10 }}
-          >
-            <MoreVertRoundedIcon fontSize="small" />
-          </IconButton>
-          <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-            {room.isActive && status !== "occupied" && status !== "checking_out_today" && (
-              [
-                ["ready", t("Mark ready", "Weka tayari")],
-                ["needs_cleaning", t("Needs cleaning", "Kinahitaji usafi")],
-                ["cleaning", t("Cleaning in progress", "Usafi unaendelea")],
-                ["out_of_service", t("Out of service", "Hakitumiki")],
-              ] as const
-            ).map(([value, label]) => (
-              <MenuItem
-                key={value}
-                disabled={room.housekeepingStatus === value}
-                onClick={() => {
-                  setAnchorEl(null);
-                  void onUpdateHousekeeping(room, value);
-                }}
-              >
-                {label}
-              </MenuItem>
-            ))}
-            {room.isActive ? (
-              <MenuItem
-                onClick={() => {
-                  setAnchorEl(null);
-                  void onUpdateActive(room, false);
-                }}
-              >
-                {t("Mark inactive", "Weka kimezimwa")}
-              </MenuItem>
-            ) : (
-              <MenuItem
-                onClick={() => {
-                  setAnchorEl(null);
-                  void onUpdateActive(room, true);
-                }}
-              >
-                {t("Activate room", "Washa chumba")}
-              </MenuItem>
-            )}
-          </Menu>
-        </>
-      )}
+      {canManage ? (
+        <Box sx={{ bottom: 12, position: "absolute", right: 10 }}>
+          <RoomStatusActions
+            onUpdateActive={onUpdateActive}
+            onUpdateHousekeeping={onUpdateHousekeeping}
+            room={room}
+            status={status}
+          />
+        </Box>
+      ) : null}
     </Paper>
+  );
+}
+
+function RoomStatusActions({
+  onUpdateActive,
+  onUpdateHousekeeping,
+  room,
+  status,
+}: {
+  onUpdateActive: (room: Room, active: boolean) => Promise<void>;
+  onUpdateHousekeeping: (room: Room, status: HousekeepingStatus) => Promise<void>;
+  room: Room;
+  status: RoomOperationalStatus;
+}) {
+  const { t } = useLanguage();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  return (
+    <>
+      <IconButton
+        aria-label={t("Update status", "Badili hali")}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setAnchorEl(event.currentTarget);
+        }}
+        size="small"
+      >
+        <MoreVertRoundedIcon fontSize="small" />
+      </IconButton>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+        {room.isActive && status !== "occupied" && status !== "checking_out_today" && (
+          [
+            ["ready", t("Mark ready", "Weka tayari")],
+            ["needs_cleaning", t("Needs cleaning", "Kinahitaji usafi")],
+            ["cleaning", t("Cleaning in progress", "Usafi unaendelea")],
+            ["out_of_service", t("Out of service", "Hakitumiki")],
+          ] as const
+        ).map(([value, label]) => (
+          <MenuItem
+            key={value}
+            disabled={room.housekeepingStatus === value}
+            onClick={() => {
+              setAnchorEl(null);
+              void onUpdateHousekeeping(room, value);
+            }}
+          >
+            {label}
+          </MenuItem>
+        ))}
+        {room.isActive ? (
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              void onUpdateActive(room, false);
+            }}
+          >
+            {t("Mark inactive", "Weka kimezimwa")}
+          </MenuItem>
+        ) : (
+          <MenuItem
+            onClick={() => {
+              setAnchorEl(null);
+              void onUpdateActive(room, true);
+            }}
+          >
+            {t("Activate room", "Washa chumba")}
+          </MenuItem>
+        )}
+      </Menu>
+    </>
   );
 }
 

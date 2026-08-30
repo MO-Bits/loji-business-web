@@ -35,7 +35,7 @@ export function PageHeader({
             sx={{
               display: "block",
               fontSize: ".625rem",
-              fontWeight: 750,
+              fontWeight: 700,
               letterSpacing: ".09em",
               mb: 0.5,
             }}
