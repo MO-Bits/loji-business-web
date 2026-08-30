@@ -55,27 +55,24 @@ button,
 
 a:focus-visible,
 button:focus-visible,
-[role="button"]:focus-visible {
-  outline: 3px solid
-    color-mix(
-      in srgb,
-      var(--mui-palette-primary-main, #1769d2) 28%,
-      transparent
-    );
+[role="button"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible,
+.MuiButtonBase-root.Mui-focusVisible {
+  outline: 3px solid var(--mui-palette-primary-main, #1769d2);
   outline-offset: 2px;
 }
 
-input:focus,
-input:focus-visible,
-textarea:focus,
-textarea:focus-visible,
-select:focus,
-select:focus-visible {
+.MuiInputBase-input:focus,
+.MuiInputBase-input:focus-visible {
   outline: none;
 }
 
-.MuiButtonBase-root:focus-visible {
-  outline: none;
+input:not(.MuiInputBase-input):focus-visible,
+textarea:not(.MuiInputBase-input):focus-visible,
+select:not(.MuiInputBase-input):focus-visible {
+  outline: 3px solid var(--mui-palette-primary-main, #1769d2);
+  outline-offset: 2px;
 }
 
 input::placeholder,
@@ -201,7 +198,7 @@ div {
 .MuiFormControl-root:has(> .MuiInputLabel-root) > .MuiInputLabel-root {
   color: var(--mui-palette-text-primary);
   font-size: 0.84rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.35;
   margin: 0 0 8px;
   max-width: 100%;
@@ -283,7 +280,7 @@ input:-webkit-autofill:focus {
   }
 }
 
-@media (max-width: 899px), (hover: none) {
+@media (max-width: 959px), (hover: none) {
   .surface-hover:hover {
     box-shadow: none;
     transform: none;

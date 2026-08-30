@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -43,7 +51,105 @@ const money = new Intl.NumberFormat("en-TZ", {
   currency: "TZS",
   maximumFractionDigits: 0,
 });
-const BOOKING_DRAFT_KEY = "loji-new-booking-draft";
+const LEGACY_BOOKING_DRAFT_KEY = "loji-new-booking-draft";
+const BOOKING_DRAFT_PREFIX = "loji-new-booking-draft:v2";
+const PAYMENT_METHODS = new Set([
+  "cash",
+  "mobile_money",
+  "card",
+  "bank_transfer",
+]);
+
+type BookingFormState = {
+  firstName: string;
+  lastName: string;
+  gender: string;
+  nationality: string;
+  occupation: string;
+  email: string;
+  phone: string;
+  whereFrom: string;
+  whereTo: string;
+  idType: string;
+  idNumber: string;
+  emergencyContactName: string;
+  emergencyContactPhone: string;
+  specialRequests: string;
+  paymentMethod: string;
+  transactionRef: string;
+};
+
+type BookingDraft = {
+  checkIn?: string;
+  checkOut?: string;
+  adults?: number;
+  children?: number;
+  paymentMethod?: string;
+};
+
+const emptyBookingForm = (paymentMethod = "cash"): BookingFormState => ({
+  firstName: "",
+  lastName: "",
+  gender: "",
+  nationality: "Tanzanian",
+  occupation: "",
+  email: "",
+  phone: "",
+  whereFrom: "",
+  whereTo: "",
+  idType: "",
+  idNumber: "",
+  emergencyContactName: "",
+  emergencyContactPhone: "",
+  specialRequests: "",
+  paymentMethod,
+  transactionRef: "",
+});
+
+function bookingDraftKey(userId: string, propertyId: string) {
+  return `${BOOKING_DRAFT_PREFIX}:${userId}:${propertyId}`;
+}
+
+function readBookingDraft(key: string): BookingDraft | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    // Older builds stored full guest identity and contact details globally.
+    // Never restore that data into another user's or property's booking form.
+    window.localStorage.removeItem(LEGACY_BOOKING_DRAFT_KEY);
+    const saved = window.localStorage.getItem(key);
+    if (!saved) return null;
+
+    const parsed = JSON.parse(saved) as BookingDraft;
+    return {
+      checkIn: typeof parsed.checkIn === "string" ? parsed.checkIn : undefined,
+      checkOut: typeof parsed.checkOut === "string" ? parsed.checkOut : undefined,
+      adults:
+        typeof parsed.adults === "number" && Number.isFinite(parsed.adults)
+          ? parsed.adults
+          : undefined,
+      children:
+        typeof parsed.children === "number" && Number.isFinite(parsed.children)
+          ? parsed.children
+          : undefined,
+      paymentMethod:
+        typeof parsed.paymentMethod === "string" &&
+        PAYMENT_METHODS.has(parsed.paymentMethod)
+          ? parsed.paymentMethod
+          : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function removeBookingDraft(key: string) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // A completed booking must not be reported as failed if storage is blocked.
+  }
+}
 
 const tomorrow = () => {
   const value = new Date();
@@ -52,18 +158,64 @@ const tomorrow = () => {
 };
 
 export function NewBookingScreen() {
+  const { session, loading, error } = useAppSession();
+  const propertyId = session?.activePropertyId;
+  const userId = session?.user?.id;
+
+  if (loading || !session) {
+    return (
+      <Box sx={{ display: "grid", minHeight: "60dvh", placeItems: "center" }}>
+        <LinearProgress sx={{ maxWidth: 320, width: "70%" }} />
+      </Box>
+    );
+  }
+
+  if (error || !propertyId || !userId) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 8 }}>
+        <Alert severity="error">
+          {error?.message ?? "Select an active property before creating a booking."}
+        </Alert>
+      </Container>
+    );
+  }
+
+  return (
+    <NewBookingFlow
+      key={`${userId}:${propertyId}`}
+      propertyId={propertyId}
+      userId={userId}
+    />
+  );
+}
+
+function NewBookingFlow({
+  propertyId,
+  userId,
+}: {
+  propertyId: string;
+  userId: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { session } = useAppSession();
   const client = useMemo(() => createClient(), []);
-  const propertyId = session?.activePropertyId;
   const feedback = useAppFeedback();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [checkIn, setCheckIn] = useState(localDateKey());
-  const [checkOut, setCheckOut] = useState(tomorrow());
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
+  const draftKey = bookingDraftKey(userId, propertyId);
+  const initialDraft = useMemo(() => readBookingDraft(draftKey), [draftKey]);
+  const [checkIn, setCheckIn] = useState(
+    () => initialDraft?.checkIn || localDateKey(),
+  );
+  const [checkOut, setCheckOut] = useState(
+    () => initialDraft?.checkOut || tomorrow(),
+  );
+  const [adults, setAdults] = useState(() =>
+    Math.max(1, Math.floor(initialDraft?.adults ?? 1)),
+  );
+  const [children, setChildren] = useState(() =>
+    Math.max(0, Math.floor(initialDraft?.children ?? 0)),
+  );
   const [rooms, setRooms] = useState<AvailableRoom[]>([]);
   const [selected, setSelected] = useState<AvailableRoom | null>(null);
   const [guestSheetOpen, setGuestSheetOpen] = useState(false);
@@ -71,65 +223,36 @@ export function NewBookingScreen() {
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    gender: "",
-    nationality: "Tanzanian",
-    occupation: "",
-    email: "",
-    phone: "",
-    whereFrom: "",
-    whereTo: "",
-    idType: "",
-    idNumber: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    specialRequests: "",
-    paymentMethod: "cash",
-    transactionRef: "",
-  });
-  const draftReady = useRef(false);
-  const [draftSaved, setDraftSaved] = useState(false);
+  const [form, setForm] = useState<BookingFormState>(() =>
+    emptyBookingForm(initialDraft?.paymentMethod),
+  );
+  const [draftSaved, setDraftSaved] = useState(Boolean(initialDraft));
+  const availabilityRequest = useRef(0);
   const [fieldErrors, setFieldErrors] = useState<
     Partial<Record<keyof typeof form, string>>
   >({});
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(BOOKING_DRAFT_KEY);
-      if (saved) {
-        const draft = JSON.parse(saved) as {
-          checkIn?: string;
-          checkOut?: string;
-          adults?: number;
-          children?: number;
-          form?: Partial<typeof form>;
-        };
-        if (draft.checkIn) setCheckIn(draft.checkIn);
-        if (draft.checkOut) setCheckOut(draft.checkOut);
-        if (typeof draft.adults === "number") setAdults(Math.max(1, draft.adults));
-        if (typeof draft.children === "number") setChildren(Math.max(0, draft.children));
-        if (draft.form) setForm((current) => ({ ...current, ...draft.form }));
-      }
-    } catch {
-      window.localStorage.removeItem(BOOKING_DRAFT_KEY);
-    } finally {
-      draftReady.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!draftReady.current) return;
-    setDraftSaved(false);
     const timer = window.setTimeout(() => {
-      window.localStorage.setItem(
-        BOOKING_DRAFT_KEY,
-        JSON.stringify({ checkIn, checkOut, adults, children, form }),
-      );
-      setDraftSaved(true);
+      try {
+        // Guest identity, contact, ID and special-request fields intentionally
+        // stay in memory only. Persist only the low-risk stay preferences.
+        window.localStorage.setItem(
+          draftKey,
+          JSON.stringify({
+            checkIn,
+            checkOut,
+            adults,
+            children,
+            paymentMethod: form.paymentMethod,
+          } satisfies BookingDraft),
+        );
+        setDraftSaved(true);
+      } catch {
+        setDraftSaved(false);
+      }
     }, 500);
     return () => window.clearTimeout(timer);
-  }, [adults, checkIn, checkOut, children, form]);
+  }, [adults, checkIn, checkOut, children, draftKey, form.paymentMethod]);
 
   const field = (name: keyof typeof form) => ({
     value: form[name],
@@ -138,8 +261,75 @@ export function NewBookingScreen() {
     onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
       setForm((current) => ({ ...current, [name]: event.target.value }));
       setFieldErrors((current) => ({ ...current, [name]: undefined }));
+      if (name === "paymentMethod") setDraftSaved(false);
     },
   });
+
+  const invalidateAvailability = () => {
+    availabilityRequest.current += 1;
+    setRooms([]);
+    setSelected(null);
+    setSearched(false);
+    setGuestSheetOpen(false);
+    setGuestStep(0);
+    setLoading(false);
+    setError(null);
+    setDraftSaved(false);
+  };
+
+  const changeCheckIn = (value: string) => {
+    setCheckIn(value);
+    invalidateAvailability();
+  };
+
+  const changeCheckOut = (value: string) => {
+    setCheckOut(value);
+    invalidateAvailability();
+  };
+
+  const changeAdults = (value: string) => {
+    const next = Number(value);
+    setAdults(Number.isFinite(next) ? Math.max(1, Math.floor(next)) : 1);
+    invalidateAvailability();
+  };
+
+  const changeChildren = (value: string) => {
+    const next = Number(value);
+    setChildren(Number.isFinite(next) ? Math.max(0, Math.floor(next)) : 0);
+    invalidateAvailability();
+  };
+
+  const chooseRoom = (room: AvailableRoom) => {
+    setSelected(room);
+    if (isMobile) {
+      setGuestStep(0);
+      setGuestSheetOpen(true);
+    }
+  };
+
+  const handleRoomKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    let nextIndex: number | null = null;
+    if (["ArrowRight", "ArrowDown"].includes(event.key)) {
+      nextIndex = (index + 1) % rooms.length;
+    } else if (["ArrowLeft", "ArrowUp"].includes(event.key)) {
+      nextIndex = (index - 1 + rooms.length) % rooms.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = rooms.length - 1;
+    }
+
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const nextRoom = rooms[nextIndex];
+    chooseRoom(nextRoom);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`available-room-${nextRoom.id}`)?.focus();
+    });
+  };
 
   const validateGuestInformation = () => {
     const next: Partial<Record<keyof typeof form, string>> = {};
@@ -190,9 +380,15 @@ export function NewBookingScreen() {
     setGuestStep((current) => Math.min(current + 1, 2));
   };
   const search = async () => {
-    if (!propertyId) return;
     if (!checkIn || !checkOut || checkOut <= checkIn)
       return setError("Checkout must be after check-in.");
+    const request = availabilityRequest.current + 1;
+    availabilityRequest.current = request;
+    setRooms([]);
+    setSelected(null);
+    setSearched(false);
+    setGuestSheetOpen(false);
+    setGuestStep(0);
     setLoading(true);
     setError(null);
     try {
@@ -203,6 +399,7 @@ export function NewBookingScreen() {
         checkOut,
         adults + children,
       );
+      if (request !== availabilityRequest.current) return;
       setRooms(values);
       setSearched(true);
       const requested = searchParams.get("room");
@@ -216,17 +413,17 @@ export function NewBookingScreen() {
         }
       }
     } catch (cause) {
+      if (request !== availabilityRequest.current) return;
       setError(
         cause instanceof Error ? cause.message : "Unable to search rooms.",
       );
     } finally {
-      setLoading(false);
+      if (request === availabilityRequest.current) setLoading(false);
     }
   };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!propertyId || !selected)
-      return setError("Select an available room first.");
+    if (!selected) return setError("Select an available room first.");
     if (!validateGuestInformation()) {
       setGuestStep(0);
       if (isMobile) setGuestSheetOpen(true);
@@ -249,7 +446,7 @@ export function NewBookingScreen() {
         booking && typeof booking === "object" && !Array.isArray(booking)
           ? String(booking.id ?? "")
           : "";
-      window.localStorage.removeItem(BOOKING_DRAFT_KEY);
+      removeBookingDraft(draftKey);
       trackEvent("booking_created", { room_id: selected.id, adults, children, payment_method: form.paymentMethod });
       feedback.success("Booking created successfully.");
       router.replace(id ? `/bookings/${id}` : "/bookings");
@@ -283,7 +480,9 @@ export function NewBookingScreen() {
               Search availability, select a room and enter guest details.
             </Typography>
             {draftSaved ? (
-              <Typography color="success.main" variant="caption">Draft saved on this device</Typography>
+              <Typography color="success.main" variant="caption">
+                Stay preferences saved on this device
+              </Typography>
             ) : null}
           </Box>
         </Stack>
@@ -322,30 +521,36 @@ export function NewBookingScreen() {
                 label="Check-in"
                 type="date"
                 value={checkIn}
-                onChange={(e) => setCheckIn(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                onChange={(event) => changeCheckIn(event.target.value)}
+                slotProps={{
+                  htmlInput: { min: localDateKey() },
+                  inputLabel: { shrink: true },
+                }}
               />
               <TextField
                 required
                 label="Check-out"
                 type="date"
                 value={checkOut}
-                onChange={(e) => setCheckOut(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                onChange={(event) => changeCheckOut(event.target.value)}
+                slotProps={{
+                  htmlInput: { min: checkIn || localDateKey() },
+                  inputLabel: { shrink: true },
+                }}
               />
               <TextField
                 label="Adults"
                 type="number"
                 value={adults}
-                onChange={(e) => setAdults(Math.max(1, Number(e.target.value)))}
+                onChange={(event) => changeAdults(event.target.value)}
+                slotProps={{ htmlInput: { min: 1, step: 1 } }}
               />
               <TextField
                 label="Children"
                 type="number"
                 value={children}
-                onChange={(e) =>
-                  setChildren(Math.max(0, Number(e.target.value)))
-                }
+                onChange={(event) => changeChildren(event.target.value)}
+                slotProps={{ htmlInput: { min: 0, step: 1 } }}
               />
             </Box>
             <Button
@@ -369,29 +574,49 @@ export function NewBookingScreen() {
             </Typography>
             {rooms.length ? (
               <Box
+                aria-label="Available rooms"
+                role="radiogroup"
                 sx={{
                   display: "grid",
                   gap: 2,
                   gridTemplateColumns: { xs: "1fr", lg: "repeat(2, 1fr)" },
                 }}
               >
-                {rooms.map((room) => (
+                {rooms.map((room, index) => (
                   <Paper
+                    component="button"
                     key={room.id}
+                    id={`available-room-${room.id}`}
+                    type="button"
                     variant="outlined"
-                    onClick={() => {
-                      setSelected(room);
-                      if (isMobile) {
-                        setGuestStep(0);
-                        setGuestSheetOpen(true);
-                      }
-                    }}
+                    role="radio"
+                    aria-checked={selected?.id === room.id}
+                    aria-label={`${room.name}, ${room.roomType}, capacity ${room.capacity}, ${money.format(room.totalPrice)}`}
+                    tabIndex={
+                      selected?.id === room.id || (!selected && index === 0)
+                        ? 0
+                        : -1
+                    }
+                    onClick={() => chooseRoom(room)}
+                    onKeyDown={(event) => handleRoomKeyDown(event, index)}
                     sx={{
+                      appearance: "none",
+                      bgcolor: "background.paper",
                       borderColor:
                         selected?.id === room.id ? "primary.main" : "divider",
                       borderWidth: selected?.id === room.id ? 2 : 1,
+                      color: "text.primary",
                       cursor: "pointer",
+                      font: "inherit",
                       overflow: "hidden",
+                      p: 0,
+                      textAlign: "left",
+                      width: "100%",
+                      "&:focus-visible": {
+                        outline: "3px solid",
+                        outlineColor: "primary.main",
+                        outlineOffset: 2,
+                      },
                     }}
                   >
                     <Stack direction={{ xs: "column", sm: "row" }}>
@@ -662,7 +887,7 @@ export function NewBookingScreen() {
                 </Button>
                 <Typography
                   color="text.secondary"
-                  textAlign="center"
+                  sx={{ textAlign: "center" }}
                   variant="caption"
                 >
                   Review guest and payment details before confirming.

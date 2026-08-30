@@ -412,14 +412,14 @@ function StaffRow({
               {member.status === "active" ? "Suspend" : "Activate"}
             </MenuItem>
             {member.role !== "owner" &&
-              ["manager", "receptionist"].map((role) => (
+              (["manager", "receptionist"] as const).map((role) => (
                 <MenuItem
                   key={role}
                   disabled={member.role === role}
                   onClick={() => {
                     setAnchor(null);
                     void action(
-                      () => changeStaffRole(supabase, member.id, role),
+                      async () => { await changeStaffRole(supabase, member.id, role); },
                       "Staff role changed successfully",
                     );
                   }}

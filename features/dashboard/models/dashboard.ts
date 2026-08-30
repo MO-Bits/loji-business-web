@@ -22,6 +22,7 @@ export type DashboardRoom = {
   pricePerNight: number;
   isActive: boolean;
   images: string[];
+  housekeepingStatus: "ready" | "needs_cleaning" | "cleaning" | "out_of_service";
 };
 
 export type HomeDashboard = {
@@ -35,6 +36,7 @@ export type HomeDashboard = {
   currentGuests: DashboardBooking[];
   availableRoomsList: DashboardRoom[];
   occupiedRoomsList: DashboardRoom[];
+  unavailableRoomsList: DashboardRoom[];
   todayRevenue: number;
   pendingPayments: number;
   totalOutstanding: number;
@@ -81,6 +83,10 @@ export function parseRoom(raw: Raw): DashboardRoom {
     .map((image) => typeof image === "string" ? image : image && typeof image === "object" ? text(image as Raw, "url", "image_url") : "")
     .filter(Boolean);
   const active = raw.is_active ?? raw.isActive ?? raw.status;
+  const rawHousekeepingStatus = text(raw, "housekeeping_status", "housekeepingStatus");
+  const housekeepingStatus = ["ready", "needs_cleaning", "cleaning", "out_of_service"].includes(rawHousekeepingStatus)
+    ? rawHousekeepingStatus as DashboardRoom["housekeepingStatus"]
+    : "ready";
   return {
     id: text(raw, "id", "room_id"),
     name: text(raw, "name", "room_name") || "Room",
@@ -90,5 +96,6 @@ export function parseRoom(raw: Raw): DashboardRoom {
     pricePerNight: number(raw, "price_per_night", "pricePerNight", "price"),
     isActive: active === true || active === "true" || active === "active",
     images,
+    housekeepingStatus,
   };
 }

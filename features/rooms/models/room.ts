@@ -12,7 +12,22 @@ export type Room = {
   images: string[];
   description: string;
   isActive: boolean;
+  housekeepingStatus: HousekeepingStatus;
+  housekeepingNotes: string;
+  housekeepingUpdatedAt: string | null;
 };
+
+export type HousekeepingStatus =
+  | "ready"
+  | "needs_cleaning"
+  | "cleaning"
+  | "out_of_service";
+
+function housekeepingStatus(value: Json | undefined): HousekeepingStatus {
+  return ["ready", "needs_cleaning", "cleaning", "out_of_service"].includes(String(value))
+    ? value as HousekeepingStatus
+    : "ready";
+}
 
 function strings(value: Json | undefined): string[] {
   if (!Array.isArray(value)) return [];
@@ -25,6 +40,9 @@ export function parseRoom(row: Record<string, Json | undefined>): Room {
     roomType: String(row.room_type ?? "master"), capacity: Number(row.capacity ?? 1), bedCount: Number(row.bed_count ?? 1),
     pricePerNight: Number(row.price_per_night ?? row.base_price ?? 0), amenities: strings(row.amenities),
     images: strings(row.room_images ?? row.images), description: String(row.description ?? ""), isActive: row.is_active !== false,
+    housekeepingStatus: housekeepingStatus(row.housekeeping_status),
+    housekeepingNotes: String(row.housekeeping_notes ?? ""),
+    housekeepingUpdatedAt: row.housekeeping_updated_at ? String(row.housekeeping_updated_at) : null,
   };
 }
 

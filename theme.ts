@@ -3,6 +3,9 @@
 import { createTheme } from "@mui/material/styles";
 
 export const theme = createTheme({
+  breakpoints: {
+    values: { xs: 0, sm: 600, md: 960, lg: 1200, xl: 1536 },
+  },
   cssVariables: {
     colorSchemeSelector: "data",
   },
@@ -53,54 +56,83 @@ export const theme = createTheme({
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: "clamp(2.35rem, 5vw, 4.25rem)",
+      fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
       fontWeight: 700,
-      letterSpacing: "-0.045em",
-      lineHeight: 1.04,
+      letterSpacing: "-0.035em",
+      lineHeight: 1.12,
     },
     h2: {
-      fontSize: "clamp(2rem, 3.8vw, 3.25rem)",
-      fontWeight: 700,
-      letterSpacing: "-0.038em",
-      lineHeight: 1.08,
-    },
-    h3: {
-      fontSize: "clamp(1.65rem, 2.7vw, 2.35rem)",
+      fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
       fontWeight: 700,
       letterSpacing: "-0.03em",
-      lineHeight: 1.14,
+      lineHeight: 1.16,
     },
-    h4: {
-      fontSize: "clamp(1.4rem, 2vw, 1.85rem)",
+    h3: {
+      fontSize: "clamp(1.375rem, 2vw, 1.75rem)",
       fontWeight: 700,
       letterSpacing: "-0.025em",
       lineHeight: 1.2,
     },
-    h5: { fontWeight: 700, letterSpacing: "-0.018em", lineHeight: 1.25 },
-    h6: { fontWeight: 600, letterSpacing: "-0.01em", lineHeight: 1.35 },
-    body1: { lineHeight: 1.6 },
-    body2: { lineHeight: 1.5 },
-    button: { fontWeight: 600, textTransform: "none" },
+    h4: {
+      fontSize: "clamp(1.25rem, 1.8vw, 1.5rem)",
+      fontWeight: 700,
+      letterSpacing: "-0.025em",
+      lineHeight: 1.24,
+    },
+    h5: {
+      fontSize: "1.125rem",
+      fontWeight: 700,
+      letterSpacing: "-0.018em",
+      lineHeight: 1.35,
+    },
+    h6: {
+      fontSize: "1rem",
+      fontWeight: 500,
+      letterSpacing: "-0.01em",
+      lineHeight: 1.45,
+    },
+    subtitle1: { fontSize: ".9375rem", fontWeight: 500, lineHeight: 1.5 },
+    subtitle2: { fontSize: ".875rem", fontWeight: 500, lineHeight: 1.45 },
+    body1: { fontSize: ".875rem", lineHeight: 1.55 },
+    body2: { fontSize: ".8125rem", lineHeight: 1.5 },
+    caption: { fontSize: ".75rem", lineHeight: 1.45 },
+    overline: {
+      fontSize: ".75rem",
+      fontWeight: 700,
+      letterSpacing: ".08em",
+      lineHeight: 1.6,
+    },
+    button: { fontSize: ".875rem", fontWeight: 500, textTransform: "none" },
   },
   components: {
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          "&.Mui-focusVisible": {
+            outline: "3px solid var(--mui-palette-primary-main)",
+            outlineOffset: 2,
+          },
+        },
+      },
+    },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
           borderRadius: 8,
-          minHeight: 42,
+          minHeight: 40,
           paddingInline: 16,
           transition:
             "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
           letterSpacing: "-.005em",
           "&:active": { transform: "scale(.985)" },
+          "@media (max-width: 599px)": { minHeight: 44 },
         },
         sizeLarge: { minHeight: 48, paddingInline: 20 },
         contained: {
           boxShadow: "0 1px 2px rgba(21,94,239,.2)",
           "&:hover": {
-            boxShadow: "0 7px 18px rgba(21,94,239,.22)",
-            transform: "translateY(-1px)",
+            boxShadow: "0 5px 14px rgba(21,94,239,.2)",
           },
         },
       },
@@ -108,8 +140,16 @@ export const theme = createTheme({
     MuiContainer: {
       styleOverrides: {
         root: {
-          paddingLeft: "clamp(16px, 2.6vw, 32px) !important",
-          paddingRight: "clamp(16px, 2.6vw, 32px) !important",
+          paddingLeft: 16,
+          paddingRight: 16,
+          "@media (min-width: 600px)": {
+            paddingLeft: 24,
+            paddingRight: 24,
+          },
+          "@media (min-width: 1200px)": {
+            paddingLeft: 32,
+            paddingRight: 32,
+          },
         },
       },
     },
@@ -163,6 +203,10 @@ export const theme = createTheme({
           minWidth: 40,
           transition: "background-color 150ms ease, transform 150ms ease",
           "&:active": { transform: "scale(.94)" },
+          "@media (max-width: 599px)": {
+            minHeight: 44,
+            minWidth: 44,
+          },
         },
       },
     },
@@ -218,6 +262,8 @@ export const theme = createTheme({
           minWidth: 96,
           paddingInline: 16,
           textTransform: "none",
+          fontSize: ".875rem",
+          fontWeight: 500,
         },
       },
     },
@@ -240,7 +286,14 @@ export const theme = createTheme({
       },
     },
     MuiMenuItem: {
-      styleOverrides: { root: { borderRadius: 6, minHeight: 40 } },
+      styleOverrides: {
+        root: {
+          borderRadius: 6,
+          fontSize: ".875rem",
+          minHeight: 40,
+          "@media (max-width: 599px)": { minHeight: 44 },
+        },
+      },
     },
     MuiAccordion: {
       styleOverrides: {
@@ -275,10 +328,18 @@ export const theme = createTheme({
     MuiSelect: {
       defaultProps: { MenuProps: { disableScrollLock: true } },
     },
+    MuiTextField: {
+      defaultProps: { size: "small" },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: { fontSize: ".875rem" },
+      },
+    },
     MuiBottomNavigationAction: {
       styleOverrides: {
         root: { minHeight: 56, minWidth: 56 },
-        label: { marginTop: 3 },
+        label: { fontSize: ".75rem", marginTop: 3 },
       },
     },
     MuiAvatar: {
@@ -349,7 +410,7 @@ export const theme = createTheme({
       },
     },
     MuiPaginationItem: {
-      styleOverrides: { root: { borderRadius: 7, fontWeight: 600 } },
+      styleOverrides: { root: { borderRadius: 7, fontWeight: 500 } },
     },
     MuiCssBaseline: {
       styleOverrides: {
@@ -359,8 +420,7 @@ export const theme = createTheme({
           MozOsxFontSmoothing: "grayscale",
         },
         "a:focus-visible, button:focus-visible, [role='button']:focus-visible": {
-          outline:
-            "3px solid color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
+          outline: "3px solid var(--mui-palette-primary-main)",
           outlineOffset: 2,
         },
       },

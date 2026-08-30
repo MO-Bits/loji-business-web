@@ -40,8 +40,6 @@ const money = new Intl.NumberFormat("en-TZ", {
   currency: "TZS",
   maximumFractionDigits: 0,
 });
-const dashboardReferenceTime = new Date().getTime();
-
 export function DashboardScreen() {
   const { t } = useLanguage();
   const sessionState = useAppSession();
@@ -116,6 +114,7 @@ export function DashboardScreen() {
           <RoomBoard
             occupiedRooms={dashboard.occupiedRoomsList}
             readyRooms={dashboard.availableRoomsList}
+            unavailableRooms={dashboard.unavailableRoomsList}
             currentGuests={dashboard.currentGuests}
             arrivals={dashboard.todayArrivals}
           />
@@ -262,11 +261,13 @@ function Metric({
 function RoomBoard({
   occupiedRooms,
   readyRooms,
+  unavailableRooms,
   currentGuests,
   arrivals,
 }: {
   occupiedRooms: DashboardRoom[];
   readyRooms: DashboardRoom[];
+  unavailableRooms: DashboardRoom[];
   currentGuests: DashboardBooking[];
   arrivals: DashboardBooking[];
 }) {
@@ -277,8 +278,9 @@ function RoomBoard({
     () => [
       ...occupiedRooms.map((room) => ({ room, state: "occupied" as const })),
       ...readyRooms.map((room) => ({ room, state: "ready" as const })),
+      ...unavailableRooms.map((room) => ({ room, state: room.housekeepingStatus })),
     ],
-    [occupiedRooms, readyRooms],
+    [occupiedRooms, readyRooms, unavailableRooms],
   );
   const bookingsByRoom = useMemo(() => {
     const values = new Map<string, DashboardBooking>();
@@ -314,6 +316,11 @@ function RoomBoard({
             color="#35A95F"
             count={readyRooms.length}
             label={t("Ready", "Tayari")}
+          />
+          <Legend
+            color="#E59A17"
+            count={unavailableRooms.length}
+            label={t("Housekeeping", "Usafi")}
           />
         </Stack>
         <Button
@@ -452,23 +459,37 @@ function RoomTile({
   onSelect,
 }: {
   room: DashboardRoom;
-  state: "occupied" | "ready";
+  state: "occupied" | DashboardRoom["housekeepingStatus"];
   booking?: DashboardBooking;
   onSelect: () => void;
 }) {
   const { t } = useLanguage();
+  const [referenceTime] = useState(() => Date.now());
   const occupied = state === "occupied";
+  const ready = state === "ready";
   const daysLeft = booking
     ? Math.max(
         0,
         Math.ceil(
-          (booking.checkOut.getTime() - dashboardReferenceTime) / 86400000,
+          (booking.checkOut.getTime() - referenceTime) / 86400000,
         ),
       )
     : null;
   const checkingOutToday = occupied && daysLeft === 0;
-  const tone = checkingOutToday ? "#E59A17" : occupied ? "#3977F6" : "#35A95F";
-  const surface = checkingOutToday ? "rgba(229,154,23,.12)" : occupied ? "rgba(57,119,246,.11)" : "rgba(53,169,95,.11)";
+  const needsAttention = state === "needs_cleaning" || state === "out_of_service";
+  const tone = checkingOutToday || needsAttention ? "#B86E00" : occupied ? "#3977F6" : ready ? "#248A48" : "#157A98";
+  const surface = checkingOutToday || needsAttention ? "rgba(229,154,23,.12)" : occupied ? "rgba(57,119,246,.11)" : ready ? "rgba(53,169,95,.11)" : "rgba(21,122,152,.11)";
+  const stateLabel = state === "needs_cleaning"
+    ? t("Needs cleaning", "Kinahitaji usafi")
+    : state === "cleaning"
+      ? t("Cleaning", "Kinasafishwa")
+      : state === "out_of_service"
+        ? t("Out of service", "Hakitumiki")
+        : checkingOutToday
+          ? t("Checking out today", "Anaondoka leo")
+          : occupied
+            ? t("Occupied", "Kimetumika")
+            : t("Ready", "Tayari");
   return (
     <Box
       component="button"
@@ -507,7 +528,7 @@ function RoomTile({
           {room.name}
         </Typography>
         <Chip
-          label={checkingOutToday ? t("Checking out today", "Anaondoka leo") : occupied ? t("Occupied", "Kimetumika") : t("Ready", "Tayari")}
+          label={stateLabel}
           size="small"
           sx={{
             bgcolor: "background.paper",
@@ -549,11 +570,18 @@ function RoomTile({
                 : `${daysLeft} ${t(daysLeft === 1 ? "day left" : "days left", daysLeft === 1 ? "siku imebaki" : "siku zimebaki")}`}
           </Typography>
         </Stack>
-      ) : (
+      ) : ready ? (
         <Stack direction="row" spacing={0.55} sx={{ alignItems: "center" }}>
           <CheckCircleRoundedIcon sx={{ color: tone, fontSize: 18 }} />
           <Typography variant="body2" sx={{ color: tone, fontWeight: 700 }}>
             {t("Available now", "Kinapatikana sasa")}
+          </Typography>
+        </Stack>
+      ) : (
+        <Stack direction="row" spacing={0.55} sx={{ alignItems: "center" }}>
+          <HotelRoundedIcon sx={{ color: tone, fontSize: 18 }} />
+          <Typography variant="body2" sx={{ color: tone, fontWeight: 700 }}>
+            {stateLabel}
           </Typography>
         </Stack>
       )}
@@ -653,7 +681,7 @@ function DashboardSkeleton() {
         </Box>
         <Divider />
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)" }}>
-          {[0, 1, 2].map((value) => (
+          {[0, 1, 2, 3].map((value) => (
             <Skeleton key={value} height={110} variant="rectangular" />
           ))}
         </Box>

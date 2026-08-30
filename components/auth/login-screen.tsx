@@ -36,8 +36,8 @@ export function LoginScreen() {
           display: "grid",
           gridTemplateRows: "1fr auto",
           minHeight: "calc(100dvh - 64px)",
-          px: { xs: 2, sm: 3.5 },
-          py: { xs: 2, sm: 2.5 },
+          px: { xs: 2, sm: 3 },
+          py: { xs: 1.5, sm: 2 },
         }}
       >
         <Box
@@ -46,14 +46,14 @@ export function LoginScreen() {
             alignItems: "center",
             display: "flex",
             justifyContent: "center",
-            py: { xs: 4.5, sm: 7 },
+            py: { xs: 4, sm: 6 },
           }}
         >
           <Stack
             component="section"
-            spacing={3}
+            spacing={2.75}
             sx={{
-              maxWidth: 430,
+              maxWidth: 400,
               textAlign: "center",
               width: "100%",
             }}
@@ -63,10 +63,10 @@ export function LoginScreen() {
                 component="h1"
                 sx={{
                   color: "text.primary",
-                  fontSize: { xs: "2.05rem", sm: "2.45rem" },
-                  fontWeight: 720,
-                  letterSpacing: "-.05em",
-                  lineHeight: 1.05,
+                  fontSize: { xs: "1.75rem", sm: "2rem" },
+                  fontWeight: 700,
+                  letterSpacing: "-.035em",
+                  lineHeight: 1.12,
                 }}
               >
                 {t("Welcome back", "Karibu tena")}
@@ -74,10 +74,10 @@ export function LoginScreen() {
               <Typography
                 color="text.secondary"
                 sx={{
-                  fontSize: { xs: ".95rem", sm: "1rem" },
-                  lineHeight: 1.7,
+                  fontSize: ".875rem",
+                  lineHeight: 1.6,
                   mx: "auto",
-                  maxWidth: 360,
+                  maxWidth: 340,
                 }}
               >
                 {t(
@@ -91,6 +91,7 @@ export function LoginScreen() {
               <Button
                 disabled={auth.loading}
                 fullWidth
+                aria-busy={auth.activeAction === "google"}
                 onClick={() => void auth.signInWithGoogle()}
                 size="large"
                 startIcon={
@@ -105,9 +106,9 @@ export function LoginScreen() {
                   borderColor: "divider",
                   borderRadius: 1,
                   color: "text.primary",
-                  fontSize: ".93rem",
-                  fontWeight: 650,
-                  minHeight: 54,
+                  fontSize: ".875rem",
+                  fontWeight: 500,
+                  minHeight: 48,
                   textTransform: "none",
                   transition:
                     "border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
@@ -149,7 +150,7 @@ export function LoginScreen() {
                 component={NextLink}
                 href="/terms"
                 underline="hover"
-                sx={{ color: "text.primary", fontWeight: 650 }}
+                sx={{ color: "text.primary", fontWeight: 500 }}
               >
                 {t("Terms", "Masharti")}
               </Link>{" "}
@@ -158,7 +159,7 @@ export function LoginScreen() {
                 component={NextLink}
                 href="/privacy"
                 underline="hover"
-                sx={{ color: "text.primary", fontWeight: 650 }}
+                sx={{ color: "text.primary", fontWeight: 500 }}
               >
                 {t("Privacy Policy", "Sera ya faragha")}
               </Link>
@@ -170,7 +171,11 @@ export function LoginScreen() {
                 component={NextLink}
                 href="/learn-more"
                 underline="hover"
-                sx={{ color: "text.secondary", fontSize: ".78rem", fontWeight: 600 }}
+                sx={{
+                  color: "text.secondary",
+                  fontSize: ".8125rem",
+                  fontWeight: 500,
+                }}
               >
                 {t("About", "Kuhusu")}
               </Link>
@@ -178,7 +183,11 @@ export function LoginScreen() {
                 component={NextLink}
                 href="/faq"
                 underline="hover"
-                sx={{ color: "text.secondary", fontSize: ".78rem", fontWeight: 600 }}
+                sx={{
+                  color: "text.secondary",
+                  fontSize: ".8125rem",
+                  fontWeight: 500,
+                }}
               >
                 {t("FAQs", "Maswali")}
               </Link>
@@ -190,7 +199,7 @@ export function LoginScreen() {
           color="text.secondary"
           component="footer"
           sx={{
-            fontSize: ".72rem",
+            fontSize: ".75rem",
             pb: { xs: 0.5, sm: 0 },
             textAlign: "center",
           }}

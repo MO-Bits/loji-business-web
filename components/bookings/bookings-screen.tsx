@@ -329,7 +329,7 @@ function BookingRow({ booking, last }: { booking: Booking; last: boolean }) {
         "&:hover": { bgcolor: "action.hover" },
       }}
     >
-      <Stack direction="row" spacing={1.25} alignItems="center">
+      <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
         <Avatar
           sx={{
             bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",

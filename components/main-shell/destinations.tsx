@@ -1,5 +1,3 @@
-import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
-import AddCircleRoundedIcon from "@mui/icons-material/AddCircleRounded";
 import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
@@ -34,9 +32,7 @@ export const workspaceDestinations: MainDestination[] = [
     path: "/bookings",
     icon: <MenuBookOutlinedIcon />,
     activeIcon: <MenuBookRoundedIcon />,
-    match: (path) =>
-      path === "/bookings" ||
-      (path.startsWith("/bookings/") && path !== "/bookings/new"),
+    match: (path) => path === "/bookings" || path.startsWith("/bookings/"),
   },
   {
     label: "Rooms",
@@ -71,15 +67,3 @@ export const accountDestination: MainDestination = {
   activeIcon: <PersonRoundedIcon />,
   match: (path) => path === "/more/account",
 };
-export const mobileDestinations = [
-  ...workspaceDestinations.slice(0, 2),
-  {
-    label: "New booking",
-    path: "/bookings/new",
-    icon: <AddCircleOutlineRoundedIcon />,
-    activeIcon: <AddCircleRoundedIcon />,
-    match: (path: string) => path === "/bookings/new",
-  },
-  workspaceDestinations[2],
-  accountDestination,
-];
