@@ -133,6 +133,8 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
   const client = useMemo(() => createClient(), []);
   const feedback = useAppFeedback();
   const idempotencyKey = useRef(crypto.randomUUID());
+  const availabilityRequestInFlight = useRef(false);
+  const bookingRequestInFlight = useRef(false);
   const draftKey = `${draftPrefix}:${userId}:${propertyId}`;
   const [activeStep, setActiveStep] = useState(0);
   const [checkIn, setCheckIn] = useState("");
@@ -273,7 +275,8 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
   };
 
   const searchRooms = async () => {
-    if (!validateStay()) return;
+    if (availabilityRequestInFlight.current || !validateStay()) return;
+    availabilityRequestInFlight.current = true;
     setLoadingRooms(true);
     setError(null);
     setSelectedRoom(null);
@@ -286,6 +289,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to check room availability.");
     } finally {
+      availabilityRequestInFlight.current = false;
       setLoadingRooms(false);
     }
   };
@@ -325,9 +329,8 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
     }
   };
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (activeStep !== 3 || !selectedRoom || !validateGuest()) return;
+  const submitBooking = async () => {
+    if (bookingRequestInFlight.current || !selectedRoom || !validateGuest()) return;
     let initialPayment = null;
     if (canRecordPayment && paymentMode !== "none") {
       const amount = paymentMode === "full" ? selectedRoom.totalPrice : Number(paymentAmount);
@@ -338,6 +341,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
       initialPayment = { amount, method: paymentMethod, reference: paymentReference };
     }
 
+    bookingRequestInFlight.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -362,14 +366,31 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to create booking.");
     } finally {
+      bookingRequestInFlight.current = false;
       setSubmitting(false);
     }
+  };
+
+  const handleWizardSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (loadingGuest || loadingRooms || submitting) return;
+    if (activeStep < steps.length - 1) {
+      void continueStep();
+      return;
+    }
+    void submitBooking();
   };
 
   if (!draftLoaded) return <BookingFlowSkeleton />;
 
   return (
-    <Box component="form" onSubmit={submit} sx={{ minHeight: "100dvh", pb: { xs: 18, md: 5 } }}>
+    <Box
+      component="form"
+      noValidate
+      aria-busy={loadingGuest || loadingRooms || submitting}
+      onSubmit={handleWizardSubmit}
+      sx={{ minHeight: "100dvh", pb: { xs: 18, md: 5 } }}
+    >
       <Container maxWidth="xl" sx={{ py: { xs: 1.5, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, md: 2.5 }}>
           <WizardHeader activeStep={activeStep} onBack={() => activeStep ? setActiveStep((value) => value - 1) : router.back()} />
@@ -432,7 +453,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
             </Box>
           </Box>
 
-          <WizardActions activeStep={activeStep} busy={loadingGuest || loadingRooms || submitting} onBack={() => setActiveStep((value) => Math.max(0, value - 1))} onContinue={() => void continueStep()} />
+          <WizardActions activeStep={activeStep} busy={loadingGuest || loadingRooms || submitting} onBack={() => setActiveStep((value) => Math.max(0, value - 1))} />
         </Stack>
       </Container>
     </Box>
@@ -442,7 +463,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
 function WizardHeader({ activeStep, onBack }: { activeStep: number; onBack: () => void }) {
   return (
     <Stack component="header" direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
-      <IconButton aria-label="Go back" onClick={onBack} sx={{ border: "1px solid", borderColor: "divider" }}><ArrowBackRoundedIcon /></IconButton>
+      <IconButton aria-label="Go back" type="button" onClick={onBack} sx={{ border: "1px solid", borderColor: "divider" }}><ArrowBackRoundedIcon /></IconButton>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography color="text.secondary" variant="overline">Reservations · Step {activeStep + 1} of {steps.length}</Typography>
         <Typography component="h1" variant="h3">Create a booking</Typography>
@@ -485,7 +506,7 @@ function RoomStep({ rooms, selectedId, onSelect, onSearchAgain }: { rooms: Avail
   return (
     <Section icon={<BedRoundedIcon />} title={rooms.length ? `${rooms.length} available room${rooms.length === 1 ? "" : "s"}` : "No matching rooms"} description={rooms.length ? "Choose the best room for this guest. Rates are verified again when you confirm." : "Change the stay dates or guest count and search again."}>
       {!rooms.length ? (
-        <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}><Alert severity="info" sx={{ width: "100%" }}>No rooms are available for this stay.</Alert><Button onClick={onSearchAgain} startIcon={<SearchRoundedIcon />} variant="outlined">Change search</Button></Stack>
+        <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}><Alert severity="info" sx={{ width: "100%" }}>No rooms are available for this stay.</Alert><Button type="button" onClick={onSearchAgain} startIcon={<SearchRoundedIcon />} variant="outlined">Change search</Button></Stack>
       ) : (
         <Box role="radiogroup" aria-label="Available rooms" sx={{ display: "grid", gap: 1.25, gridTemplateColumns: { xs: "1fr", xl: "repeat(2,minmax(0,1fr))" } }}>
           {rooms.map((room) => <RoomChoice key={room.id} room={room} selected={room.id === selectedId} onSelect={() => onSelect(room)} />)}
@@ -518,7 +539,7 @@ function GuestStep({ existingGuestId, field, showMore, onChangeGuest, onToggleMo
         {existingGuestId ? (
           <Alert
             severity="success"
-            action={<Button color="inherit" onClick={onChangeGuest} size="small">Use different guest</Button>}
+            action={<Button color="inherit" type="button" onClick={onChangeGuest} size="small">Use different guest</Button>}
             sx={{
               alignItems: { xs: "flex-start", sm: "center" },
               flexDirection: { xs: "column", sm: "row" },
@@ -540,7 +561,7 @@ function GuestStep({ existingGuestId, field, showMore, onChangeGuest, onToggleMo
           <TextField required label="Phone" {...field("phone")} />
           <TextField label="Email" type="email" {...field("email")} /><TextField label="Nationality" {...field("nationality")} />
         </Box>
-        <Button onClick={onToggleMore} sx={{ alignSelf: "flex-start" }}>{showMore ? "Hide additional details" : "Add ID, travel and emergency details"}</Button>
+        <Button type="button" onClick={onToggleMore} sx={{ alignSelf: "flex-start" }}>{showMore ? "Hide additional details" : "Add ID, travel and emergency details"}</Button>
         <Collapse in={showMore} unmountOnExit>
           <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
             <TextField label="Occupation" {...field("occupation")} /><TextField label="Coming from" {...field("whereFrom")} />
@@ -592,12 +613,12 @@ function ReviewRow({ label, value, accent = false }: { label: string; value: str
   return <Box sx={{ alignItems: "baseline", display: "grid", gap: 1.5, gridTemplateColumns: "minmax(84px,auto) minmax(0,1fr)", py: 1.25 }}><Typography color="text.secondary" variant="body2">{label}</Typography><Typography color={accent ? "primary.main" : "text.primary"} variant="body2" sx={{ fontWeight: 700, minWidth: 0, overflowWrap: "anywhere", textAlign: "right" }}>{value || "—"}</Typography></Box>;
 }
 
-function WizardActions({ activeStep, busy, onBack, onContinue }: { activeStep: number; busy: boolean; onBack: () => void; onContinue: () => void }) {
+function WizardActions({ activeStep, busy, onBack }: { activeStep: number; busy: boolean; onBack: () => void }) {
   return (
     <Paper elevation={activeStep >= 0 ? 6 : 0} sx={{ bottom: { xs: "calc(64px + env(safe-area-inset-bottom))", md: "auto" }, left: { xs: 0, md: "auto" }, p: { xs: 1.25, md: 1.5 }, position: { xs: "fixed", md: "static" }, right: { xs: 0, md: "auto" }, zIndex: { xs: 10, md: "auto" } }}>
       <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", maxWidth: { md: 560 }, ml: { md: "auto" } }}>
-        {activeStep > 0 ? <Button disabled={busy} onClick={onBack} sx={{ flex: { xs: 1, md: "initial" } }}>Back</Button> : null}
-        <Button disabled={busy} type={activeStep === 3 ? "submit" : "button"} onClick={activeStep === 3 ? undefined : onContinue} endIcon={activeStep < 3 ? <ArrowForwardRoundedIcon /> : undefined} variant="contained" sx={{ flex: { xs: 2, md: "initial" }, minWidth: { md: 180 } }}>{busy ? "Please wait…" : activeStep === 0 ? "Check availability" : activeStep === 3 ? "Confirm booking" : "Continue"}</Button>
+        {activeStep > 0 ? <Button disabled={busy} type="button" onClick={onBack} sx={{ flex: { xs: 1, md: "initial" } }}>Back</Button> : null}
+        <Button disabled={busy} type="submit" endIcon={activeStep < 3 ? <ArrowForwardRoundedIcon /> : undefined} variant="contained" sx={{ flex: { xs: 2, md: "initial" }, minWidth: { md: 180 } }}>{busy ? "Please wait…" : activeStep === 0 ? "Check availability" : activeStep === 3 ? "Confirm booking" : "Continue"}</Button>
       </Stack>
     </Paper>
   );
@@ -608,5 +629,5 @@ function BookingFlowSkeleton() {
 }
 
 function CenteredState({ title, children, icon, severity = "info" }: { title: string; children: ReactNode; icon?: ReactNode; severity?: "info" | "error" }) {
-  return <Container maxWidth="sm" sx={{ py: { xs: 6, sm: 10 } }}><Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}><Stack spacing={1.5} sx={{ alignItems: "flex-start" }}>{icon ? <Box sx={{ bgcolor: "action.selected", borderRadius: 2, color: "primary.main", display: "grid", height: 46, placeItems: "center", width: 46 }}>{icon}</Box> : null}<Typography variant="h5">{title}</Typography><Alert severity={severity} sx={{ width: "100%" }}>{children}</Alert><Button onClick={() => window.history.back()}>Go back</Button></Stack></Paper></Container>;
+  return <Container maxWidth="sm" sx={{ py: { xs: 6, sm: 10 } }}><Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}><Stack spacing={1.5} sx={{ alignItems: "flex-start" }}>{icon ? <Box sx={{ bgcolor: "action.selected", borderRadius: 2, color: "primary.main", display: "grid", height: 46, placeItems: "center", width: 46 }}>{icon}</Box> : null}<Typography variant="h5">{title}</Typography><Alert severity={severity} sx={{ width: "100%" }}>{children}</Alert><Button type="button" onClick={() => window.history.back()}>Go back</Button></Stack></Paper></Container>;
 }

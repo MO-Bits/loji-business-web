@@ -13,8 +13,11 @@ import {
   Button,
   IconButton,
   Stack,
+  TablePagination,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { PageHeader } from "@/components/shared/page-header";
 import {
   EmptyState,
@@ -31,17 +34,35 @@ import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/components/providers/language-provider";
 
 const DAY = 86_400_000;
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const CALENDAR_PAGE_SIZE_OPTIONS = [20, 40, 80];
 
 function isoDate(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-function addDays(date: Date, days: number) {
-  return new Date(date.getTime() + days * DAY);
+function parseDate(value: string) {
+  return new Date(`${value}T00:00:00Z`);
 }
 
-function parseDate(value: string) {
-  return new Date(`${value}T12:00:00Z`);
+function isDateKey(value: unknown): value is string {
+  if (typeof value !== "string" || !DATE_KEY.test(value)) return false;
+  const parsed = parseDate(value);
+  return !Number.isNaN(parsed.getTime()) && isoDate(parsed) === value;
+}
+
+function addDays(value: string, days: number) {
+  return isoDate(new Date(parseDate(value).getTime() + days * DAY));
+}
+
+function formatDate(
+  value: string,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+) {
+  return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(
+    parseDate(value),
+  );
 }
 
 function daysBetween(from: string, to: string) {
@@ -50,7 +71,7 @@ function daysBetween(from: string, to: string) {
 
 function calendarDays(from: string, to: string) {
   const count = Math.min(daysBetween(from, to) + 1, 31);
-  return Array.from({ length: count }, (_, index) => isoDate(addDays(parseDate(from), index)));
+  return Array.from({ length: count }, (_, index) => addDays(from, index));
 }
 
 function statusTone(status: string): "danger" | "info" | "neutral" | "success" | "warning" {
@@ -63,19 +84,40 @@ function statusTone(status: string): "danger" | "info" | "neutral" | "success" |
 
 export function CalendarScreen() {
   const { loading: sessionLoading, session } = useAppSession();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
+  const theme = useTheme();
+  const isDesktopLayout = useMediaQuery(theme.breakpoints.up("md"), {
+    defaultMatches: false,
+  });
   const supabase = useMemo(() => createClient(), []);
-  const today = useMemo(() => new Date(), []);
-  const [from, setFrom] = useState(() => isoDate(today));
-  const [to, setTo] = useState(() => isoDate(addDays(today, 13)));
+  const bootstrapDate = useMemo(() => isoDate(new Date()), []);
+  const propertyId = session?.activePropertyId;
+  const sessionBusinessDate = isDateKey(session?.property?.business_date)
+    ? session.property.business_date
+    : isDateKey(session?.property?.businessDate)
+      ? session.property.businessDate
+      : null;
+  const rangeAnchor = sessionBusinessDate ?? bootstrapDate;
+  const [rangeState, setRangeState] = useState<{
+    propertyId: string;
+    from: string;
+    to: string;
+  } | null>(null);
+  const activeRange = rangeState && propertyId && rangeState.propertyId === propertyId
+    ? rangeState
+    : { from: rangeAnchor, to: addDays(rangeAnchor, 13) };
+  const { from, to } = activeRange;
   const [calendarState, setCalendarState] = useState<{
     propertyId: string;
     value: Awaited<ReturnType<typeof getPropertyCalendar>>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
   const requestId = useRef(0);
-  const propertyId = session?.activePropertyId;
+  const initializedBusinessContext = useRef<string | null>(null);
+  const customizedPropertyId = useRef<string | null>(null);
   const calendar = calendarState && calendarState.propertyId === propertyId
     ? calendarState.value
     : null;
@@ -96,6 +138,31 @@ export function CalendarScreen() {
     }
     return grouped;
   }, [calendar?.bookings]);
+  const sortedBookings = useMemo(
+    () => [...(calendar?.bookings ?? [])].sort((a, b) => a.checkIn.localeCompare(b.checkIn)),
+    [calendar?.bookings],
+  );
+  const collectionCount = isDesktopLayout
+    ? calendar?.rooms.length ?? 0
+    : sortedBookings.length;
+  const safePage = Math.min(
+    page,
+    Math.max(0, Math.ceil(collectionCount / rowsPerPage) - 1),
+  );
+  const pagedRooms = useMemo(
+    () => (calendar?.rooms ?? []).slice(
+      safePage * rowsPerPage,
+      (safePage + 1) * rowsPerPage,
+    ),
+    [calendar?.rooms, rowsPerPage, safePage],
+  );
+  const pagedBookings = useMemo(
+    () => sortedBookings.slice(
+      safePage * rowsPerPage,
+      (safePage + 1) * rowsPerPage,
+    ),
+    [rowsPerPage, safePage, sortedBookings],
+  );
 
   const load = useCallback(async () => {
     if (!propertyId || !canView || invalidRange) {
@@ -109,9 +176,29 @@ export function CalendarScreen() {
     setLoading(true);
     setErrorState(null);
     setCalendarState((current) => current?.propertyId === requestPropertyId ? current : null);
+    let awaitingAlignedReload = false;
     try {
       const value = await getPropertyCalendar(supabase, requestPropertyId, from, to);
       if (requestId.current === currentRequest) {
+        const businessDate = isDateKey(value.businessDate) ? value.businessDate : null;
+        const businessContext = businessDate
+          ? `${requestPropertyId}:${businessDate}`
+          : null;
+        if (businessDate && initializedBusinessContext.current !== businessContext) {
+          initializedBusinessContext.current = businessContext;
+          if (customizedPropertyId.current !== requestPropertyId) {
+            const alignedTo = addDays(businessDate, 13);
+            if (from !== businessDate || to !== alignedTo) {
+              awaitingAlignedReload = true;
+              setRangeState({
+                propertyId: requestPropertyId,
+                from: businessDate,
+                to: alignedTo,
+              });
+              return;
+            }
+          }
+        }
         setCalendarState({ propertyId: requestPropertyId, value });
       }
     } catch (caught) {
@@ -122,12 +209,17 @@ export function CalendarScreen() {
         });
       }
     } finally {
-      if (requestId.current === currentRequest) setLoading(false);
+      if (requestId.current === currentRequest && !awaitingAlignedReload) {
+        setLoading(false);
+      }
     }
   }, [canView, from, invalidRange, propertyId, supabase, to]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
+    const timer = window.setTimeout(() => {
+      setPage(0);
+      void load();
+    }, 0);
     return () => {
       window.clearTimeout(timer);
       requestId.current += 1;
@@ -135,13 +227,28 @@ export function CalendarScreen() {
   }, [load]);
 
   const shift = (days: number) => {
-    setFrom((value) => isoDate(addDays(parseDate(value), days)));
-    setTo((value) => isoDate(addDays(parseDate(value), days)));
+    if (!propertyId) return;
+    setPage(0);
+    customizedPropertyId.current = propertyId;
+    setRangeState({
+      propertyId,
+      from: addDays(from, days),
+      to: addDays(to, days),
+    });
   };
 
   const resetToday = () => {
-    setFrom(isoDate(today));
-    setTo(isoDate(addDays(today, 13)));
+    if (!propertyId) return;
+    setPage(0);
+    const businessDate = isDateKey(calendar?.businessDate)
+      ? calendar.businessDate
+      : rangeAnchor;
+    customizedPropertyId.current = propertyId;
+    setRangeState({
+      propertyId,
+      from: businessDate,
+      to: addDays(businessDate, 13),
+    });
   };
 
   if (!sessionLoading && !canView) {
@@ -163,6 +270,7 @@ export function CalendarScreen() {
   }
 
   const days = calendarDays(from, to);
+  const locale = language === "sw" ? "sw-TZ" : "en-TZ";
 
   return (
     <WorkspacePage>
@@ -186,9 +294,9 @@ export function CalendarScreen() {
             </Stack>
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
               <Typography color="text.secondary" variant="body2">
-                {new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(parseDate(from))}
+                {formatDate(from, locale, { day: "numeric", month: "short" })}
                 {" – "}
-                {new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short", year: "numeric" }).format(parseDate(to))}
+                {formatDate(to, locale, { day: "numeric", month: "short", year: "numeric" })}
               </Typography>
               {calendar?.timezone ? <StatusPill label={calendar.timezone} tone="neutral" /> : null}
             </Stack>
@@ -218,24 +326,29 @@ export function CalendarScreen() {
             />
           ) : (
             <>
-              <Box sx={{ display: { xs: "none", md: "block" }, overflowX: "auto" }}>
+              {isDesktopLayout ? (
+                <Box sx={{ overflowX: "auto" }}>
                 <Box sx={{ display: "grid", gridTemplateColumns: `180px repeat(${days.length}, minmax(92px, 1fr))`, minWidth: 180 + days.length * 92 }}>
                   <Box sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider", left: 0, p: 1.5, position: "sticky", zIndex: 3 }}>
                     <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700 }}>{t("Room", "Chumba")}</Typography>
                   </Box>
                   {days.map((day) => {
                     const date = parseDate(day);
-                    const isToday = day === (calendar.businessDate || isoDate(today));
+                    const isToday = day === (
+                      (isDateKey(calendar.businessDate) && calendar.businessDate)
+                      || sessionBusinessDate
+                      || bootstrapDate
+                    );
                     return (
                       <Box key={day} sx={{ bgcolor: isToday ? "color-mix(in srgb, var(--mui-palette-primary-main) 7%, transparent)" : "background.paper", borderBottom: 1, borderLeft: 1, borderColor: "divider", p: 1, textAlign: "center" }}>
                         <Typography color={isToday ? "primary.main" : "text.secondary"} variant="caption" sx={{ display: "block", fontWeight: 700, textTransform: "uppercase" }}>
-                          {new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(date)}
+                          {new Intl.DateTimeFormat(locale, { timeZone: "UTC", weekday: "short" }).format(date)}
                         </Typography>
                         <Typography sx={{ fontVariantNumeric: "tabular-nums", fontWeight: isToday ? 700 : 500 }}>{date.getUTCDate()}</Typography>
                       </Box>
                     );
                   })}
-                  {calendar.rooms.map((room) => {
+                  {pagedRooms.map((room) => {
                     const roomBookings = bookingsByRoom.get(room.id) ?? [];
                     return (
                       <Box key={room.id} sx={{ display: "contents" }}>
@@ -258,14 +371,12 @@ export function CalendarScreen() {
                     );
                   })}
                 </Box>
-              </Box>
-
-              <Box sx={{ display: { xs: "block", md: "none" } }}>
-                {calendar.bookings.length ? (
+                </Box>
+              ) : (
+                <Box>
+                {sortedBookings.length ? (
                   <Stack divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}>
-                    {[...calendar.bookings]
-                      .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
-                      .map((booking) => (
+                    {pagedBookings.map((booking) => (
                         <Box component={Link} href={`/bookings/${booking.id}`} key={booking.id} sx={{ color: "inherit", display: "block", p: 2, textDecoration: "none", "&:active": { bgcolor: "action.hover" } }}>
                           <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
                             <Box sx={{ minWidth: 0 }}>
@@ -280,7 +391,43 @@ export function CalendarScreen() {
                 ) : (
                   <EmptyState description={t("No stays fall inside this date range.", "Hakuna ukaaji ndani ya tarehe hizi.")} icon={<CalendarMonthRoundedIcon />} title={t("Calendar is clear", "Kalenda iko wazi")} />
                 )}
-              </Box>
+                </Box>
+              )}
+              {collectionCount > CALENDAR_PAGE_SIZE_OPTIONS[0] ? (
+                <Box sx={{ borderTop: 1, borderColor: "divider" }}>
+                  <TablePagination
+                    component="div"
+                    count={collectionCount}
+                    labelDisplayedRows={({ from: first, to: last, count }) =>
+                      isDesktopLayout
+                        ? t(`${first}–${last} of ${count} rooms`, `${first}–${last} kati ya vyumba ${count}`)
+                        : t(`${first}–${last} of ${count} stays`, `${first}–${last} kati ya ukaaji ${count}`)
+                    }
+                    labelRowsPerPage={isDesktopLayout
+                      ? t("Rooms per page", "Vyumba kwa ukurasa")
+                      : t("Stays per page", "Ukaaji kwa ukurasa")}
+                    onPageChange={(_, nextPage) => setPage(nextPage)}
+                    onRowsPerPageChange={(event) => {
+                      setRowsPerPage(Number(event.target.value));
+                      setPage(0);
+                    }}
+                    page={safePage}
+                    rowsPerPage={rowsPerPage}
+                    rowsPerPageOptions={CALENDAR_PAGE_SIZE_OPTIONS}
+                    sx={{
+                      "& .MuiTablePagination-selectLabel": {
+                        display: { xs: "none", sm: "block" },
+                      },
+                      "& .MuiTablePagination-spacer": {
+                        display: { xs: "none", sm: "block" },
+                      },
+                      "& .MuiTablePagination-toolbar": {
+                        px: { xs: 1, sm: 2 },
+                      },
+                    }}
+                  />
+                </Box>
+              ) : null}
             </>
           )}
         </Surface>

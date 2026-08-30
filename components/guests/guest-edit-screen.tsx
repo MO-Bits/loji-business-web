@@ -23,9 +23,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   MenuItem,
   Skeleton,
@@ -36,7 +33,11 @@ import {
 
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
-import { ResponsiveModal } from "@/components/shared/responsive-modal";
+import {
+  useDirtyNavigation,
+  useEphemeralDraft,
+  useUnsavedChanges,
+} from "@/components/providers/unsaved-changes-provider";
 import {
   EmptyState,
   StickyMobileActionBar,
@@ -58,6 +59,11 @@ type GuestForm = Required<GuestUpdateInput>;
 type GuestField = keyof GuestForm;
 type GuestErrors = Partial<Record<GuestField, string>>;
 type Translate = (english: string, swahili: string) => string;
+type GuestEditorDraft = {
+  baseline: GuestForm;
+  form: GuestForm;
+};
+type DraftNotice = "restored" | "stale" | null;
 
 const phonePattern = /^[+()\d.\-\s]+$/;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -157,6 +163,7 @@ export function GuestEditScreen({ guestId }: { guestId: string }) {
       guestHref={guestHref}
       key={`${workspace.propertyId}:${workspace.guest.id}`}
       propertyId={propertyId}
+      userId={session?.user?.id ?? "unknown-user"}
     />
   );
 }
@@ -166,54 +173,80 @@ function GuestEditForm({
   guest,
   guestHref,
   propertyId,
+  userId,
 }: {
   canEditSensitive: boolean;
   guest: GuestProfile;
   guestHref: string;
   propertyId: string;
+  userId: string;
 }) {
   const router = useRouter();
   const feedback = useAppFeedback();
   const { t } = useLanguage();
+  const { requestNavigation } = useDirtyNavigation();
   const client = useMemo(() => createClient(), []);
   const initial = useMemo(() => guestToInput(guest), [guest]);
-  const [form, setForm] = useState<GuestForm>(initial);
+  const draftKey = [
+    "guest-editor",
+    userId,
+    propertyId,
+    guest.id,
+    canEditSensitive ? "sensitive" : "standard",
+  ].join(":");
+  const draftStore = useEphemeralDraft<GuestEditorDraft>(draftKey);
+  const storedDraft = useMemo(() => draftStore.read(), [draftStore]);
+  const restoredDraft = storedDraft
+    && !guestInputsDiffer(storedDraft.baseline, initial)
+    ? storedDraft
+    : null;
+  const [baseline, setBaseline] = useState<GuestForm>(initial);
+  const [form, setForm] = useState<GuestForm>(restoredDraft?.form ?? initial);
+  const [draftNotice, setDraftNotice] = useState<DraftNotice>(() => {
+    if (restoredDraft) return "restored";
+    return storedDraft ? "stale" : null;
+  });
   const [attempted, setAttempted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [discardOpen, setDiscardOpen] = useState(false);
   const normalized = normalizeGuest(form);
   const errors = validateGuest(normalized, t);
   const invalid = Object.keys(errors).length > 0;
-  const dirty = guestInputsDiffer(initial, normalized);
+  const dirty = guestInputsDiffer(baseline, normalized);
+  const clearUnsavedChanges = useUnsavedChanges(dirty, draftStore.clear);
 
   useEffect(() => {
-    if (!dirty || saving) return;
-    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-    };
-    window.addEventListener("beforeunload", warnBeforeUnload);
-    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
-  }, [dirty, saving]);
+    if (storedDraft && !restoredDraft) draftStore.clear();
+  }, [draftStore, restoredDraft, storedDraft]);
 
   const changeField =
     (field: GuestField) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = event.target.value;
-      setForm((current) => ({ ...current, [field]: value }));
+      const nextForm = { ...form, [field]: value };
+      setForm(nextForm);
+      if (guestInputsDiffer(baseline, normalizeGuest(nextForm))) {
+        draftStore.write({ baseline, form: nextForm });
+      } else {
+        draftStore.clear();
+      }
       setError(null);
     };
+
+  const discardRestoredDraft = () => {
+    draftStore.clear();
+    setForm(initial);
+    setAttempted(false);
+    setError(null);
+    setDraftNotice(null);
+  };
 
   const helperText = (field: GuestField, fallback = " ") =>
     attempted && errors[field] ? errors[field] : fallback;
 
   const requestCancel = () => {
     if (saving) return;
-    if (dirty) {
-      setDiscardOpen(true);
-      return;
-    }
-    router.push(guestHref);
+    void requestNavigation(() => router.push(guestHref));
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -233,6 +266,9 @@ function GuestEditForm({
       feedback.success(
         t("Guest profile updated.", "Wasifu wa mgeni umesasishwa."),
       );
+      draftStore.clear();
+      setBaseline(normalized);
+      clearUnsavedChanges();
       router.replace(guestHref);
       router.refresh();
     } catch (cause) {
@@ -267,6 +303,35 @@ function GuestEditForm({
               guest={guest}
               onCancel={requestCancel}
             />
+
+            {draftNotice === "restored" ? (
+              <Alert
+                action={
+                  <Button
+                    color="inherit"
+                    onClick={discardRestoredDraft}
+                    size="small"
+                    type="button"
+                  >
+                    {t("Discard draft", "Ondoa rasimu")}
+                  </Button>
+                }
+                onClose={() => setDraftNotice(null)}
+                severity="info"
+              >
+                {t(
+                  "Your unsaved draft was restored from this tab.",
+                  "Rasimu yako ambayo haijahifadhiwa imerejeshwa kutoka kwenye kichupo hiki.",
+                )}
+              </Alert>
+            ) : draftNotice === "stale" ? (
+              <Alert onClose={() => setDraftNotice(null)} severity="warning">
+                {t(
+                  "This guest changed while you were away, so the older draft was not restored.",
+                  "Taarifa za mgeni huyu zilibadilika ulipokuwa mbali, hivyo rasimu ya zamani haikurejeshwa.",
+                )}
+              </Alert>
+            ) : null}
 
             {error ? (
               <Alert severity="error" onClose={() => setError(null)}>
@@ -601,29 +666,6 @@ function GuestEditForm({
         </Stack>
       </StickyMobileActionBar>
 
-      <ResponsiveModal
-        maxWidth="xs"
-        onClose={saving ? undefined : () => setDiscardOpen(false)}
-        open={discardOpen}
-      >
-        <DialogTitle>{t("Discard changes?", "Ondoa mabadiliko?")}</DialogTitle>
-        <DialogContent>
-          <Typography color="text.secondary">
-            {t(
-              "The guest profile has unsaved changes. Leaving now will discard them.",
-              "Wasifu wa mgeni una mabadiliko ambayo hayajahifadhiwa. Kuondoka sasa kutayaondoa.",
-            )}
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDiscardOpen(false)}>
-            {t("Keep editing", "Endelea kuhariri")}
-          </Button>
-          <Button color="error" onClick={() => router.push(guestHref)}>
-            {t("Discard", "Ondoa")}
-          </Button>
-        </DialogActions>
-      </ResponsiveModal>
     </Box>
   );
 }

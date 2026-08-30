@@ -27,13 +27,16 @@ import {
   TableBody,
   TableCell,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { PageHeader } from "@/components/shared/page-header";
@@ -81,8 +84,14 @@ const filterValues: RoomFilter[] = [
   "inactive",
 ];
 
+const ROOM_PAGE_SIZE_OPTIONS = [12, 24, 48];
+
 export function RoomsScreen() {
   const { t } = useLanguage();
+  const theme = useTheme();
+  const isDesktopLayout = useMediaQuery(theme.breakpoints.up("lg"), {
+    defaultMatches: false,
+  });
   const feedback = useAppFeedback();
   const { session } = useAppSession();
   const client = useMemo(() => createClient(), []);
@@ -93,6 +102,8 @@ export function RoomsScreen() {
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RoomFilter>("all");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(12);
   const [pendingRoom, setPendingRoom] = useState<string | null>(null);
   const propertyId = session?.activePropertyId;
   const board = boardState && boardState.property.id === propertyId ? boardState : null;
@@ -140,6 +151,7 @@ export function RoomsScreen() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setPendingRoom(null);
+      setPage(0);
       void refresh();
     }, 0);
     return () => {
@@ -171,10 +183,34 @@ export function RoomsScreen() {
       ].some((item) => item?.toLocaleLowerCase().includes(normalized));
     });
   }, [filter, query, rooms]);
+  const filterCounts = useMemo(() => {
+    const counts = new Map<RoomFilter, number>([["all", rooms.length]]);
+    for (const room of rooms) {
+      counts.set(
+        room.operationalStatus,
+        (counts.get(room.operationalStatus) ?? 0) + 1,
+      );
+    }
+    return counts;
+  }, [rooms]);
+  const safePage = Math.min(
+    page,
+    Math.max(0, Math.ceil(visibleRooms.length / rowsPerPage) - 1),
+  );
+  const pagedRooms = useMemo(
+    () => visibleRooms.slice(safePage * rowsPerPage, (safePage + 1) * rowsPerPage),
+    [rowsPerPage, safePage, visibleRooms],
+  );
 
-  const filterCount = (value: RoomFilter) => value === "all"
-    ? rooms.length
-    : rooms.filter((room) => room.operationalStatus === value).length;
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    setPage(0);
+  };
+
+  const updateFilter = (value: RoomFilter) => {
+    setFilter(value);
+    setPage(0);
+  };
 
   const updateHousekeeping = async (room: RoomBoardItem, status: HousekeepingStatus) => {
     if (!propertyId || pendingRoom) return;
@@ -258,7 +294,7 @@ export function RoomsScreen() {
           >
             <TextField
               aria-label={t("Search rooms", "Tafuta vyumba")}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => updateQuery(event.target.value)}
               placeholder={t("Search room, guest, type or amenity", "Tafuta chumba, mgeni, aina au huduma")}
               size="small"
               slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRoundedIcon fontSize="small" /></InputAdornment> } }}
@@ -285,19 +321,19 @@ export function RoomsScreen() {
             <ToggleButtonGroup
               aria-label={t("Filter room board", "Chuja ubao wa vyumba")}
               exclusive
-              onChange={(_, value: RoomFilter | null) => value && setFilter(value)}
+              onChange={(_, value: RoomFilter | null) => value && updateFilter(value)}
               size="small"
               sx={{ minWidth: "max-content" }}
               value={filter}
             >
-              <ToggleButton value="all">{t("All", "Vyote")} · {filterCount("all")}</ToggleButton>
-              <ToggleButton value="ready">{t("Ready", "Tayari")} · {filterCount("ready")}</ToggleButton>
-              <ToggleButton value="occupied">{t("Occupied", "Vimekaliwa")} · {filterCount("occupied")}</ToggleButton>
-              <ToggleButton value="checking_out_today">{t("Due out", "Wanatoka")} · {filterCount("checking_out_today")}</ToggleButton>
-              <ToggleButton value="needs_cleaning">{t("Dirty", "Vichafu")} · {filterCount("needs_cleaning")}</ToggleButton>
-              <ToggleButton value="cleaning">{t("Cleaning", "Usafi")} · {filterCount("cleaning")}</ToggleButton>
-              <ToggleButton value="out_of_service">{t("Out of service", "Havitumiki")} · {filterCount("out_of_service")}</ToggleButton>
-              <ToggleButton value="inactive">{t("Inactive", "Vimezimwa")} · {filterCount("inactive")}</ToggleButton>
+              <ToggleButton value="all">{t("All", "Vyote")} · {filterCounts.get("all") ?? 0}</ToggleButton>
+              <ToggleButton value="ready">{t("Ready", "Tayari")} · {filterCounts.get("ready") ?? 0}</ToggleButton>
+              <ToggleButton value="occupied">{t("Occupied", "Vimekaliwa")} · {filterCounts.get("occupied") ?? 0}</ToggleButton>
+              <ToggleButton value="checking_out_today">{t("Due out", "Wanatoka")} · {filterCounts.get("checking_out_today") ?? 0}</ToggleButton>
+              <ToggleButton value="needs_cleaning">{t("Dirty", "Vichafu")} · {filterCounts.get("needs_cleaning") ?? 0}</ToggleButton>
+              <ToggleButton value="cleaning">{t("Cleaning", "Usafi")} · {filterCounts.get("cleaning") ?? 0}</ToggleButton>
+              <ToggleButton value="out_of_service">{t("Out of service", "Havitumiki")} · {filterCounts.get("out_of_service") ?? 0}</ToggleButton>
+              <ToggleButton value="inactive">{t("Inactive", "Vimezimwa")} · {filterCounts.get("inactive") ?? 0}</ToggleButton>
             </ToggleButtonGroup>
           </Box>
         </Surface>
@@ -323,19 +359,19 @@ export function RoomsScreen() {
             <EmptyState description={t("Change the search or choose another operational status.", "Badili utafutaji au chagua hali nyingine ya uendeshaji.")} icon={<SearchRoundedIcon />} title={t("No rooms match this view", "Hakuna vyumba vinavyolingana")} />
           </Surface>
         ) : (
-          <>
-            <Box sx={{ display: { xs: "none", lg: "block" } }}>
+          <Stack spacing={1.5}>
+            {isDesktopLayout ? (
               <RoomTable
                 canCreateBooking={canCreateBooking}
                 canManage={canManage}
                 onActive={updateActive}
                 onHousekeeping={updateHousekeeping}
                 pendingRoom={pendingRoom}
-                rooms={visibleRooms}
+                rooms={pagedRooms}
               />
-            </Box>
-            <Box sx={{ display: { xs: "grid", lg: "none" }, gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
-              {visibleRooms.map((room) => (
+            ) : (
+              <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
+              {pagedRooms.map((room) => (
                 <RoomCard
                   canCreateBooking={canCreateBooking}
                   canManage={canManage}
@@ -346,8 +382,40 @@ export function RoomsScreen() {
                   room={room}
                 />
               ))}
-            </Box>
-          </>
+              </Box>
+            )}
+            {visibleRooms.length > ROOM_PAGE_SIZE_OPTIONS[0] ? (
+              <Surface padding={false}>
+                <TablePagination
+                  component="div"
+                  count={visibleRooms.length}
+                  labelDisplayedRows={({ from: first, to: last, count }) =>
+                    t(`${first}–${last} of ${count} rooms`, `${first}–${last} kati ya vyumba ${count}`)
+                  }
+                  labelRowsPerPage={t("Rooms per page", "Vyumba kwa ukurasa")}
+                  onPageChange={(_, nextPage) => setPage(nextPage)}
+                  onRowsPerPageChange={(event) => {
+                    setRowsPerPage(Number(event.target.value));
+                    setPage(0);
+                  }}
+                  page={safePage}
+                  rowsPerPage={rowsPerPage}
+                  rowsPerPageOptions={ROOM_PAGE_SIZE_OPTIONS}
+                  sx={{
+                    "& .MuiTablePagination-selectLabel": {
+                      display: { xs: "none", sm: "block" },
+                    },
+                    "& .MuiTablePagination-spacer": {
+                      display: { xs: "none", sm: "block" },
+                    },
+                    "& .MuiTablePagination-toolbar": {
+                      px: { xs: 1, sm: 2 },
+                    },
+                  }}
+                />
+              </Surface>
+            ) : null}
+          </Stack>
         )}
       </Stack>
     </WorkspacePage>

@@ -44,7 +44,23 @@ import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import { createClient } from "@/lib/supabase/client";
 
 const DAY = 86_400_000;
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const iso = (date: Date) => date.toISOString().slice(0, 10);
+const parseDateKey = (value: string) => new Date(`${value}T00:00:00Z`);
+const isDateKey = (value: unknown): value is string => {
+  if (typeof value !== "string" || !DATE_KEY.test(value)) return false;
+  const parsed = parseDateKey(value);
+  return !Number.isNaN(parsed.getTime()) && iso(parsed) === value;
+};
+const addDays = (value: string, days: number) =>
+  iso(new Date(parseDateKey(value).getTime() + days * DAY));
+const formatDateKey = (
+  value: string,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+) => new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(
+  parseDateKey(value),
+);
 const rangeIsInvalid = (from: string, to: string) => {
   if (!from || !to || to < from) return true;
   return (Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY > 366;
@@ -65,13 +81,31 @@ const csvCell = (value: string | number) => {
 type Period = "7" | "30" | "90" | "custom";
 
 export function ReportsScreen() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { loading: sessionLoading, session } = useAppSession();
   const supabase = useMemo(() => createClient(), []);
-  const today = useMemo(() => new Date(), []);
-  const [period, setPeriod] = useState<Period>("30");
-  const [from, setFrom] = useState(() => iso(new Date(today.getTime() - 29 * DAY)));
-  const [to, setTo] = useState(() => iso(today));
+  const bootstrapDate = useMemo(() => iso(new Date()), []);
+  const propertyId = session?.activePropertyId;
+  const sessionBusinessDate = isDateKey(session?.property?.business_date)
+    ? session.property.business_date
+    : isDateKey(session?.property?.businessDate)
+      ? session.property.businessDate
+      : null;
+  const rangeAnchor = sessionBusinessDate ?? bootstrapDate;
+  const [rangeState, setRangeState] = useState<{
+    propertyId: string;
+    period: Period;
+    from: string;
+    to: string;
+  } | null>(null);
+  const activeRange = rangeState && propertyId && rangeState.propertyId === propertyId
+    ? rangeState
+    : {
+        period: "30" as Period,
+        from: addDays(rangeAnchor, -29),
+        to: rangeAnchor,
+      };
+  const { period, from, to } = activeRange;
   const [reportState, setReportState] = useState<{
     propertyId: string;
     value: PropertyReport;
@@ -79,7 +113,7 @@ export function ReportsScreen() {
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
   const requestId = useRef(0);
-  const propertyId = session?.activePropertyId;
+  const initializedBusinessContext = useRef<string | null>(null);
   const report = reportState && reportState.propertyId === propertyId
     ? reportState.value
     : null;
@@ -103,9 +137,32 @@ export function ReportsScreen() {
     setLoading(true);
     setErrorState(null);
     setReportState((current) => current?.propertyId === requestPropertyId ? current : null);
+    let awaitingAlignedReload = false;
     try {
       const value = await getPropertyReport(supabase, requestPropertyId, from, to);
       if (requestId.current === currentRequest) {
+        const businessDate = isDateKey(value.businessDate) ? value.businessDate : null;
+        const businessContext = businessDate
+          ? `${requestPropertyId}:${businessDate}`
+          : null;
+        if (
+          businessDate
+          && period !== "custom"
+          && initializedBusinessContext.current !== businessContext
+        ) {
+          initializedBusinessContext.current = businessContext;
+          const alignedFrom = addDays(businessDate, -(Number(period) - 1));
+          if (from !== alignedFrom || to !== businessDate) {
+            awaitingAlignedReload = true;
+            setRangeState({
+              propertyId: requestPropertyId,
+              period,
+              from: alignedFrom,
+              to: businessDate,
+            });
+            return;
+          }
+        }
         setReportState({ propertyId: requestPropertyId, value });
       }
     } catch (caught) {
@@ -116,9 +173,11 @@ export function ReportsScreen() {
         });
       }
     } finally {
-      if (requestId.current === currentRequest) setLoading(false);
+      if (requestId.current === currentRequest && !awaitingAlignedReload) {
+        setLoading(false);
+      }
     }
-  }, [canView, from, invalidRange, propertyId, supabase, to]);
+  }, [canView, from, invalidRange, period, propertyId, supabase, to]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -129,10 +188,17 @@ export function ReportsScreen() {
   }, [load]);
 
   const selectPeriod = (next: Period) => {
-    setPeriod(next);
+    if (!propertyId) return;
     if (next === "custom") return;
-    setFrom(iso(new Date(today.getTime() - (Number(next) - 1) * DAY)));
-    setTo(iso(today));
+    const businessDate = isDateKey(report?.businessDate)
+      ? report.businessDate
+      : rangeAnchor;
+    setRangeState({
+      propertyId,
+      period: next,
+      from: addDays(businessDate, -(Number(next) - 1)),
+      to: businessDate,
+    });
   };
 
   const exportCsv = () => {
@@ -217,6 +283,7 @@ export function ReportsScreen() {
     (total, source) => total + source.bookings,
     0,
   ) ?? 0;
+  const locale = language === "sw" ? "sw-TZ" : "en-TZ";
 
   return (
     <WorkspacePage>
@@ -262,7 +329,10 @@ export function ReportsScreen() {
               ))}
               <Button
                 aria-pressed={period === "custom"}
-                onClick={() => selectPeriod("custom")}
+                onClick={() => {
+                  if (!propertyId) return;
+                  setRangeState({ propertyId, period: "custom", from, to });
+                }}
                 variant={period === "custom" ? "contained" : "outlined"}
               >
                 {t("Custom", "Chagua")}
@@ -273,8 +343,8 @@ export function ReportsScreen() {
                 fullWidth
                 label={t("From", "Kuanzia")}
                 onChange={(event) => {
-                  setPeriod("custom");
-                  setFrom(event.target.value);
+                  if (!propertyId) return;
+                  setRangeState({ propertyId, period: "custom", from: event.target.value, to });
                 }}
                 slotProps={{ htmlInput: { max: to }, inputLabel: { shrink: true } }}
                 type="date"
@@ -284,8 +354,8 @@ export function ReportsScreen() {
                 fullWidth
                 label={t("To", "Hadi")}
                 onChange={(event) => {
-                  setPeriod("custom");
-                  setTo(event.target.value);
+                  if (!propertyId) return;
+                  setRangeState({ propertyId, period: "custom", from, to: event.target.value });
                 }}
                 slotProps={{ htmlInput: { min: from }, inputLabel: { shrink: true } }}
                 type="date"
@@ -391,9 +461,7 @@ export function ReportsScreen() {
                     />
                     {index % Math.max(1, Math.ceil((report?.daily.length ?? 1) / 7)) === 0 ? (
                       <Typography color="text.secondary" variant="caption">
-                        {new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(
-                          new Date(`${item.date}T12:00:00Z`),
-                        )}
+                        {formatDateKey(item.date, locale, { day: "numeric", month: "short" })}
                       </Typography>
                     ) : null}
                   </Stack>

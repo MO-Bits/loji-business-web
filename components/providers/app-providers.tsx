@@ -9,6 +9,7 @@ import { FeedbackProvider } from "@/components/providers/feedback-provider";
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { PwaRegister } from "@/components/providers/pwa-register";
 import { AppSessionProvider } from "@/components/providers/app-session-provider";
+import { UnsavedChangesProvider } from "@/components/providers/unsaved-changes-provider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -23,7 +24,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         <PwaRegister />
         <LanguageProvider>
           <AppSessionProvider>
-            <FeedbackProvider>{children}</FeedbackProvider>
+            <UnsavedChangesProvider>
+              <FeedbackProvider>{children}</FeedbackProvider>
+            </UnsavedChangesProvider>
           </AppSessionProvider>
         </LanguageProvider>
       </ThemeProvider>

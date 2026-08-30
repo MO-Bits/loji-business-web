@@ -49,12 +49,15 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Tabs,
   TextField,
   Tooltip,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
@@ -109,6 +112,7 @@ type InvitationActionTarget = {
 };
 
 const roleOrder: TeamRole[] = ["owner", "manager", "receptionist"];
+const TEAM_PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 function roleLabel(role: TeamRole, t: Translator) {
   if (role === "owner") return t("Owner", "Mmiliki");
@@ -175,6 +179,13 @@ async function copyText(value: string) {
 
 export function TeamAccessScreen() {
   const { t } = useLanguage();
+  const theme = useTheme();
+  const isDirectoryDesktop = useMediaQuery(theme.breakpoints.up("md"), {
+    defaultMatches: false,
+  });
+  const showHeaderInvite = useMediaQuery(theme.breakpoints.up("sm"), {
+    defaultMatches: false,
+  });
   const feedback = useAppFeedback();
   const { session, loading: sessionLoading } = useAppSession();
   const client = useMemo(() => createClient(), []);
@@ -191,6 +202,10 @@ export function TeamAccessScreen() {
   const [statusFilter, setStatusFilter] = useState<
     StaffMember["status"] | "all"
   >("all");
+  const [memberPage, setMemberPage] = useState(0);
+  const [memberRowsPerPage, setMemberRowsPerPage] = useState(10);
+  const [invitationPage, setInvitationPage] = useState(0);
+  const [invitationRowsPerPage, setInvitationRowsPerPage] = useState(10);
   const [invitePropertyId, setInvitePropertyId] = useState<string | null>(null);
   const [memberAction, setMemberAction] = useState<MemberActionTarget | null>(
     null,
@@ -249,6 +264,8 @@ export function TeamAccessScreen() {
       setMemberAction(null);
       setInvitationAction(null);
       setPendingKey(null);
+      setMemberPage(0);
+      setInvitationPage(0);
       if (!localCapabilities.canManageStaff || !propertyId) {
         requestId.current += 1;
         setWorkspace(null);
@@ -320,6 +337,28 @@ export function TeamAccessScreen() {
       ) ?? [],
     [normalizedQuery, workspace?.invitations],
   );
+  const safeMemberPage = Math.min(
+    memberPage,
+    Math.max(0, Math.ceil(visibleMembers.length / memberRowsPerPage) - 1),
+  );
+  const pagedMembers = useMemo(
+    () => visibleMembers.slice(
+      safeMemberPage * memberRowsPerPage,
+      (safeMemberPage + 1) * memberRowsPerPage,
+    ),
+    [memberRowsPerPage, safeMemberPage, visibleMembers],
+  );
+  const safeInvitationPage = Math.min(
+    invitationPage,
+    Math.max(0, Math.ceil(visibleInvitations.length / invitationRowsPerPage) - 1),
+  );
+  const pagedInvitations = useMemo(
+    () => visibleInvitations.slice(
+      safeInvitationPage * invitationRowsPerPage,
+      (safeInvitationPage + 1) * invitationRowsPerPage,
+    ),
+    [invitationRowsPerPage, safeInvitationPage, visibleInvitations],
+  );
 
   const submitInvite = async (email: string, role: TeamRole) => {
     if (!propertyId) return false;
@@ -335,6 +374,7 @@ export function TeamAccessScreen() {
       setInvitePropertyId(null);
       setTab("invitations");
       setQuery("");
+      setInvitationPage(0);
     }
     return success;
   };
@@ -490,11 +530,10 @@ export function TeamAccessScreen() {
       <BackToSettingsButton />
       <SettingsPageHeader
         action={
-          canInvite ? (
+          canInvite && showHeaderInvite ? (
             <Button
               onClick={() => propertyId && setInvitePropertyId(propertyId)}
               startIcon={<AddRoundedIcon />}
-              sx={{ display: { xs: "none", sm: "inline-flex" } }}
               variant="contained"
             >
               {t("Invite teammate", "Alika mshiriki")}
@@ -562,6 +601,8 @@ export function TeamAccessScreen() {
           onChange={(_, next: TeamTab) => {
             setTab(next);
             setQuery("");
+            setMemberPage(0);
+            setInvitationPage(0);
           }}
           scrollButtons="auto"
           sx={{ px: { xs: 0.75, sm: 1.25 } }}
@@ -602,9 +643,19 @@ export function TeamAccessScreen() {
 
       {tab !== "roles" ? (
         <FilterBar
-          onQueryChange={setQuery}
-          onRoleChange={setRoleFilter}
-          onStatusChange={setStatusFilter}
+          onQueryChange={(value) => {
+            setQuery(value);
+            setMemberPage(0);
+            setInvitationPage(0);
+          }}
+          onRoleChange={(value) => {
+            setRoleFilter(value);
+            setMemberPage(0);
+          }}
+          onStatusChange={(value) => {
+            setStatusFilter(value);
+            setMemberPage(0);
+          }}
           query={query}
           role={roleFilter}
           showMemberFilters={tab === "members"}
@@ -618,20 +669,38 @@ export function TeamAccessScreen() {
         </Surface>
       ) : tab === "members" ? (
         <MembersDirectory
-          members={visibleMembers}
+          count={visibleMembers.length}
+          desktop={isDirectoryDesktop}
+          members={pagedMembers}
           onAction={(action, member) => propertyId && setMemberAction({ action, member, propertyId })}
+          onPageChange={setMemberPage}
+          onRowsPerPageChange={(value) => {
+            setMemberRowsPerPage(value);
+            setMemberPage(0);
+          }}
+          page={safeMemberPage}
           pendingKey={pendingKey}
+          rowsPerPage={memberRowsPerPage}
         />
       ) : tab === "invitations" ? (
         <InvitationsDirectory
-          invitations={visibleInvitations}
+          count={visibleInvitations.length}
+          desktop={isDirectoryDesktop}
+          invitations={pagedInvitations}
           onAction={(action, invitation) =>
             propertyId && setInvitationAction({ action, invitation, propertyId })
           }
           onCopy={(invitation) => void copyInvitationCode(invitation)}
           onInvite={canInvite ? () => propertyId && setInvitePropertyId(propertyId) : undefined}
+          onPageChange={setInvitationPage}
+          onRowsPerPageChange={(value) => {
+            setInvitationRowsPerPage(value);
+            setInvitationPage(0);
+          }}
           onShare={(invitation) => void shareInvitation(invitation)}
+          page={safeInvitationPage}
           pendingKey={pendingKey}
+          rowsPerPage={invitationRowsPerPage}
         />
       ) : (
         <RolesAndPermissions currentRole={workspace?.role ?? "member"} />
@@ -667,8 +736,8 @@ export function TeamAccessScreen() {
         target={activeInvitationAction}
       />
 
-      {canInvite ? (
-        <Box sx={{ display: { xs: "block", sm: "none" } }}>
+      {canInvite && !showHeaderInvite ? (
+        <Box>
           <StickyMobileActionBar>
             <Button
               fullWidth
@@ -778,16 +847,28 @@ function FilterBar({
 }
 
 function MembersDirectory({
+  count,
+  desktop,
   members,
   onAction,
+  onPageChange,
+  onRowsPerPageChange,
+  page,
   pendingKey,
+  rowsPerPage,
 }: {
+  count: number;
+  desktop: boolean;
   members: StaffMember[];
   onAction: (action: MemberAction, member: StaffMember) => void;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
+  page: number;
   pendingKey: string | null;
+  rowsPerPage: number;
 }) {
   const { t } = useLanguage();
-  if (!members.length) {
+  if (!count) {
     return (
       <Surface padding={false}>
         <EmptyState
@@ -803,8 +884,9 @@ function MembersDirectory({
   }
 
   return (
-    <>
-      <Surface padding={false} sx={{ display: { xs: "none", md: "block" } }}>
+    <Stack spacing={1.25}>
+      {desktop ? (
+        <Surface padding={false}>
         <TableContainer>
           <Table aria-label={t("Team members", "Washiriki wa timu")}>
             <TableHead>
@@ -860,9 +942,9 @@ function MembersDirectory({
             </TableBody>
           </Table>
         </TableContainer>
-      </Surface>
-
-      <Stack spacing={1.25} sx={{ display: { xs: "flex", md: "none" } }}>
+        </Surface>
+      ) : (
+        <Stack spacing={1.25}>
         {members.map((member) => (
           <Surface key={member.membershipId}>
             <Stack spacing={1.75}>
@@ -915,8 +997,19 @@ function MembersDirectory({
             </Stack>
           </Surface>
         ))}
-      </Stack>
-    </>
+        </Stack>
+      )}
+      <DirectoryPagination
+        count={count}
+        itemLabel="team members"
+        itemLabelSwahili="washiriki wa timu"
+        onPageChange={onPageChange}
+        onRowsPerPageChange={onRowsPerPageChange}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        rowsPerPageLabel={t("Members per page", "Washiriki kwa ukurasa")}
+      />
+    </Stack>
   );
 }
 
@@ -1065,22 +1158,34 @@ function MemberActionMenu({
 }
 
 function InvitationsDirectory({
+  count,
+  desktop,
   invitations,
   onAction,
   onCopy,
   onInvite,
+  onPageChange,
+  onRowsPerPageChange,
   onShare,
+  page,
   pendingKey,
+  rowsPerPage,
 }: {
+  count: number;
+  desktop: boolean;
   invitations: StaffInvitation[];
   onAction: (action: InvitationAction, invitation: StaffInvitation) => void;
   onCopy: (invitation: StaffInvitation) => void;
   onInvite?: () => void;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
   onShare: (invitation: StaffInvitation) => void;
+  page: number;
   pendingKey: string | null;
+  rowsPerPage: number;
 }) {
   const { t } = useLanguage();
-  if (!invitations.length) {
+  if (!count) {
     return (
       <Surface padding={false}>
         <EmptyState
@@ -1107,7 +1212,8 @@ function InvitationsDirectory({
           "Misimbo ya mialiko inaonekana kwa wasimamizi walioidhinishwa pekee. Ishiriki na mwenye barua pepe iliyoalikwa kupitia njia salama.",
         )}
       </Alert>
-      <Surface padding={false} sx={{ display: { xs: "none", md: "block" } }}>
+      {desktop ? (
+        <Surface padding={false}>
         <TableContainer>
           <Table aria-label={t("Pending invitations", "Mialiko inayosubiri")}>
             <TableHead>
@@ -1191,9 +1297,9 @@ function InvitationsDirectory({
             </TableBody>
           </Table>
         </TableContainer>
-      </Surface>
-
-      <Stack spacing={1.25} sx={{ display: { xs: "flex", md: "none" } }}>
+        </Surface>
+      ) : (
+        <Stack spacing={1.25}>
         {invitations.map((invitation) => (
           <Surface key={invitation.id}>
             <Stack spacing={1.75}>
@@ -1259,8 +1365,74 @@ function InvitationsDirectory({
             </Stack>
           </Surface>
         ))}
-      </Stack>
+        </Stack>
+      )}
+      <DirectoryPagination
+        count={count}
+        itemLabel="invitations"
+        itemLabelSwahili="mialiko"
+        onPageChange={onPageChange}
+        onRowsPerPageChange={onRowsPerPageChange}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        rowsPerPageLabel={t("Invitations per page", "Mialiko kwa ukurasa")}
+      />
     </>
+  );
+}
+
+function DirectoryPagination({
+  count,
+  itemLabel,
+  itemLabelSwahili,
+  onPageChange,
+  onRowsPerPageChange,
+  page,
+  rowsPerPage,
+  rowsPerPageLabel,
+}: {
+  count: number;
+  itemLabel: string;
+  itemLabelSwahili: string;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
+  page: number;
+  rowsPerPage: number;
+  rowsPerPageLabel: string;
+}) {
+  const { t } = useLanguage();
+  if (count <= TEAM_PAGE_SIZE_OPTIONS[0]) return null;
+
+  return (
+    <Surface padding={false}>
+      <TablePagination
+        component="div"
+        count={count}
+        labelDisplayedRows={({ from, to, count: total }) => t(
+          `${from}–${to} of ${total} ${itemLabel}`,
+          `${from}–${to} kati ya ${total} ${itemLabelSwahili}`,
+        )}
+        labelRowsPerPage={rowsPerPageLabel}
+        onPageChange={(_, nextPage) => onPageChange(nextPage)}
+        onRowsPerPageChange={(event) =>
+          onRowsPerPageChange(Number(event.target.value))
+        }
+        page={page}
+        rowsPerPage={rowsPerPage}
+        rowsPerPageOptions={TEAM_PAGE_SIZE_OPTIONS}
+        sx={{
+          "& .MuiTablePagination-selectLabel": {
+            display: { xs: "none", sm: "block" },
+          },
+          "& .MuiTablePagination-spacer": {
+            display: { xs: "none", sm: "block" },
+          },
+          "& .MuiTablePagination-toolbar": {
+            px: { xs: 1, sm: 2 },
+          },
+        }}
+      />
+    </Surface>
   );
 }
 

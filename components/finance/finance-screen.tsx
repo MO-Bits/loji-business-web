@@ -49,7 +49,37 @@ import { createClient } from "@/lib/supabase/client";
 
 const PAGE_SIZE = 25;
 const DAY = 86_400_000;
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 const iso = (date: Date) => date.toISOString().slice(0, 10);
+const parseDateKey = (value: string) => new Date(`${value}T00:00:00Z`);
+const isDateKey = (value: unknown): value is string => {
+  if (typeof value !== "string" || !DATE_KEY.test(value)) return false;
+  const parsed = parseDateKey(value);
+  return !Number.isNaN(parsed.getTime()) && iso(parsed) === value;
+};
+const addDays = (value: string, days: number) =>
+  iso(new Date(parseDateKey(value).getTime() + days * DAY));
+const formatDateKey = (
+  value: string,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+) => new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(
+  parseDateKey(value),
+);
+const formatTimestamp = (
+  value: string,
+  locale: string,
+  timeZone: string,
+  options: Intl.DateTimeFormatOptions,
+) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(date);
+  }
+};
 const rangeIsInvalid = (from: string, to: string) => {
   if (!from || !to || to < from) return true;
   return (Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY > 366;
@@ -79,11 +109,25 @@ const paymentTone = (status: string): "danger" | "neutral" | "success" | "warnin
 
 export function FinanceScreen() {
   const { loading: sessionLoading, session } = useAppSession();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const supabase = useMemo(() => createClient(), []);
-  const today = useMemo(() => new Date(), []);
-  const [from, setFrom] = useState(() => iso(new Date(today.getTime() - 29 * DAY)));
-  const [to, setTo] = useState(() => iso(today));
+  const bootstrapDate = useMemo(() => iso(new Date()), []);
+  const propertyId = session?.activePropertyId;
+  const sessionBusinessDate = isDateKey(session?.property?.business_date)
+    ? session.property.business_date
+    : isDateKey(session?.property?.businessDate)
+      ? session.property.businessDate
+      : null;
+  const rangeAnchor = sessionBusinessDate ?? bootstrapDate;
+  const [rangeState, setRangeState] = useState<{
+    propertyId: string;
+    from: string;
+    to: string;
+  } | null>(null);
+  const activeRange = rangeState && propertyId && rangeState.propertyId === propertyId
+    ? rangeState
+    : { from: addDays(rangeAnchor, -29), to: rangeAnchor };
+  const { from, to } = activeRange;
   const [query, setQuery] = useState("");
   const [method, setMethod] = useState("");
   const [status, setStatus] = useState("");
@@ -96,7 +140,8 @@ export function FinanceScreen() {
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
   const requestId = useRef(0);
-  const propertyId = session?.activePropertyId;
+  const initializedBusinessContext = useRef<string | null>(null);
+  const customizedPropertyId = useRef<string | null>(null);
   const dashboard = financeState && financeState.propertyId === propertyId
     ? financeState.dashboard
     : null;
@@ -123,6 +168,7 @@ export function FinanceScreen() {
     setLoading(true);
     setErrorState(null);
     setFinanceState((current) => current?.propertyId === requestPropertyId ? current : null);
+    let awaitingAlignedReload = false;
     try {
       const [nextDashboard, nextLedger] = await Promise.all([
         getOwnerFinanceDashboard(supabase, requestPropertyId, from, to),
@@ -138,6 +184,27 @@ export function FinanceScreen() {
         }),
       ]);
       if (requestId.current === currentRequest) {
+        const businessDate = isDateKey(nextDashboard.businessDate)
+          ? nextDashboard.businessDate
+          : null;
+        const businessContext = businessDate
+          ? `${requestPropertyId}:${businessDate}`
+          : null;
+        if (businessDate && initializedBusinessContext.current !== businessContext) {
+          initializedBusinessContext.current = businessContext;
+          if (customizedPropertyId.current !== requestPropertyId) {
+            const alignedFrom = addDays(businessDate, -29);
+            if (from !== alignedFrom || to !== businessDate) {
+              awaitingAlignedReload = true;
+              setRangeState({
+                propertyId: requestPropertyId,
+                from: alignedFrom,
+                to: businessDate,
+              });
+              return;
+            }
+          }
+        }
         setFinanceState({
           propertyId: requestPropertyId,
           dashboard: nextDashboard,
@@ -152,7 +219,9 @@ export function FinanceScreen() {
         });
       }
     } finally {
-      if (requestId.current === currentRequest) setLoading(false);
+      if (requestId.current === currentRequest && !awaitingAlignedReload) {
+        setLoading(false);
+      }
     }
   }, [canView, from, invalidRange, method, page, propertyId, query, status, supabase, to]);
 
@@ -214,6 +283,8 @@ export function FinanceScreen() {
 
   const summary = dashboard?.summary;
   const maxDaily = Math.max(1, ...(dashboard?.daily.map((item) => item.collected) ?? [0]));
+  const locale = language === "sw" ? "sw-TZ" : "en-TZ";
+  const propertyTimeZone = dashboard?.timezone || "UTC";
 
   return (
     <WorkspacePage>
@@ -227,8 +298,8 @@ export function FinanceScreen() {
         <Surface sx={{ p: { xs: 1.5, sm: 2 } }}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, width: { xs: "100%", sm: "auto" } }}>
-              <TextField fullWidth label={t("From", "Kuanzia")} onChange={(event) => { setFrom(event.target.value); setPage(1); }} type="date" value={from} slotProps={{ htmlInput: { max: to }, inputLabel: { shrink: true } }} />
-              <TextField fullWidth label={t("To", "Hadi")} onChange={(event) => { setTo(event.target.value); setPage(1); }} type="date" value={to} slotProps={{ htmlInput: { min: from }, inputLabel: { shrink: true } }} />
+              <TextField fullWidth label={t("From", "Kuanzia")} onChange={(event) => { if (!propertyId) return; customizedPropertyId.current = propertyId; setRangeState({ propertyId, from: event.target.value, to }); setPage(1); }} type="date" value={from} slotProps={{ htmlInput: { max: to }, inputLabel: { shrink: true } }} />
+              <TextField fullWidth label={t("To", "Hadi")} onChange={(event) => { if (!propertyId) return; customizedPropertyId.current = propertyId; setRangeState({ propertyId, from, to: event.target.value }); setPage(1); }} type="date" value={to} slotProps={{ htmlInput: { min: from }, inputLabel: { shrink: true } }} />
             </Stack>
             {dashboard?.timezone ? <StatusPill label={dashboard.timezone} /> : null}
           </Stack>
@@ -264,7 +335,7 @@ export function FinanceScreen() {
                 {dashboard.daily.map((item, index) => (
                   <Stack key={item.date} spacing={0.75} sx={{ alignItems: "center", flex: 1, height: "100%", justifyContent: "flex-end", minWidth: 24 }}>
                     <Box aria-label={`${item.date}: ${money(item.collected)}`} role="img" title={`${item.date}: ${money(item.collected)}`} sx={{ bgcolor: item.collected ? "primary.main" : "action.disabledBackground", borderRadius: "6px 6px 2px 2px", height: `${Math.max(item.collected ? 8 : 2, (item.collected / maxDaily) * 160)}px`, minHeight: 2, transition: "height 180ms ease", width: "min(24px, 70%)" }} />
-                    {index % Math.max(1, Math.ceil(dashboard.daily.length / 7)) === 0 ? <Typography color="text.secondary" variant="caption">{new Intl.DateTimeFormat(undefined, { day: "numeric", month: "short" }).format(new Date(`${item.date}T12:00:00Z`))}</Typography> : null}
+                    {index % Math.max(1, Math.ceil(dashboard.daily.length / 7)) === 0 ? <Typography color="text.secondary" variant="caption">{formatDateKey(item.date, locale, { day: "numeric", month: "short" })}</Typography> : null}
                   </Stack>
                 ))}
               </Stack>
@@ -325,11 +396,11 @@ export function FinanceScreen() {
               <TableContainer sx={{ display: { xs: "none", md: "block" } }}>
                 <Table>
                   <TableHead><TableRow><TableCell>{t("Guest / booking", "Mgeni / uhifadhi")}</TableCell><TableCell>{t("Date", "Tarehe")}</TableCell><TableCell>{t("Method", "Njia")}</TableCell><TableCell>{t("Reference", "Kumbukumbu")}</TableCell><TableCell align="right">{t("Amount", "Kiasi")}</TableCell><TableCell /></TableRow></TableHead>
-                  <TableBody>{ledger.items.map((item) => <PaymentRow item={item} key={item.id} />)}</TableBody>
+                  <TableBody>{ledger.items.map((item) => <PaymentRow item={item} key={item.id} locale={locale} timeZone={propertyTimeZone} />)}</TableBody>
                 </Table>
               </TableContainer>
               <Stack divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />} sx={{ display: { xs: "flex", md: "none" } }}>
-                {ledger.items.map((item) => <PaymentCard item={item} key={item.id} />)}
+                {ledger.items.map((item) => <PaymentCard item={item} key={item.id} locale={locale} timeZone={propertyTimeZone} />)}
               </Stack>
               {ledger.total > PAGE_SIZE ? <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><Pagination count={Math.ceil(ledger.total / PAGE_SIZE)} onChange={(_, value) => setPage(value)} page={page} /></Box> : null}
             </>
@@ -340,11 +411,11 @@ export function FinanceScreen() {
   );
 }
 
-function PaymentRow({ item }: { item: PaymentLedgerItem }) {
+function PaymentRow({ item, locale, timeZone }: { item: PaymentLedgerItem; locale: string; timeZone: string }) {
   return (
     <TableRow hover>
       <TableCell><Typography sx={{ fontWeight: 700 }} variant="body2">{item.guestName}</Typography><Typography color="text.secondary" variant="caption">{item.bookingNumber}</Typography></TableCell>
-      <TableCell>{item.paidAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(item.paidAt)) : "—"}</TableCell>
+      <TableCell>{item.paidAt ? formatTimestamp(item.paidAt, locale, timeZone, { dateStyle: "medium", timeStyle: "short" }) : "—"}</TableCell>
       <TableCell>
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap" }}>
           <StatusPill label={item.method.replaceAll("_", " ")} tone="info" />
@@ -358,7 +429,7 @@ function PaymentRow({ item }: { item: PaymentLedgerItem }) {
   );
 }
 
-function PaymentCard({ item }: { item: PaymentLedgerItem }) {
+function PaymentCard({ item, locale, timeZone }: { item: PaymentLedgerItem; locale: string; timeZone: string }) {
   return (
     <Box component={Link} href={`/bookings/${item.bookingId}`} sx={{ color: "inherit", p: 2, textDecoration: "none" }}>
       <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -367,7 +438,7 @@ function PaymentCard({ item }: { item: PaymentLedgerItem }) {
           <Typography color="text.secondary" variant="body2">{item.bookingNumber} · {item.method.replaceAll("_", " ")}</Typography>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.5 }}>
             <StatusPill label={item.status.replaceAll("_", " ")} tone={paymentTone(item.status)} />
-            <Typography color="text.secondary" variant="caption">{item.paidAt ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(item.paidAt)) : ""}</Typography>
+            <Typography color="text.secondary" variant="caption">{item.paidAt ? formatTimestamp(item.paidAt, locale, timeZone, { dateStyle: "medium" }) : ""}</Typography>
           </Stack>
         </Box>
         <Typography sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money(item.amount, item.currency)}</Typography>

@@ -1,6 +1,11 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import {
+  Fragment,
+  useEffect,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -52,6 +57,7 @@ import {
 } from "@/features/session/permissions";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/components/providers/language-provider";
+import { useDirtyNavigation } from "@/components/providers/unsaved-changes-provider";
 import {
   accountDestination,
   businessDestinations,
@@ -103,6 +109,11 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { session, loading, error, refresh, switchProperty } = useAppSession();
   const { t } = useLanguage();
+  const {
+    clearDrafts,
+    hasUnsavedChanges,
+    requestNavigation,
+  } = useDirtyNavigation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
   const requiredCapability = requiredCapabilityForPath(pathname);
@@ -113,6 +124,48 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       ? dashboardAllowed
       : !requiredCapability || capabilities[requiredCapability];
   const homePath = dashboardAllowed ? "/dashboard" : "/settings/profile";
+
+  const guardInternalLink = (event: ReactMouseEvent<HTMLElement>) => {
+    if (
+      !hasUnsavedChanges ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      !(event.target instanceof Element)
+    ) {
+      return;
+    }
+
+    const anchor = event.target.closest("a[href]");
+    if (
+      !(anchor instanceof HTMLAnchorElement) ||
+      anchor.hasAttribute("download") ||
+      anchor.getAttribute("aria-disabled") === "true" ||
+      (anchor.target && anchor.target !== "_self")
+    ) {
+      return;
+    }
+
+    const destination = new URL(anchor.href, window.location.href);
+    const current = new URL(window.location.href);
+    if (
+      destination.origin !== current.origin ||
+      (destination.pathname === current.pathname &&
+        destination.search === current.search)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    void requestNavigation(() => {
+      router.push(
+        `${destination.pathname}${destination.search}${destination.hash}`,
+      );
+    });
+  };
 
   useEffect(() => {
     if (!loading && session && session.status !== AppStatus.Ready) {
@@ -169,14 +222,20 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   const signOut = async () => {
-    await createClient().auth.signOut();
-    router.replace("/login");
-    router.refresh();
+    await requestNavigation(async () => {
+      await createClient().auth.signOut();
+      clearDrafts();
+      router.replace("/login");
+      router.refresh();
+    });
   };
 
   const switchActiveProperty = async (propertyId: string) => {
-    await switchProperty(propertyId);
-    router.refresh();
+    await requestNavigation(async () => {
+      await switchProperty(propertyId);
+      clearDrafts();
+      router.refresh();
+    });
   };
 
   const sidebar = (
@@ -198,7 +257,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <Box sx={{ bgcolor: "background.default", display: "flex", minHeight: "100dvh" }}>
+    <Box
+      onClickCapture={guardInternalLink}
+      sx={{ bgcolor: "background.default", display: "flex", minHeight: "100dvh" }}
+    >
       <Box
         component="a"
         href="#main-content"
@@ -409,7 +471,9 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               setMobileOpen(true);
               return;
             }
-            router.push(String(value));
+            void requestNavigation(() => {
+              router.push(String(value));
+            });
           }}
           sx={{
             borderTop: 1,
