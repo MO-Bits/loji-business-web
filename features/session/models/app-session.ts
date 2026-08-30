@@ -4,13 +4,16 @@ import { AppStatus, AppStep } from "./app-status";
 
 export type Membership = {
   id?: string;
+  property?: Property | null;
   property_id?: string;
   role?: string;
   [key: string]: unknown;
 };
 
 export type Property = {
+  formatted_address?: string;
   id?: string;
+  images?: unknown[];
   name?: string;
   type?: string;
   address?: string;

@@ -1,185 +1,128 @@
 "use client";
 
-import Link from "next/link";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import ExploreRoundedIcon from "@mui/icons-material/ExploreRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import MapRoundedIcon from "@mui/icons-material/MapRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import {
-  Box,
-  Button,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { BrandWordmark } from "@/components/shared/brand-wordmark";
+import { Box, Button, Divider, Stack, Typography } from "@mui/material";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { OnboardingFrame } from "@/components/auth/onboarding-frame";
+import { useLanguage } from "@/components/providers/language-provider";
 
 const steps = [
   {
+    description: [
+      "Find the property, street, ward or a nearby landmark.",
+      "Tafuta biashara, mtaa, kata au alama ya karibu.",
+    ],
     icon: SearchRoundedIcon,
-    title: "Search your area",
-    description: "Find your property, street, ward, or a nearby landmark.",
+    title: ["Search the area", "Tafuta eneo"],
   },
   {
+    description: [
+      "Move the map until the pin sits on the property entrance.",
+      "Sogeza ramani hadi pini iwe kwenye mlango wa biashara.",
+    ],
     icon: LocationOnRoundedIcon,
-    title: "Place the pin",
-    description: "Move the map pin to the exact entrance of your property.",
+    title: ["Place the pin", "Weka pini"],
   },
   {
+    description: [
+      "Review the detected address before completing setup.",
+      "Kagua anwani iliyopatikana kabla ya kukamilisha usanidi.",
+    ],
     icon: ExploreRoundedIcon,
-    title: "Confirm the address",
-    description: "Review the detected address before saving your location.",
+    title: ["Confirm the address", "Thibitisha anwani"],
   },
 ] as const;
 
 export function PropertyAddressIntro() {
+  const router = useRouter();
+  const { t } = useLanguage();
+
   return (
-    <Box
-      component="main"
-      sx={{
-        background:
-          "radial-gradient(circle at 85% 5%, color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent), transparent 34%)",
-        minHeight: "100dvh",
-        py: { xs: 3, md: 7 },
-      }}
+    <OnboardingFrame
+      action={
+        <Button
+          color="inherit"
+          onClick={() => router.back()}
+          startIcon={<ArrowBackRoundedIcon />}
+        >
+          {t("Back", "Rudi")}
+        </Button>
+      }
+      description={t(
+        "Set the entrance guests and staff should use. Search by place name or move the pin directly on the map.",
+        "Weka mlango ambao wageni na wafanyakazi watatumia. Tafuta kwa jina la eneo au sogeza pini moja kwa moja kwenye ramani.",
+      )}
+      eyebrow={t("Property location", "Eneo la biashara")}
+      icon={<MapRoundedIcon />}
+      panelDescription={t(
+        "The map will suggest an address from your selected pin",
+        "Ramani itapendekeza anwani kutokana na pini uliyochagua",
+      )}
+      panelTitle={t("Set an accurate location", "Weka eneo sahihi")}
+      step={3}
+      steps={[
+        t("Personal profile", "Wasifu binafsi"),
+        t("Property details", "Taarifa za biashara"),
+        t("Location & finish", "Eneo na kumaliza"),
+      ]}
+      title={t("Where is your property?", "Biashara yako iko wapi?")}
     >
-      <Container maxWidth="md">
-        <Stack spacing={{ xs: 4, md: 6 }}>
-          <BrandWordmark priority sx={{ width: { xs: 168, sm: 205 } }} />
-
-          <Box
-            sx={{
-              display: "grid",
-              gap: { xs: 4, md: 6 },
-              gridTemplateColumns: { xs: "1fr", md: "1.1fr .9fr" },
-              alignItems: "center",
-            }}
+      <Stack divider={<Divider flexItem />}>
+        {steps.map(({ description, icon: Icon, title }) => (
+          <Stack
+            direction="row"
+            key={title[0]}
+            spacing={2}
+            sx={{ alignItems: "flex-start", py: 2 }}
           >
-            <Stack spacing={2.5}>
-              <Box
-                sx={{
-                  alignItems: "center",
-                  bgcolor:
-                    "color-mix(in srgb, var(--mui-palette-primary-main) 12%, transparent)",
-                  borderRadius: 1,
-                  color: "primary.main",
-                  display: "flex",
-                  height: 58,
-                  justifyContent: "center",
-                  width: 58,
-                }}
-              >
-                <MapRoundedIcon fontSize="large" />
-              </Box>
-
-              <Box>
-                <Typography
-                  color="primary"
-                  sx={{
-                    fontSize: ".75rem",
-                    fontWeight: 700,
-                    letterSpacing: ".12em",
-                    mb: 1,
-                  }}
-                >
-                  PROPERTY LOCATION · STEP 3 OF 3
-                </Typography>
-                <Typography
-                  component="h1"
-                  variant="h2"
-                  sx={{
-                    fontSize: { xs: "2.6rem", sm: "3.7rem" },
-                    letterSpacing: "-.055em",
-                    lineHeight: 1.02,
-                  }}
-                >
-                  Where is your property?
-                </Typography>
-              </Box>
-
-              <Typography
-                color="text.secondary"
-                sx={{
-                  fontSize: { xs: "1rem", sm: "1.15rem" },
-                  lineHeight: 1.7,
-                  maxWidth: 580,
-                }}
-              >
-                Set the exact location guests and your team should use. You can
-                search by place name, street, ward, or move the pin directly on
-                the map.
-              </Typography>
-
-              <Button
-                component={Link}
-                href="/onboarding/property/address/map"
-                size="large"
-                variant="contained"
-                endIcon={<ArrowForwardRoundedIcon />}
-                sx={{
-                  alignSelf: { xs: "stretch", sm: "flex-start" },
-                  minHeight: 54,
-                  px: 3.5,
-                }}
-              >
-                Open location map
-              </Button>
-            </Stack>
-
-            <Paper
-              variant="outlined"
+            <Box
               sx={{
-                p: { xs: 2.5, sm: 3 },
-                background:
-                  "color-mix(in srgb, var(--mui-palette-background-paper) 94%, transparent)",
+                bgcolor:
+                  "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+                borderRadius: 2,
+                color: "primary.main",
+                display: "grid",
+                flexShrink: 0,
+                height: 42,
+                placeItems: "center",
+                width: 42,
               }}
             >
-              <Stack spacing={1}>
-                {steps.map(({ icon: Icon, title, description }, index) => (
-                  <Stack
-                    key={title}
-                    direction="row"
-                    spacing={2}
-                    sx={{
-                      alignItems: "flex-start",
-                      borderBottom: index < steps.length - 1 ? 1 : 0,
-                      borderColor: "divider",
-                      py: 2,
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        bgcolor: "primary.main",
-                        borderRadius: 1,
-                        color: "primary.contrastText",
-                        display: "grid",
-                        flexShrink: 0,
-                        height: 44,
-                        placeItems: "center",
-                        width: 44,
-                      }}
-                    >
-                      <Icon fontSize="small" />
-                    </Box>
-                    <Box>
-                      <Typography sx={{ fontWeight: 700 }}>{title}</Typography>
-                      <Typography
-                        color="text.secondary"
-                        variant="body2"
-                        sx={{ lineHeight: 1.55, mt: 0.35 }}
-                      >
-                        {description}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                ))}
-              </Stack>
-            </Paper>
-          </Box>
-        </Stack>
-      </Container>
-    </Box>
+              <Icon fontSize="small" />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 700 }}>
+                {t(title[0], title[1])}
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{ lineHeight: 1.65, mt: 0.35 }}
+                variant="body2"
+              >
+                {t(description[0], description[1])}
+              </Typography>
+            </Box>
+          </Stack>
+        ))}
+      </Stack>
+
+      <Button
+        component={Link}
+        endIcon={<ArrowForwardRoundedIcon />}
+        fullWidth
+        href="/onboarding/property/address/map"
+        size="large"
+        variant="contained"
+      >
+        {t("Open location map", "Fungua ramani ya eneo")}
+      </Button>
+    </OnboardingFrame>
   );
 }

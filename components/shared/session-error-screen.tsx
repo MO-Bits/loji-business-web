@@ -3,6 +3,7 @@
 import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
+import { BrandLockup } from "@/components/shared/brand-lockup";
 
 export function SessionErrorScreen({
   error,
@@ -15,29 +16,44 @@ export function SessionErrorScreen({
     <Box
       sx={{
         alignItems: "center",
+        bgcolor: "background.default",
         display: "flex",
         justifyContent: "center",
         minHeight: "100dvh",
-        p: 3,
+        p: { xs: 2, sm: 3 },
       }}
     >
-      <Paper variant="outlined" sx={{ maxWidth: 480, p: { xs: 3, sm: 4 } }}>
-        <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
-          <ErrorOutlineRoundedIcon color="error" sx={{ fontSize: 38 }} />
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            We couldn’t open Loji Business
-          </Typography>
-          <Typography color="text.secondary">
-            Check your connection and try again. Your information is safe.
-          </Typography>
-          <Typography variant="caption" color="text.disabled">
-            {error.message}
-          </Typography>
-          <Button
-            variant="contained"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={onRetry}
+      <Paper variant="outlined" sx={{ maxWidth: 500, overflow: "hidden", width: "100%" }}>
+        <Stack spacing={2.5} sx={{ alignItems: "flex-start", p: { xs: 2.5, sm: 4 } }}>
+          <BrandLockup symbolSize={30} textSize=".9375rem" />
+          <Box
+            sx={{
+              alignItems: "center",
+              bgcolor: "color-mix(in srgb, var(--mui-palette-error-main) 10%, var(--mui-palette-background-paper))",
+              borderRadius: 2,
+              color: "error.main",
+              display: "grid",
+              height: 44,
+              placeItems: "center",
+              width: 44,
+            }}
           >
+            <ErrorOutlineRoundedIcon />
+          </Box>
+          <Box>
+            <Typography component="h1" sx={{ fontSize: "1.375rem", fontWeight: 700, letterSpacing: "-.02em" }}>
+              We couldn’t open your workspace
+            </Typography>
+            <Typography color="text.secondary" sx={{ fontSize: ".875rem", lineHeight: 1.65, mt: 0.75 }}>
+              Check your connection and try again. Your saved information is safe.
+            </Typography>
+            {process.env.NODE_ENV === "development" ? (
+              <Typography color="text.disabled" sx={{ fontSize: ".75rem", mt: 1.25 }}>
+                {error.message}
+              </Typography>
+            ) : null}
+          </Box>
+          <Button variant="contained" startIcon={<RefreshRoundedIcon />} onClick={onRetry}>
             Try again
           </Button>
         </Stack>

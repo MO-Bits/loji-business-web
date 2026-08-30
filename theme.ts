@@ -4,7 +4,7 @@ import { createTheme } from "@mui/material/styles";
 
 export const theme = createTheme({
   breakpoints: {
-    values: { xs: 0, sm: 600, md: 960, lg: 1200, xl: 1536 },
+    values: { xs: 0, sm: 600, md: 900, lg: 1200, xl: 1536 },
   },
   cssVariables: {
     colorSchemeSelector: "data",
@@ -12,89 +12,96 @@ export const theme = createTheme({
   colorSchemes: {
     light: {
       palette: {
-        primary: { main: "#176B4D", light: "#4E9D7D", dark: "#104C36" },
-        secondary: { main: "#397BB1" },
-        success: { main: "#258463" },
-        warning: { main: "#AE6F13" },
-        error: { main: "#D14343" },
-        info: { main: "#1769D2" },
-        background: { default: "#F6F8F7", paper: "#FFFFFF" },
-        text: { primary: "#1E2A25", secondary: "#718079" },
-        divider: "#E1E8E4",
+        primary: {
+          main: "#007AFF",
+          light: "#5AC8FA",
+          dark: "#0066CC",
+          contrastText: "#FFFFFF",
+        },
+        secondary: { main: "#5856D6" },
+        success: { main: "#248A3D" },
+        warning: { main: "#C76A00" },
+        error: { main: "#D70015" },
+        info: { main: "#007AFF" },
+        background: { default: "#F5F5F7", paper: "#FFFFFF" },
+        text: { primary: "#1D1D1F", secondary: "#6E6E73" },
+        divider: "#E5E5EA",
         action: {
-          hover: "rgba(23,107,77,.055)",
-          selected: "rgba(23,107,77,.10)",
-          disabledBackground: "rgba(30,42,37,.08)",
+          hover: "rgba(0,122,255,.055)",
+          selected: "rgba(0,122,255,.105)",
+          disabled: "rgba(60,60,67,.38)",
+          disabledBackground: "rgba(116,116,128,.12)",
         },
       },
     },
     dark: {
       palette: {
         primary: {
-          main: "#72C6A5",
-          light: "#9BDEC5",
-          dark: "#4FA17F",
-          contrastText: "#071B13",
+          main: "#0A84FF",
+          light: "#64D2FF",
+          dark: "#409CFF",
+          contrastText: "#FFFFFF",
         },
-        secondary: { main: "#82BDEB" },
-        success: { main: "#45C486", light: "#78DBA9", dark: "#23945D" },
-        warning: { main: "#F4B557", light: "#FFD28A", dark: "#C9821F" },
-        error: { main: "#FF7B7B", light: "#FFA6A6", dark: "#D94F4F" },
-        info: { main: "#72B7FF" },
-        background: { default: "#101A16", paper: "#16231D" },
-        text: { primary: "#F1F7F4", secondary: "#AAB8B1" },
-        divider: "#30433A",
+        secondary: { main: "#BF5AF2" },
+        success: { main: "#30D158" },
+        warning: { main: "#FF9F0A" },
+        error: { main: "#FF453A" },
+        info: { main: "#64D2FF" },
+        background: { default: "#0B0D10", paper: "#15171B" },
+        text: { primary: "#F5F5F7", secondary: "#A1A1A6" },
+        divider: "#2C2C2E",
         action: {
-          hover: "rgba(255,255,255,.055)",
-          selected: "rgba(114,198,165,.14)",
-          disabledBackground: "rgba(255,255,255,.08)",
+          hover: "rgba(255,255,255,.06)",
+          selected: "rgba(10,132,255,.16)",
+          disabled: "rgba(235,235,245,.3)",
+          disabledBackground: "rgba(118,118,128,.24)",
         },
       },
     },
   },
-  shape: { borderRadius: 10 },
+  shape: { borderRadius: 12 },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
+      fontSize: "clamp(1.75rem, 2.4vw, 2rem)",
       fontWeight: 700,
-      letterSpacing: "-0.035em",
-      lineHeight: 1.12,
+      letterSpacing: "-0.03em",
+      lineHeight: 1.16,
     },
     h2: {
-      fontSize: "clamp(1.5rem, 2.5vw, 2rem)",
+      fontSize: "clamp(1.5rem, 2vw, 1.75rem)",
       fontWeight: 700,
       letterSpacing: "-0.03em",
       lineHeight: 1.16,
     },
     h3: {
-      fontSize: "clamp(1.375rem, 2vw, 1.75rem)",
+      fontSize: "clamp(1.375rem, 1.7vw, 1.625rem)",
       fontWeight: 700,
       letterSpacing: "-0.025em",
       lineHeight: 1.2,
     },
     h4: {
-      fontSize: "clamp(1.25rem, 1.8vw, 1.5rem)",
+      fontSize: "clamp(1.25rem, 1.5vw, 1.375rem)",
       fontWeight: 700,
       letterSpacing: "-0.025em",
       lineHeight: 1.24,
     },
     h5: {
-      fontSize: "1.125rem",
+      fontSize: "1.0625rem",
       fontWeight: 700,
       letterSpacing: "-0.018em",
       lineHeight: 1.35,
     },
     h6: {
-      fontSize: "1rem",
+      fontSize: ".9375rem",
       fontWeight: 500,
       letterSpacing: "-0.01em",
       lineHeight: 1.45,
     },
     subtitle1: { fontSize: ".9375rem", fontWeight: 500, lineHeight: 1.5 },
     subtitle2: { fontSize: ".875rem", fontWeight: 500, lineHeight: 1.45 },
-    body1: { fontSize: ".875rem", lineHeight: 1.55 },
-    body2: { fontSize: ".8125rem", lineHeight: 1.5 },
+    body1: { fontSize: ".875rem", lineHeight: 1.6 },
+    body2: { fontSize: ".8125rem", lineHeight: 1.55 },
     caption: { fontSize: ".75rem", lineHeight: 1.45 },
     overline: {
       fontSize: ".75rem",
@@ -119,7 +126,7 @@ export const theme = createTheme({
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 10,
           minHeight: 40,
           paddingInline: 16,
           transition:
@@ -130,9 +137,9 @@ export const theme = createTheme({
         },
         sizeLarge: { minHeight: 48, paddingInline: 20 },
         contained: {
-          boxShadow: "0 1px 2px rgba(23,107,77,.18)",
+          boxShadow: "0 1px 2px rgba(0,122,255,.18)",
           "&:hover": {
-            boxShadow: "0 5px 14px rgba(23,107,77,.2)",
+            boxShadow: "0 6px 18px rgba(0,122,255,.22)",
           },
         },
       },
@@ -157,17 +164,17 @@ export const theme = createTheme({
       styleOverrides: {
         root: ({ ownerState }) => ({
           backgroundImage: "none",
-          borderRadius: ownerState.square ? 0 : 10,
+          borderRadius: ownerState.square ? 0 : 12,
         }),
-        rounded: { borderRadius: "10px !important" },
+        rounded: { borderRadius: "12px !important" },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
-          boxShadow: "0 1px 2px rgba(16,24,40,.025)",
+          boxShadow: "0 1px 2px rgba(0,0,0,.025)",
         },
       },
     },
     MuiCard: {
-      styleOverrides: { root: { borderRadius: "10px !important" } },
+      styleOverrides: { root: { borderRadius: "12px !important" } },
     },
     MuiChip: {
       styleOverrides: {
@@ -179,11 +186,11 @@ export const theme = createTheme({
       defaultProps: { disableRipple: false },
       styleOverrides: {
         root: {
-          boxShadow: "0 8px 24px rgba(23,107,77,.24)",
+          boxShadow: "0 8px 24px rgba(0,122,255,.24)",
           minHeight: 48,
           textTransform: "none",
           "&:hover": {
-            boxShadow: "0 12px 30px rgba(23,107,77,.3)",
+            boxShadow: "0 12px 30px rgba(0,122,255,.3)",
             transform: "translateY(-1px)",
           },
           "&:active": { transform: "scale(.98)" },
@@ -219,8 +226,8 @@ export const theme = createTheme({
         },
       },
     },
-    MuiAlert: { styleOverrides: { root: { borderRadius: 8 } } },
-    MuiSkeleton: { styleOverrides: { root: { borderRadius: 8 } } },
+    MuiAlert: { styleOverrides: { root: { borderRadius: 10 } } },
+    MuiSkeleton: { styleOverrides: { root: { borderRadius: 10 } } },
     MuiDivider: {
       styleOverrides: { root: { borderColor: "var(--mui-palette-divider)" } },
     },
@@ -238,8 +245,8 @@ export const theme = createTheme({
       styleOverrides: {
         paper: {
           border: "1px solid var(--mui-palette-divider)",
-          borderRadius: 8,
-          boxShadow: "0 24px 80px rgba(17,24,39,.18)",
+          borderRadius: 14,
+          boxShadow: "0 24px 80px rgba(0,0,0,.2)",
         },
       },
     },
@@ -279,7 +286,7 @@ export const theme = createTheme({
       styleOverrides: {
         paper: {
           border: "1px solid var(--mui-palette-divider)",
-          boxShadow: "0 12px 36px rgba(17,24,39,.12)",
+          boxShadow: "0 14px 44px rgba(0,0,0,.14)",
           marginTop: 6,
         },
         list: { padding: 6 },
@@ -299,7 +306,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: "none",
-          borderRadius: "8px !important",
+          borderRadius: "12px !important",
           "&::before": { display: "none" },
         },
       },
@@ -307,14 +314,20 @@ export const theme = createTheme({
     MuiTableCell: {
       styleOverrides: {
         head: {
-          backgroundColor: "var(--mui-palette-background-default)",
+          backgroundColor:
+            "color-mix(in srgb, var(--mui-palette-background-default) 78%, var(--mui-palette-background-paper))",
           color: "var(--mui-palette-text-secondary)",
           fontSize: ".75rem",
           fontWeight: 700,
           letterSpacing: ".035em",
           textTransform: "uppercase",
         },
-        root: { borderColor: "var(--mui-palette-divider)" },
+        root: {
+          borderColor: "var(--mui-palette-divider)",
+          fontSize: ".875rem",
+          height: 48,
+          padding: "10px 16px",
+        },
       },
     },
     MuiTableRow: {
@@ -337,11 +350,13 @@ export const theme = createTheme({
           fontSize: ".875rem",
           "&.MuiOutlinedInput-root": {
             backgroundColor: "var(--mui-palette-background-paper)",
-            borderRadius: 8,
+            borderRadius: 10,
+            minHeight: 40,
             transition: "box-shadow 150ms ease, border-color 150ms ease",
             "&.Mui-focused": {
               boxShadow: "0 0 0 3px color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)",
             },
+            "@media (max-width: 599px)": { minHeight: 44 },
           },
         },
       },
@@ -394,7 +409,7 @@ export const theme = createTheme({
       styleOverrides: {
         paper: {
           border: "1px solid var(--mui-palette-divider)",
-          boxShadow: "0 16px 44px rgba(17,24,39,.14)",
+          boxShadow: "0 16px 44px rgba(0,0,0,.16)",
           marginTop: 6,
         },
         option: { borderRadius: 6, margin: "2px 6px", minHeight: 42 },

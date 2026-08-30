@@ -1,2 +1,5 @@
-import { StaffManagement } from "@/components/more/staff-management";
-export default function StaffPage() { return <StaffManagement />; }
+import { redirect } from "next/navigation";
+
+export default function StaffPage() {
+  redirect("/settings/team");
+}

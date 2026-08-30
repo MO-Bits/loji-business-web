@@ -101,6 +101,10 @@ export function PublicNavigation() {
     ...legalItems,
   ];
   const toggleLanguage = () => setLanguage(language === "en" ? "sw" : "en");
+  const primaryAction =
+    pathname === "/login"
+      ? { href: "/contact", label: t("Contact us", "Wasiliana nasi") }
+      : { href: "/login", label: t("Sign in", "Ingia") };
 
   return (
     <>
@@ -273,11 +277,11 @@ export function PublicNavigation() {
           </Select>
           <Button
             component={NextLink}
-            href="/login"
-            variant={pathname === "/login" ? "outlined" : "contained"}
+            href={primaryAction.href}
+            variant="contained"
             sx={{ minHeight: 40, whiteSpace: "nowrap" }}
           >
-            {t("Sign in", "Ingia")}
+            {primaryAction.label}
           </Button>
         </Stack>
 

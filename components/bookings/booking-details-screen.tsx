@@ -1,61 +1,68 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import EditCalendarRoundedIcon from "@mui/icons-material/EditCalendarRounded";
+import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
+import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Alert,
   Avatar,
   Box,
   Button,
+  Checkbox,
   Chip,
-  CircularProgress,
   Container,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   IconButton,
   LinearProgress,
+  Menu,
+  MenuItem,
   Paper,
-  Snackbar,
+  Skeleton,
   Stack,
+  TextField,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
+import { StatusPill, StickyMobileActionBar, type StatusTone } from "@/components/shared/workspace-ui";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
-import {
-  getWorkspaceCapabilities,
-  normalizeWorkspaceRole,
-} from "@/features/session/permissions";
+import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import { createClient } from "@/lib/supabase/client";
 import {
-  checkInBooking,
-  checkoutBooking,
-  getBooking,
+  getBookingWorkspace,
+  getAvailableRooms,
+  recordBookingPayment,
+  updateBookingLifecycle,
+  updatePropertyBooking,
+  type BookingLifecycleAction,
 } from "@/features/bookings/services/booking-service";
 import {
   bookingStatusLabel,
   type Booking,
+  type BookingActivity,
+  type BookingWorkspace,
+  type AvailableRoom,
 } from "@/features/bookings/models/booking";
-import { formatLocalDate, formatLocalDateTime } from "@/lib/date-time";
+import { formatLocalDate, formatLocalDateTime, localDateKey } from "@/lib/date-time";
+import { useAppFeedback } from "@/components/providers/feedback-provider";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -63,963 +70,577 @@ const money = new Intl.NumberFormat("en-TZ", {
   maximumFractionDigits: 0,
 });
 
-type BookingAction = "checkin" | "checkout";
-type ChipTone = "success" | "info" | "warning" | "error" | "default";
+type ActionDefinition = {
+  action: BookingLifecycleAction;
+  label: string;
+  title: string;
+  description: string;
+  dangerous?: boolean;
+  reasonRequired?: boolean;
+};
 
-function bookingStatusTone(status: string): ChipTone {
-  const normalized = status.toLowerCase();
-  if (normalized === "checked_in" || normalized === "checked_out") return "success";
-  if (normalized === "confirmed") return "info";
-  if (normalized === "reserved" || normalized === "pending") return "warning";
-  if (normalized === "cancelled" || normalized === "canceled") return "error";
-  return "default";
-}
+const actionDefinitions: Record<BookingLifecycleAction, ActionDefinition> = {
+  confirm: { action: "confirm", label: "Confirm booking", title: "Confirm this reservation?", description: "The reservation will become confirmed and ready for arrival processing." },
+  check_in: { action: "check_in", label: "Check in guest", title: "Check in this guest?", description: "This confirms the guest has arrived and places the assigned room in occupied state." },
+  check_out: { action: "check_out", label: "Check out guest", title: "Check out this guest?", description: "This ends the stay and sends the room to housekeeping." },
+  cancel: { action: "cancel", label: "Cancel booking", title: "Cancel this reservation?", description: "The room will be released. Add a reason for the operational record.", dangerous: true, reasonRequired: true },
+  mark_no_show: { action: "mark_no_show", label: "Mark as no-show", title: "Mark guest as a no-show?", description: "The reservation will close without check-in. Add a reason for the record.", dangerous: true, reasonRequired: true },
+  reinstate: { action: "reinstate", label: "Reinstate booking", title: "Reinstate this reservation?", description: "The server will revalidate the room and restore the reservation when possible." },
+};
 
-function paymentTone(status: string, balanceDue: number): ChipTone {
-  if (balanceDue <= 0) return "success";
-  if (status.toLowerCase() === "partially_paid") return "warning";
-  if (status.toLowerCase() === "unpaid") return "error";
-  return "warning";
-}
-
-function stayNights(booking: Booking) {
-  const difference = booking.checkOut.getTime() - booking.checkIn.getTime();
-  return Math.max(0, Math.round(difference / 86_400_000));
+function statusTone(status: string): StatusTone {
+  if (status === "checked_in") return "success";
+  if (status === "confirmed" || status === "reserved") return "info";
+  if (status === "pending") return "warning";
+  if (status === "cancelled" || status === "no_show") return "danger";
+  return "neutral";
 }
 
 export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
   const router = useRouter();
-  const {
-    session,
-    loading: sessionLoading,
-    error: sessionError,
-  } = useAppSession();
+  const { session, loading: sessionLoading, error: sessionError } = useAppSession();
   const client = useMemo(() => createClient(), []);
+  const feedback = useAppFeedback();
   const propertyId = session?.activePropertyId;
-  const role = normalizeWorkspaceRole(session?.activeRole);
-  const capabilities = getWorkspaceCapabilities(role);
-  const [booking, setBooking] = useState<Booking | null>(null);
+  const localCapabilities = getWorkspaceCapabilities(session?.activeRole);
+  const [workspaceState, setWorkspaceState] = useState<BookingWorkspace | null>(null);
   const [loading, setLoading] = useState(true);
-  const [action, setAction] = useState<BookingAction | null>(null);
+  const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
+  const [selectedAction, setSelectedAction] = useState<BookingLifecycleAction | null>(null);
   const [working, setWorking] = useState(false);
+  const [reason, setReason] = useState("");
   const [allowBalance, setAllowBalance] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [amendOpen, setAmendOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const requestId = useRef(0);
+  const activePropertyId = useRef<string | undefined>(undefined);
+  const workspace = workspaceState && workspaceState.propertyId === propertyId ? workspaceState : null;
+  const error = errorState && errorState.propertyId === propertyId ? errorState.message : null;
+  const dataLoading = loading || Boolean(workspaceState && workspaceState.propertyId !== propertyId);
+
+  useEffect(() => {
+    activePropertyId.current = propertyId;
+    return () => {
+      activePropertyId.current = undefined;
+    };
+  }, [propertyId]);
 
   const refresh = useCallback(async () => {
-    if (!propertyId) return;
+    if (!propertyId) {
+      requestId.current += 1;
+      setWorkspaceState(null);
+      setLoading(false);
+      return;
+    }
+    const requestPropertyId = propertyId;
+    const currentRequest = ++requestId.current;
     setLoading(true);
-    setError(null);
+    setErrorState(null);
+    setWorkspaceState((current) => current?.propertyId === requestPropertyId ? current : null);
     try {
-      setBooking(await getBooking(client, propertyId, bookingId));
+      const nextWorkspace = await getBookingWorkspace(client, requestPropertyId, bookingId);
+      if (currentRequest !== requestId.current || activePropertyId.current !== requestPropertyId) return;
+      setWorkspaceState(nextWorkspace);
     } catch (cause) {
-      setError(
-        cause instanceof Error ? cause.message : "Unable to load booking.",
-      );
+      if (currentRequest !== requestId.current || activePropertyId.current !== requestPropertyId) return;
+      setErrorState({
+        propertyId: requestPropertyId,
+        message: cause instanceof Error ? cause.message : "Unable to load booking.",
+      });
     } finally {
+      if (currentRequest !== requestId.current || activePropertyId.current !== requestPropertyId) return;
       setLoading(false);
     }
   }, [bookingId, client, propertyId]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void refresh(), 0);
-    return () => window.clearTimeout(timer);
+    const timer = window.setTimeout(() => {
+      setSelectedAction(null);
+      setReason("");
+      setAllowBalance(false);
+      setAmendOpen(false);
+      setPaymentOpen(false);
+      setWorking(false);
+      void refresh();
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      requestId.current += 1;
+    };
   }, [refresh]);
 
-  const openAction = (nextAction: BookingAction) => {
+  if (sessionLoading) return <BookingDetailsSkeleton />;
+  if (sessionError || !propertyId) {
+    return <ErrorState actionLabel="Back" message={sessionError?.message ?? "Select an active property to view this booking."} onRetry={() => router.back()} />;
+  }
+  if (dataLoading) return <BookingDetailsSkeleton />;
+  if (!workspace) return <ErrorState message={error ?? "Booking not found or you no longer have access."} onRetry={() => void refresh()} />;
+
+  const booking = workspace.booking;
+  const primaryAction = workspace.allowedActions.confirm
+    ? actionDefinitions.confirm
+    : workspace.allowedActions.checkIn
+      ? actionDefinitions.check_in
+      : workspace.allowedActions.checkOut
+        ? actionDefinitions.check_out
+        : workspace.allowedActions.reinstate
+          ? actionDefinitions.reinstate
+          : null;
+  const secondaryActions = [
+    workspace.allowedActions.cancel ? actionDefinitions.cancel : null,
+    workspace.allowedActions.noShow ? actionDefinitions.mark_no_show : null,
+  ].filter(Boolean) as ActionDefinition[];
+  const canRecordPayment =
+    localCapabilities.canRecordPayment &&
+    workspace.allowedActions.recordPayment &&
+    !["cancelled", "no_show"].includes(booking.status);
+  const hasSettlement = booking.hasFinancials;
+
+  const openAction = (action: BookingLifecycleAction) => {
+    setErrorState(null);
+    setReason("");
     setAllowBalance(false);
-    setAction(nextAction);
+    setSelectedAction(action);
   };
 
   const closeAction = () => {
     if (working) return;
+    setSelectedAction(null);
+    setReason("");
     setAllowBalance(false);
-    setAction(null);
   };
 
-  const confirm = async () => {
-    if (!booking || !action) return;
-    if (action === "checkin" && !capabilities.canCheckIn) {
-      setError("Your role cannot check in guests.");
-      closeAction();
+  const confirmAction = async () => {
+    if (!selectedAction) return;
+    const definition = actionDefinitions[selectedAction];
+    const needsBalanceReason = selectedAction === "check_out" && workspace.requiresSettlement && allowBalance;
+    if ((definition.reasonRequired || needsBalanceReason) && !reason.trim()) {
+      setErrorState({ propertyId, message: "Add a reason before continuing." });
       return;
     }
-    if (action === "checkout" && !capabilities.canCheckout) {
-      setError("Your role cannot check out guests.");
-      closeAction();
+    if (selectedAction === "check_out" && workspace.requiresSettlement && !allowBalance) {
+      setErrorState({ propertyId, message: "Resolve the balance or explicitly approve checkout with an outstanding balance." });
       return;
     }
 
+    const actionPropertyId = propertyId;
+    const action = selectedAction;
     setWorking(true);
-    setError(null);
+    setErrorState(null);
     try {
-      if (action === "checkin") {
-        await checkInBooking(client, booking.id);
-      } else {
-        await checkoutBooking(client, booking.id, allowBalance);
-      }
-      setMessage(
-        action === "checkin"
-          ? "Guest checked in successfully."
-          : "Guest checked out successfully.",
-      );
-      setAction(null);
+      await updateBookingLifecycle(client, actionPropertyId, booking.id, action, {
+        reason,
+        allowBalance,
+      });
+      if (activePropertyId.current !== actionPropertyId) return;
+      feedback.success(`${definition.label} completed.`);
+      setSelectedAction(null);
+      setReason("");
       setAllowBalance(false);
       await refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Action failed.");
+      if (activePropertyId.current === actionPropertyId) {
+        setErrorState({
+          propertyId: actionPropertyId,
+          message: cause instanceof Error ? cause.message : "Unable to update booking.",
+        });
+      }
+    } finally {
+      if (activePropertyId.current === actionPropertyId) setWorking(false);
+    }
+  };
+
+  return (
+    <Box sx={{ pb: { xs: primaryAction ? 14 : 4, md: 5 } }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 1.5, sm: 2.5, lg: 3 } }}>
+        <Stack spacing={{ xs: 1.5, md: 2.25 }}>
+          <BookingHeader
+            booking={booking}
+            primaryAction={primaryAction}
+            secondaryActions={secondaryActions}
+            canAmend={workspace.allowedActions.edit}
+            onBack={() => router.back()}
+            onAction={openAction}
+            onAmend={() => setAmendOpen(true)}
+          />
+
+          {error ? <Alert severity="error" onClose={() => setErrorState(null)}>{error}</Alert> : null}
+          {workspace.blockedReason ? <Alert severity="info">{workspace.blockedReason}</Alert> : null}
+
+          <LifecycleStrip booking={booking} />
+
+          <Box sx={{ alignItems: "start", display: "grid", gap: { xs: 1.5, lg: 2 }, gridTemplateColumns: { xs: "1fr", lg: "minmax(0,1.35fr) minmax(320px,.75fr)" } }}>
+            <Stack spacing={{ xs: 1.5, md: 2 }}>
+              <DetailsSection icon={<CalendarMonthRoundedIcon />} title="Stay and room">
+                <DetailRow label="Dates" value={`${formatLocalDate(booking.checkIn)} → ${formatLocalDate(booking.checkOut)}`} />
+                <DetailRow label="Room" value={<LinkValue href={`/rooms/${booking.roomId}`}>{booking.roomName} · {booking.roomType}</LinkValue>} />
+                <DetailRow label="Guests" value={`${booking.adults} adult${booking.adults === 1 ? "" : "s"} · ${booking.children} child${booking.children === 1 ? "" : "ren"}`} />
+                <DetailRow label="Source" value={booking.bookingSource} />
+                <DetailRow label="Special requests" value={booking.specialRequests || "None recorded"} />
+              </DetailsSection>
+
+              <DetailsSection
+                icon={<PersonRoundedIcon />}
+                title="Guest profile"
+                action={
+                  <Stack direction="row" spacing={0.5}>
+                    {booking.phone ? <IconButton component="a" href={`tel:${booking.phone}`} aria-label="Call guest" size="small"><PhoneRoundedIcon fontSize="small" /></IconButton> : null}
+                    {booking.email ? <IconButton component="a" href={`mailto:${booking.email}`} aria-label="Email guest" size="small"><EmailRoundedIcon fontSize="small" /></IconButton> : null}
+                  </Stack>
+                }
+              >
+                <DetailRow label="Name" value={booking.guestName} />
+                <DetailRow label="Phone" value={booking.phone || "Not recorded"} />
+                <DetailRow label="Email" value={booking.email || "Not recorded"} />
+                <DetailRow label="Nationality" value={booking.nationality || "Not recorded"} />
+                <DetailRow label="Occupation" value={booking.occupation || "Not recorded"} />
+                <DetailRow label="ID" value={booking.idNumber ? `${bookingStatusLabel(booking.idType)} · ${booking.idNumber}` : "Not recorded"} />
+                <DetailRow label="Travel" value={booking.whereFrom || booking.whereTo ? `${booking.whereFrom || "—"} → ${booking.whereTo || "—"}` : "Not recorded"} />
+                <DetailRow label="Emergency contact" value={booking.emergencyName ? `${booking.emergencyName}${booking.emergencyPhone ? ` · ${booking.emergencyPhone}` : ""}` : "Not recorded"} />
+              </DetailsSection>
+
+              <ActivityPanel activity={workspace.activity} />
+            </Stack>
+
+            <Stack spacing={{ xs: 1.5, md: 2 }} sx={{ position: { lg: "sticky" }, top: { lg: 84 } }}>
+              {hasSettlement ? (
+                <SettlementPanel booking={booking} payments={workspace.payments} canRecordPayment={canRecordPayment} onRecordPayment={() => setPaymentOpen(true)} />
+              ) : (
+                <Paper variant="outlined" sx={{ p: 2 }}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><LockRoundedIcon color="action" fontSize="small" /><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Payment access restricted</Typography></Stack>
+                  <Typography color="text.secondary" variant="body2" sx={{ mt: 0.75 }}>This role can manage the stay without receiving property financial amounts.</Typography>
+                </Paper>
+              )}
+              <ReservationFacts booking={booking} />
+            </Stack>
+          </Box>
+        </Stack>
+      </Container>
+
+      {primaryAction ? (
+        <StickyMobileActionBar>
+          <Button fullWidth startIcon={primaryAction.action === "check_out" ? <LogoutRoundedIcon /> : <LoginRoundedIcon />} variant="contained" onClick={() => openAction(primaryAction.action)}>{primaryAction.label}</Button>
+        </StickyMobileActionBar>
+      ) : null}
+
+      <LifecycleModal
+        action={selectedAction}
+        allowBalance={allowBalance}
+        error={error}
+        reason={reason}
+        requiresSettlement={workspace.requiresSettlement}
+        working={working}
+        onAllowBalance={setAllowBalance}
+        onClose={closeAction}
+        onConfirm={() => void confirmAction()}
+        onReason={setReason}
+      />
+      <PaymentModal
+        booking={booking}
+        open={paymentOpen}
+        propertyId={propertyId}
+        onClose={() => setPaymentOpen(false)}
+        onSaved={async () => {
+          if (activePropertyId.current !== propertyId) return;
+          setPaymentOpen(false);
+          feedback.success("Payment recorded successfully.");
+          await refresh();
+        }}
+      />
+      {amendOpen ? (
+        <AmendBookingModal
+          booking={booking}
+          businessDate={workspace.businessDate}
+          propertyId={propertyId}
+          onClose={() => setAmendOpen(false)}
+          onSaved={async () => {
+            if (activePropertyId.current !== propertyId) return;
+            setAmendOpen(false);
+            feedback.success("Reservation amended successfully.");
+            await refresh();
+          }}
+        />
+      ) : null}
+    </Box>
+  );
+}
+
+function BookingHeader({ booking, primaryAction, secondaryActions, canAmend, onBack, onAction, onAmend }: { booking: Booking; primaryAction: ActionDefinition | null; secondaryActions: ActionDefinition[]; canAmend: boolean; onBack: () => void; onAction: (action: BookingLifecycleAction) => void; onAmend: () => void }) {
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const openMenu = (event: MouseEvent<HTMLElement>) => setAnchor(event.currentTarget);
+  const initials = booking.guestName.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  return (
+    <Stack component="header" direction="row" spacing={1} sx={{ alignItems: { xs: "flex-start", md: "center" }, justifyContent: "space-between", minWidth: 0 }}>
+      <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
+        <IconButton aria-label="Back to bookings" onClick={onBack} sx={{ border: "1px solid", borderColor: "divider" }}><ArrowBackRoundedIcon /></IconButton>
+        <Avatar sx={{ bgcolor: "action.selected", color: "primary.main", display: { xs: "none", sm: "grid" }, fontWeight: 700 }}>{initials || "G"}</Avatar>
+        <Box sx={{ minWidth: 0 }}>
+          <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap" }}><Typography color="text.secondary" variant="overline">{booking.bookingNumber}</Typography><StatusPill label={bookingStatusLabel(booking.status)} tone={statusTone(booking.status)} /></Stack>
+          <Typography component="h1" variant="h3" noWrap>{booking.guestName}</Typography>
+          <Typography color="text.secondary" variant="body2" noWrap>{booking.roomName} · {formatLocalDate(booking.checkIn)} → {formatLocalDate(booking.checkOut)}</Typography>
+        </Box>
+      </Stack>
+      <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+        {primaryAction ? <Button variant="contained" onClick={() => onAction(primaryAction.action)} sx={{ display: { xs: "none", md: "inline-flex" } }}>{primaryAction.label}</Button> : null}
+        {canAmend || secondaryActions.length ? <><IconButton aria-label="More booking actions" onClick={openMenu} sx={{ border: "1px solid", borderColor: "divider" }}><MoreHorizRoundedIcon /></IconButton><Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>{canAmend ? <MenuItem onClick={() => { setAnchor(null); onAmend(); }}><EditCalendarRoundedIcon fontSize="small" sx={{ mr: 1 }} />Amend reservation</MenuItem> : null}{secondaryActions.map((action) => <MenuItem key={action.action} onClick={() => { setAnchor(null); onAction(action.action); }} sx={{ color: action.dangerous ? "error.main" : undefined }}>{action.label}</MenuItem>)}</Menu></> : null}
+      </Stack>
+    </Stack>
+  );
+}
+
+function LifecycleStrip({ booking }: { booking: Booking }) {
+  const order = ["pending", "confirmed", "checked_in", "checked_out"];
+  const current = booking.status === "reserved" ? 0 : order.indexOf(booking.status);
+  const closed = ["cancelled", "no_show"].includes(booking.status);
+  return (
+    <Paper variant="outlined" sx={{ overflowX: "auto", p: { xs: 1.25, sm: 1.5 } }}>
+      <Stack direction="row" sx={{ minWidth: 540 }}>
+        {["Created", "Confirmed", "Checked in", "Checked out"].map((label, index) => {
+          const done = !closed && index <= current;
+          const active = !closed && index === current;
+          return <Stack key={label} direction="row" sx={{ alignItems: "center", flex: index < 3 ? 1 : "initial" }}><Box sx={{ bgcolor: done ? "primary.main" : "background.paper", border: "2px solid", borderColor: done ? "primary.main" : "divider", borderRadius: "50%", height: 14, width: 14 }} /><Typography color={active ? "text.primary" : "text.secondary"} variant="caption" sx={{ fontWeight: active ? 700 : 500, ml: 0.75 }}>{label}</Typography>{index < 3 ? <Box sx={{ bgcolor: done && index < current ? "primary.main" : "divider", height: 2, flex: 1, mx: 1 }} /> : null}</Stack>;
+        })}
+      </Stack>
+      {closed ? <Alert severity="warning" sx={{ mt: 1.25 }}>This reservation is {bookingStatusLabel(booking.status).toLowerCase()}.</Alert> : null}
+    </Paper>
+  );
+}
+
+function DetailsSection({ icon, title, action, children }: { icon: ReactNode; title: string; action?: ReactNode; children: ReactNode }) {
+  return (
+    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", borderBottom: "1px solid", borderColor: "divider", p: { xs: 1.5, sm: 2 } }}><Box sx={{ color: "primary.main", display: "flex" }}>{icon}</Box><Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 700 }}>{title}</Typography>{action}</Stack>
+      <Stack divider={<Divider flexItem />} spacing={0} sx={{ px: { xs: 1.5, sm: 2 } }}>{children}</Stack>
+    </Paper>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: ReactNode }) {
+  return <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.3, sm: 2 }} sx={{ alignItems: { sm: "baseline" }, justifyContent: "space-between", py: 1.2 }}><Typography color="text.secondary" variant="body2">{label}</Typography><Box sx={{ fontSize: ".8125rem", fontWeight: 500, maxWidth: { sm: "65%" }, overflowWrap: "anywhere", textAlign: { sm: "right" } }}>{value}</Box></Stack>;
+}
+
+function LinkValue({ href, children }: { href: string; children: ReactNode }) {
+  return <Box component={Link} href={href} sx={{ color: "primary.main", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>{children}</Box>;
+}
+
+function ActivityPanel({ activity }: { activity: BookingActivity[] }) {
+  return (
+    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", borderBottom: "1px solid", borderColor: "divider", p: { xs: 1.5, sm: 2 } }}><EventNoteRoundedIcon color="primary" /><Box><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Activity</Typography><Typography color="text.secondary" variant="caption">Audited reservation events</Typography></Box></Stack>
+      {!activity.length ? <Box sx={{ p: 2 }}><Typography color="text.secondary" variant="body2">No audited events are available for this reservation yet.</Typography></Box> : <Stack component="ol" divider={<Divider flexItem />} spacing={0} sx={{ listStyle: "none", m: 0, p: 0 }}>{activity.map((event) => <Stack component="li" direction="row" key={event.id} spacing={1.25} sx={{ alignItems: "flex-start", px: { xs: 1.5, sm: 2 }, py: 1.4 }}><Box sx={{ bgcolor: "primary.main", borderRadius: "50%", flexShrink: 0, height: 8, mt: 0.8, width: 8 }} /><Box sx={{ flex: 1 }}><Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.2, sm: 1 }} sx={{ justifyContent: "space-between" }}><Typography variant="body2" sx={{ fontWeight: 700 }}>{event.title || bookingStatusLabel(event.type)}</Typography><Typography color="text.secondary" variant="caption">{formatLocalDateTime(event.createdAt)}</Typography></Stack>{event.detail ? <Typography color="text.secondary" variant="body2" sx={{ mt: 0.25 }}>{event.detail}</Typography> : null}{event.actorName ? <Typography color="text.secondary" variant="caption">By {event.actorName}</Typography> : null}</Box></Stack>)}</Stack>}
+    </Paper>
+  );
+}
+
+function SettlementPanel({ booking, payments, canRecordPayment, onRecordPayment }: { booking: Booking; payments: BookingWorkspace["payments"]; canRecordPayment: boolean; onRecordPayment: () => void }) {
+  const total = booking.totalPrice ?? 0;
+  const paid = booking.amountPaid ?? 0;
+  const ratio = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+  return (
+    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", borderBottom: "1px solid", borderColor: "divider", p: 2 }}><PaymentsRoundedIcon color="primary" /><Box sx={{ flex: 1 }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Settlement</Typography><Typography color="text.secondary" variant="caption">Payment position for this stay</Typography></Box><Chip label={bookingStatusLabel(booking.paymentStatus)} size="small" color={booking.balanceDue === 0 ? "success" : "warning"} /></Stack>
+      <Box sx={{ p: 2 }}><Stack direction="row" sx={{ alignItems: "end", justifyContent: "space-between" }}><Box sx={{ minWidth: 0 }}><Typography color="text.secondary" variant="caption">Collected</Typography><Typography color="primary.main" variant="h4" sx={{ overflowWrap: "anywhere" }}>{money.format(paid)}</Typography></Box><Typography color="text.secondary" variant="caption">{ratio}%</Typography></Stack><LinearProgress aria-label="Payment collection progress" value={ratio} variant="determinate" color={booking.balanceDue && booking.balanceDue > 0 ? "warning" : "success"} sx={{ height: 6, mt: 1 }} /></Box>
+      <Box sx={{ borderBlock: "1px solid", borderColor: "divider", display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}><SettlementMetric label="Booking total" value={money.format(total)} /><SettlementMetric label="Outstanding" value={money.format(booking.balanceDue ?? 0)} warning={Boolean(booking.balanceDue)} /></Box>
+      {payments.length ? <Stack divider={<Divider flexItem />} spacing={0} sx={{ px: 2 }}>{payments.map((payment) => <Stack key={payment.id} direction="row" spacing={1} sx={{ justifyContent: "space-between", py: 1.1 }}><Box sx={{ minWidth: 0 }}><Typography variant="body2" sx={{ fontWeight: 500 }}>{payment.method ? bookingStatusLabel(payment.method) : "Payment"}</Typography><Typography color="text.secondary" variant="caption" sx={{ overflowWrap: "anywhere" }}>{formatLocalDateTime(payment.paidAt)}{payment.reference ? ` · ${payment.reference}` : ""}</Typography></Box><Typography variant="body2" sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money.format(payment.amount)}</Typography></Stack>)}</Stack> : <Typography color="text.secondary" variant="body2" sx={{ px: 2, pb: 1.5 }}>No itemised payment records were returned.</Typography>}
+      {canRecordPayment && (booking.balanceDue ?? 0) > 0 ? <Box sx={{ borderTop: "1px solid", borderColor: "divider", p: 1.5 }}><Button fullWidth onClick={onRecordPayment} startIcon={<PaymentsRoundedIcon />} variant="contained">Record payment</Button></Box> : null}
+    </Paper>
+  );
+}
+
+function SettlementMetric({ label, value, warning }: { label: string; value: string; warning?: boolean }) {
+  return <Box sx={{ minWidth: 0, p: 1.5, "& + &": { borderLeft: "1px solid", borderColor: "divider" } }}><Typography color="text.secondary" variant="caption">{label}</Typography><Typography color={warning ? "warning.main" : "text.primary"} variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700, mt: 0.25, overflowWrap: "anywhere" }}>{value}</Typography></Box>;
+}
+
+function ReservationFacts({ booking }: { booking: Booking }) {
+  return <Paper variant="outlined" sx={{ p: 2 }}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><ReceiptLongRoundedIcon color="primary" /><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Reservation record</Typography></Stack><Stack divider={<Divider flexItem />} spacing={0} sx={{ mt: 1 }}><DetailRow label="Created" value={formatLocalDateTime(booking.createdAt)} /><DetailRow label="Checked in" value={booking.checkedInAt ? formatLocalDateTime(booking.checkedInAt) : "Not yet"} /><DetailRow label="Checked out" value={booking.checkedOutAt ? formatLocalDateTime(booking.checkedOutAt) : "Not yet"} /></Stack></Paper>;
+}
+
+function LifecycleModal(props: { action: BookingLifecycleAction | null; allowBalance: boolean; error: string | null; reason: string; requiresSettlement: boolean; working: boolean; onAllowBalance: (value: boolean) => void; onClose: () => void; onConfirm: () => void; onReason: (value: string) => void }) {
+  if (!props.action) return null;
+  const definition = actionDefinitions[props.action];
+  const balanceAction = props.action === "check_out" && props.requiresSettlement;
+  const needsReason = definition.reasonRequired || (balanceAction && props.allowBalance);
+  return (
+    <ResponsiveModal open onClose={props.onClose} maxWidth="xs">
+      <DialogTitle>{definition.title}</DialogTitle>
+      <Box aria-busy={props.working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); props.onConfirm(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
+        <DialogContent><Typography color="text.secondary">{definition.description}</Typography>{balanceAction ? <Alert severity="warning" sx={{ mt: 2 }}>This stay has an outstanding balance. Resolve it first or explicitly approve checkout with a balance.</Alert> : null}{balanceAction ? <FormControlLabel control={<Checkbox checked={props.allowBalance} onChange={(event) => props.onAllowBalance(event.target.checked)} />} label="Approve checkout with outstanding balance" sx={{ alignItems: "flex-start", mt: 1 }} /> : null}{needsReason ? <TextField autoFocus fullWidth label="Reason" multiline minRows={3} value={props.reason} onChange={(event) => props.onReason(event.target.value)} sx={{ mt: 1.5 }} /> : null}{props.error ? <Alert severity="error" sx={{ mt: 1.5 }}>{props.error}</Alert> : null}</DialogContent>
+        <DialogActions><Button disabled={props.working} onClick={props.onClose}>Back</Button><Button color={definition.dangerous ? "error" : "primary"} disabled={props.working || (needsReason && !props.reason.trim()) || (balanceAction && !props.allowBalance)} type="submit" variant="contained">{props.working ? "Please wait…" : definition.label}</Button></DialogActions>
+      </Box>
+    </ResponsiveModal>
+  );
+}
+
+function AmendBookingModal({ booking, businessDate, propertyId, onClose, onSaved }: { booking: Booking; businessDate: string; propertyId: string; onClose: () => void; onSaved: () => Promise<void> }) {
+  const client = useMemo(() => createClient(), []);
+  const originalCheckIn = localDateKey(booking.checkIn);
+  const originalCheckOut = localDateKey(booking.checkOut);
+  const [checkIn, setCheckIn] = useState(originalCheckIn);
+  const [checkOut, setCheckOut] = useState(originalCheckOut);
+  const [adults, setAdults] = useState(booking.adults);
+  const [children, setChildren] = useState(booking.children);
+  const [roomId, setRoomId] = useState(booking.roomId);
+  const [source, setSource] = useState(booking.bookingSource);
+  const [specialRequests, setSpecialRequests] = useState(booking.specialRequests);
+  const [rooms, setRooms] = useState<AvailableRoom[]>([]);
+  const [checkingRooms, setCheckingRooms] = useState(false);
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const guests = adults + children;
+  const changed =
+    checkIn !== originalCheckIn ||
+    checkOut !== originalCheckOut ||
+    adults !== booking.adults ||
+    children !== booking.children ||
+    roomId !== booking.roomId ||
+    source !== booking.bookingSource ||
+    specialRequests.trim() !== booking.specialRequests.trim();
+
+  const invalidateRoomSearch = () => {
+    setRooms([]);
+    setRoomId(booking.roomId);
+  };
+
+  const validate = () => {
+    if (!checkIn || !checkOut || checkOut <= checkIn) {
+      setError("Check-out must be after check-in.");
+      return false;
+    }
+    if (businessDate && checkIn < businessDate) {
+      setError("Check-in cannot be before the property business date.");
+      return false;
+    }
+    if (adults < 1 || children < 0 || guests > 40) {
+      setError("Enter a valid guest count.");
+      return false;
+    }
+    return true;
+  };
+
+  const checkOtherRooms = async () => {
+    if (!validate()) return;
+    setCheckingRooms(true);
+    setError(null);
+    try {
+      const available = await getAvailableRooms(client, propertyId, checkIn, checkOut, guests);
+      setRooms(available.filter((room) => room.id !== booking.roomId));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to check room availability.");
+    } finally {
+      setCheckingRooms(false);
+    }
+  };
+
+  const save = async () => {
+    if (!validate() || !changed) return;
+    setWorking(true);
+    setError(null);
+    try {
+      await updatePropertyBooking(client, propertyId, booking.id, {
+        roomId,
+        checkIn,
+        checkOut,
+        adults,
+        children,
+        source,
+        specialRequests,
+      });
+      await onSaved();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to amend booking.");
     } finally {
       setWorking(false);
     }
   };
 
-  if (sessionLoading) return <BookingDetailsLoading />;
-
-  if (sessionError || !propertyId) {
-    return (
-      <Container maxWidth="sm" sx={{ py: { xs: 5, sm: 8 } }}>
-        <Alert severity="error">
-          {sessionError?.message ?? "Select an active property to view this booking."}
-        </Alert>
-      </Container>
-    );
-  }
-
-  if (loading) return <BookingDetailsLoading />;
-
-  if (!booking) {
-    return (
-      <Container maxWidth="sm" sx={{ py: { xs: 5, sm: 8 } }}>
-        <Stack spacing={1.5}>
-          <Alert severity="error">{error ?? "Booking not found."}</Alert>
-          <Button onClick={() => void refresh()} variant="outlined">
-            Try again
-          </Button>
-        </Stack>
-      </Container>
-    );
-  }
-
-  const canCheckIn =
-    capabilities.canCheckIn &&
-    ["confirmed", "reserved"].includes(booking.status);
-  const canCheckout = capabilities.canCheckout && booking.status === "checked_in";
-  const canSeeSettlement = capabilities.canViewFinance || capabilities.canCheckout;
-  const pendingAction: BookingAction | null = canCheckIn
-    ? "checkin"
-    : canCheckout
-      ? "checkout"
-      : null;
-
   return (
-    <Box sx={{ minHeight: "100dvh", pb: { xs: pendingAction ? 16 : 10, md: 5 } }}>
-      <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
-        <Stack spacing={{ xs: 1.5, md: 2 }}>
-          <BookingNavigation
-            bookingNumber={booking.bookingNumber}
-            onBack={() => router.back()}
-          />
-
-          <BookingHero
-            booking={booking}
-            role={role}
-          />
-
-          {pendingAction ? (
-            <Box sx={{ display: { xs: "none", sm: "block" } }}>
-              <StayActionButton action={pendingAction} onAction={openAction} />
-            </Box>
-          ) : null}
-
-          {["confirmed", "checked_in"].includes(booking.status) && !pendingAction ? (
-            <Alert severity="info">
-              Your current role is view-only for this stage of the stay.
-            </Alert>
-          ) : null}
-
-          <Box
-            sx={{
-              alignItems: "start",
-              display: "grid",
-              gap: { xs: 1.5, lg: 2 },
-              gridTemplateColumns: {
-                xs: "minmax(0, 1fr)",
-                lg: "minmax(0, 1.35fr) minmax(320px, .8fr)",
-              },
-            }}
-          >
-            <Stack spacing={{ xs: 1.5, md: 2 }}>
-              <ActivityTimeline
-                booking={booking}
-                canSeeSettlement={canSeeSettlement}
-              />
-              <BookingDetailsSection
-                defaultExpanded
-                icon={<PersonRoundedIcon fontSize="small" />}
-                title="Guest profile"
-              >
-                <Info icon={<PhoneRoundedIcon />} label="Phone" value={booking.phone} />
-                <Info icon={<EmailRoundedIcon />} label="Email" value={booking.email} />
-                <Info label="Gender" value={booking.gender} />
-                <Info label="Nationality" value={booking.nationality} />
-                <Info label="Occupation" value={booking.occupation} />
-                {booking.emergencyName ? (
-                  <Info
-                    label="Emergency contact"
-                    value={booking.emergencyName + (booking.emergencyPhone ? " · " + booking.emergencyPhone : "")}
-                  />
-                ) : null}
-              </BookingDetailsSection>
-
-              <BookingDetailsSection
-                defaultExpanded
-                icon={<EventAvailableRoundedIcon fontSize="small" />}
-                title="Stay & room"
-              >
-                <Info
-                  icon={<CalendarMonthRoundedIcon />}
-                  label="Stay"
-                  value={formatLocalDate(booking.checkIn) + " – " + formatLocalDate(booking.checkOut)}
-                />
-                <Info
-                  icon={<BedRoundedIcon />}
-                  label="Room"
-                  value={booking.roomName + " · " + booking.roomType}
-                />
-                <Info
-                  label="Guests"
-                  value={booking.adults + " adults · " + booking.children + " children"}
-                />
-                <Info label="Source" value={booking.bookingSource} />
-                <Info label="Booked" value={formatLocalDateTime(booking.createdAt)} />
-                {booking.checkedInAt ? (
-                  <Info label="Checked in" value={formatLocalDateTime(booking.checkedInAt)} />
-                ) : null}
-                {booking.checkedOutAt ? (
-                  <Info label="Checked out" value={formatLocalDateTime(booking.checkedOutAt)} />
-                ) : null}
-                <Info
-                  label="Special requests"
-                  value={booking.specialRequests || "None recorded"}
-                />
-              </BookingDetailsSection>
-
-              <BookingDetailsSection
-                icon={<ReceiptLongRoundedIcon fontSize="small" />}
-                title="Travel & identification"
-              >
-                <Info label="Coming from" value={booking.whereFrom || "Not recorded"} />
-                <Info label="Going to" value={booking.whereTo || "Not recorded"} />
-                <Info label="ID type" value={booking.idType || "Not recorded"} />
-                <Info label="ID number" value={booking.idNumber || "Not recorded"} />
-              </BookingDetailsSection>
-            </Stack>
-
-            <Stack spacing={{ xs: 1.5, md: 2 }} sx={{ position: { lg: "sticky" }, top: { lg: 20 } }}>
-              <SettlementPanel booking={booking} canSeeSettlement={canSeeSettlement} />
-              <StaySnapshot booking={booking} />
-            </Stack>
+    <ResponsiveModal open onClose={working ? undefined : onClose} maxWidth="md">
+      <DialogTitle>Amend reservation</DialogTitle>
+      <Box aria-busy={working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void save(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
+        <DialogContent dividers>
+          <Stack spacing={2}>
+          <Alert severity="info">Availability, room capacity and the stay total are revalidated by the server when you save.</Alert>
+          <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
+            <TextField required label="Check-in" type="date" value={checkIn} onChange={(event) => { setCheckIn(event.target.value); invalidateRoomSearch(); }} slotProps={{ htmlInput: { min: businessDate || undefined }, inputLabel: { shrink: true } }} />
+            <TextField required label="Check-out" type="date" value={checkOut} onChange={(event) => { setCheckOut(event.target.value); invalidateRoomSearch(); }} slotProps={{ htmlInput: { min: checkIn || businessDate || undefined }, inputLabel: { shrink: true } }} />
+            <TextField label="Adults" type="number" value={adults} onChange={(event) => { setAdults(Math.min(20, Math.max(1, Math.floor(Number(event.target.value) || 1)))); invalidateRoomSearch(); }} slotProps={{ htmlInput: { min: 1, max: 20 } }} />
+            <TextField label="Children" type="number" value={children} onChange={(event) => { setChildren(Math.min(20, Math.max(0, Math.floor(Number(event.target.value) || 0)))); invalidateRoomSearch(); }} slotProps={{ htmlInput: { min: 0, max: 20 } }} />
           </Box>
-        </Stack>
-      </Container>
-
-      {pendingAction ? (
-        <Paper
-          elevation={4}
-          sx={{
-            bottom: "calc(env(safe-area-inset-bottom) + 70px)",
-            display: { xs: "block", sm: "none" },
-            left: 12,
-            p: 1,
-            position: "fixed",
-            right: 12,
-            zIndex: (theme) => theme.zIndex.appBar,
-          }}
-        >
-          <StayActionButton action={pendingAction} onAction={openAction} />
-        </Paper>
-      ) : null}
-
-      <ResponsiveModal open={Boolean(action)} onClose={closeAction} maxWidth="xs">
-        <DialogTitle>
-          {action === "checkin" ? "Check in guest?" : "Check out guest?"}
-        </DialogTitle>
-        <DialogContent>
-          <Typography color="text.secondary">
-            Confirm {booking.guestName}&apos;s{" "}
-            {action === "checkin" ? "arrival" : "departure"}.
-          </Typography>
-          {action === "checkout" && booking.balanceDue > 0 ? (
-            <Alert severity="warning" sx={{ mt: 2 }}>
-              Outstanding balance: {money.format(booking.balanceDue)}. A checkout
-              with a balance needs an explicit approval.
-            </Alert>
-          ) : null}
-          {action === "checkout" && booking.balanceDue > 0 ? (
-            <Button
-              aria-pressed={allowBalance}
-              color={allowBalance ? "warning" : "inherit"}
-              onClick={() => setAllowBalance((value) => !value)}
-              variant={allowBalance ? "contained" : "outlined"}
-              sx={{ mt: 1.5 }}
-            >
-              {allowBalance
-                ? "Checkout with balance approved"
-                : "Allow checkout with balance"}
-            </Button>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeAction} disabled={working}>
-            Cancel
-          </Button>
-          <Button variant="contained" onClick={() => void confirm()} disabled={working}>
-            {working ? "Please wait…" : "Confirm"}
-          </Button>
-        </DialogActions>
-      </ResponsiveModal>
-
-      <Snackbar
-        open={Boolean(message || error)}
-        autoHideDuration={5000}
-        onClose={() => {
-          setMessage(null);
-          setError(null);
-        }}
-      >
-        <Alert severity={error ? "error" : "success"} variant="filled">
-          {error || message}
-        </Alert>
-      </Snackbar>
-    </Box>
-  );
-}
-
-function BookingDetailsLoading() {
-  return (
-    <Box sx={{ display: "grid", minHeight: "70dvh", placeItems: "center" }}>
-      <Stack spacing={1.25} sx={{ alignItems: "center" }}>
-        <CircularProgress size={30} />
-        <Typography color="text.secondary" variant="caption">
-          Loading reservation workspace
-        </Typography>
-      </Stack>
-    </Box>
-  );
-}
-
-function BookingNavigation({
-  bookingNumber,
-  onBack,
-}: {
-  bookingNumber: string;
-  onBack: () => void;
-}) {
-  return (
-    <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-      <IconButton aria-label="Back to bookings" onClick={onBack}>
-        <ArrowBackRoundedIcon />
-      </IconButton>
-      <Box sx={{ minWidth: 0 }}>
-        <Typography color="text.secondary" variant="overline">
-          RESERVATIONS · DETAIL
-        </Typography>
-        <Typography variant="h4">Booking detail</Typography>
-        <Typography color="text.secondary" noWrap variant="body2">
-          {bookingNumber}
-        </Typography>
-      </Box>
-    </Stack>
-  );
-}
-
-function BookingHero({
-  booking,
-  role,
-}: {
-  booking: Booking;
-  role: string;
-}) {
-  const initials = booking.guestName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-  const status = booking.status.toLowerCase();
-  return (
-    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
-      <Box
-        sx={{
-          bgcolor: "primary.dark",
-          color: "primary.contrastText",
-          p: { xs: 1.75, sm: 2.5, lg: 3 },
-        }}
-      >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1.5, sm: 2 }}
-          sx={{ alignItems: { sm: "center" } }}
-        >
-          <Avatar
-            sx={{
-              bgcolor: "rgba(255,255,255,.15)",
-              color: "inherit",
-              fontWeight: 700,
-              height: { xs: 52, sm: 62 },
-              width: { xs: 52, sm: 62 },
-            }}
-          >
-            {initials || "G"}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontSize: ".75rem", fontWeight: 700, letterSpacing: ".08em", opacity: 0.72 }}>
-              GUEST RESERVATION
-            </Typography>
-            <Typography variant="h3">{booking.guestName}</Typography>
-            <Typography sx={{ fontSize: ".8125rem", mt: 0.35, opacity: 0.78, overflowWrap: "anywhere" }}>
-              {booking.phone || booking.email || "Contact details not recorded"}
-            </Typography>
-          </Box>
-          <Stack
-            direction={{ xs: "row", sm: "column" }}
-            spacing={0.75}
-            sx={{ alignItems: { sm: "flex-end" }, flexWrap: "wrap" }}
-          >
-            <Chip
-              color={bookingStatusTone(status)}
-              label={bookingStatusLabel(booking.status)}
-              size="small"
-              sx={{ bgcolor: "rgba(255,255,255,.12)", color: "inherit" }}
-            />
-            <Typography sx={{ fontSize: ".75rem", opacity: 0.68 }}>
-              {role + " workspace"}
-            </Typography>
-          </Stack>
-        </Stack>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={0.75}
-          sx={{ alignItems: { sm: "center" }, mt: { xs: 1.75, sm: 2.5 } }}
-        >
-          <Chip
-            icon={<BedRoundedIcon />}
-            label={booking.roomName + " · " + booking.roomType}
-            size="small"
-            sx={{
-              bgcolor: "rgba(255,255,255,.1)",
-              color: "inherit",
-              "& .MuiChip-icon": { color: "inherit" },
-            }}
-          />
-          <Chip
-            icon={<CalendarMonthRoundedIcon />}
-            label={formatLocalDate(booking.checkIn) + " → " + formatLocalDate(booking.checkOut)}
-            size="small"
-            sx={{
-              bgcolor: "rgba(255,255,255,.1)",
-              color: "inherit",
-              "& .MuiChip-icon": { color: "inherit" },
-            }}
-          />
-        </Stack>
-      </Box>
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, minmax(0, 1fr))",
-            sm: "repeat(4, minmax(0, 1fr))",
-          },
-        }}
-      >
-        <HeroMetric label="Arrival" value={formatLocalDate(booking.checkIn)} />
-        <HeroMetric label="Departure" value={formatLocalDate(booking.checkOut)} />
-        <HeroMetric label="Guests" value={String(booking.totalGuests)} />
-        <HeroMetric label="Room" value={booking.roomName} />
-      </Box>
-    </Paper>
-  );
-}
-
-function HeroMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <Box
-      sx={{
-        borderRight: { sm: "1px solid" },
-        borderBottom: { xs: "1px solid", sm: 0 },
-        borderColor: "divider",
-        minWidth: 0,
-        p: { xs: 1.25, sm: 1.75 },
-        "&:nth-of-type(2)": { borderRight: { xs: 0, sm: "1px solid" } },
-        "&:nth-of-type(4)": { borderRight: 0 },
-        "&:nth-of-type(-n+2)": { borderBottom: { sm: 0 } },
-      }}
-    >
-      <Typography color="text.secondary" variant="caption">
-        {label}
-      </Typography>
-      <Typography noWrap sx={{ fontSize: ".875rem", fontWeight: 700, mt: 0.3 }}>
-        {value}
-      </Typography>
-    </Box>
-  );
-}
-
-function StayActionButton({
-  action,
-  onAction,
-}: {
-  action: BookingAction;
-  onAction: (action: BookingAction) => void;
-}) {
-  const checkout = action === "checkout";
-  return (
-    <Button
-      fullWidth
-      size="large"
-      startIcon={checkout ? <LogoutRoundedIcon /> : <LoginRoundedIcon />}
-      onClick={() => onAction(action)}
-      variant="contained"
-      sx={{ minWidth: { sm: 220 } }}
-    >
-      {checkout ? "Check out guest" : "Check in guest"}
-    </Button>
-  );
-}
-
-function SettlementPanel({
-  booking,
-  canSeeSettlement,
-}: {
-  booking: Booking;
-  canSeeSettlement: boolean;
-}) {
-  const total = Math.max(booking.totalPrice, 0);
-  const paid = Math.max(booking.amountPaid, 0);
-  const ratio = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
-
-  return (
-    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
-      <Box
-        sx={{
-          alignItems: "center",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          display: "flex",
-          gap: 1,
-          p: { xs: 1.5, sm: 2 },
-        }}
-      >
-        <Box
-          sx={{
-            alignItems: "center",
-            bgcolor: "action.hover",
-            borderRadius: 1.5,
-            color: "primary.main",
-            display: "inline-flex",
-            height: 34,
-            justifyContent: "center",
-            width: 34,
-          }}
-        >
-          <AccountBalanceWalletRoundedIcon fontSize="small" />
-        </Box>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            Settlement
-          </Typography>
-          <Typography color="text.secondary" variant="caption">
-            Booking payment position
-          </Typography>
-        </Box>
-        <Chip
-          color={paymentTone(booking.paymentStatus, booking.balanceDue)}
-          label={bookingStatusLabel(booking.paymentStatus)}
-          size="small"
-        />
-      </Box>
-
-      {canSeeSettlement ? (
-        <>
-          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-            <Stack direction="row" sx={{ alignItems: "end", justifyContent: "space-between" }}>
-              <Box>
-                <Typography color="text.secondary" variant="caption">
-                  Collected
-                </Typography>
-                <Typography color="primary.main" variant="h4">
-                  {money.format(booking.amountPaid)}
-                </Typography>
-              </Box>
-              <Typography color="text.secondary" variant="caption">
-                {ratio}% of total
-              </Typography>
-            </Stack>
-            <LinearProgress
-              color={booking.balanceDue > 0 ? "warning" : "success"}
-              value={ratio}
-              variant="determinate"
-              sx={{ borderRadius: 99, height: 7, mt: 1.25 }}
-            />
-          </Box>
-          <Box
-            sx={{
-              borderTop: "1px solid",
-              borderColor: "divider",
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-            }}
-          >
-            <SettlementMetric label="Total" value={money.format(booking.totalPrice)} />
-            <SettlementMetric
-              accent={booking.balanceDue > 0 ? "warning.main" : "success.main"}
-              label={booking.balanceDue > 0 ? "Outstanding" : "Settled"}
-              value={money.format(booking.balanceDue)}
-            />
-          </Box>
-          <Stack divider={<Divider flexItem />} spacing={0} sx={{ px: { xs: 1.5, sm: 2 } }}>
-            <CompactInfo label="Payment records" value={String(booking.paymentCount)} />
-            <CompactInfo label="Latest method" value={booking.lastPaymentMethod || "Not recorded"} />
-          </Stack>
-        </>
-      ) : (
-        <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-          <Alert severity="info">
-            Payment status is visible, while settlement amounts are restricted for your role.
-          </Alert>
-        </Box>
-      )}
-    </Paper>
-  );
-}
-
-function SettlementMetric({
-  accent,
-  label,
-  value,
-}: {
-  accent?: string;
-  label: string;
-  value: string;
-}) {
-  return (
-    <Box sx={{ minWidth: 0, p: { xs: 1.25, sm: 1.5 }, "& + &": { borderLeft: "1px solid", borderColor: "divider" } }}>
-      <Typography color="text.secondary" variant="caption">
-        {label}
-      </Typography>
-      <Typography sx={{ color: accent, fontSize: ".9375rem", fontWeight: 800, mt: 0.25 }} noWrap>
-        {value}
-      </Typography>
-    </Box>
-  );
-}
-
-function CompactInfo({ label, value }: { label: string; value: string }) {
-  return (
-    <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between", py: 1.15 }}>
-      <Typography color="text.secondary" variant="body2">
-        {label}
-      </Typography>
-      <Typography sx={{ fontSize: ".8125rem", fontWeight: 700, textAlign: "right" }}>
-        {value}
-      </Typography>
-    </Stack>
-  );
-}
-
-function StaySnapshot({ booking }: { booking: Booking }) {
-  const nights = stayNights(booking);
-  const checkedIn = Boolean(booking.checkedInAt) || ["checked_in", "checked_out"].includes(booking.status);
-  const checkedOut = Boolean(booking.checkedOutAt) || booking.status === "checked_out";
-
-  return (
-    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 } }}>
-      <Stack spacing={1.25}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-          <CheckCircleRoundedIcon color={checkedOut ? "success" : "action"} fontSize="small" />
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-              Stay control
-            </Typography>
-            <Typography color="text.secondary" variant="caption">
-              Operational snapshot
-            </Typography>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", mb: 1 }}>
+              <Box><Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Room assignment</Typography><Typography color="text.secondary" variant="caption">Keep the current room or check live alternatives.</Typography></Box>
+              <Button disabled={checkingRooms} onClick={() => void checkOtherRooms()} startIcon={<SearchRoundedIcon />} variant="outlined">{checkingRooms ? "Checking…" : "Check other rooms"}</Button>
+            </Stack>
+            <TextField fullWidth select label="Room" value={roomId} onChange={(event) => setRoomId(event.target.value)}>
+              <MenuItem value={booking.roomId}>{booking.roomName} · {booking.roomType} (current)</MenuItem>
+              {rooms.map((room) => <MenuItem key={room.id} value={room.id}>{room.name} · {room.roomType} · {money.format(room.totalPrice)}</MenuItem>)}
+            </TextField>
+            {rooms.length === 0 && !checkingRooms ? <Typography color="text.secondary" variant="caption" sx={{ display: "block", mt: 0.75 }}>No alternative rooms loaded. The current room will still be revalidated on save.</Typography> : null}
           </Box>
-        </Stack>
-        <Box
-          sx={{
-            display: "grid",
-            gap: 1,
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-          }}
-        >
-          <SnapshotMetric label="Nights" value={String(nights)} />
-          <SnapshotMetric label="Arrival" value={checkedIn ? "Done" : "Due"} />
-          <SnapshotMetric label="Departure" value={checkedOut ? "Done" : "Open"} />
-        </Box>
-      </Stack>
-    </Paper>
-  );
-}
-
-function SnapshotMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <Box sx={{ bgcolor: "action.hover", borderRadius: 1.5, minWidth: 0, p: 1 }}>
-      <Typography color="text.secondary" variant="caption">
-        {label}
-      </Typography>
-      <Typography noWrap sx={{ fontSize: ".8125rem", fontWeight: 800 }}>
-        {value}
-      </Typography>
-    </Box>
-  );
-}
-
-function ActivityTimeline({
-  booking,
-  canSeeSettlement,
-}: {
-  booking: Booking;
-  canSeeSettlement: boolean;
-}) {
-  const normalized = booking.status.toLowerCase();
-  const checkedIn = Boolean(booking.checkedInAt) || ["checked_in", "checked_out"].includes(normalized);
-  const checkedOut = Boolean(booking.checkedOutAt) || normalized === "checked_out";
-  const confirmed = !["pending", "cancelled", "canceled"].includes(normalized);
-  const paid = booking.amountPaid > 0;
-  const events = [
-    {
-      label: "Created",
-      done: true,
-      value: formatLocalDateTime(booking.createdAt),
-    },
-    {
-      label: "Confirmed",
-      done: confirmed,
-      value: confirmed ? bookingStatusLabel(booking.status) : "Awaiting confirmation",
-    },
-    {
-      label: "Payment",
-      done: paid,
-      value: paid
-        ? canSeeSettlement
-          ? money.format(booking.amountPaid) + " received"
-          : bookingStatusLabel(booking.paymentStatus)
-        : "No payment recorded",
-    },
-    {
-      label: "Checked in",
-      done: checkedIn,
-      value: booking.checkedInAt ? formatLocalDateTime(booking.checkedInAt) : "Not yet",
-    },
-    {
-      label: "Checked out",
-      done: checkedOut,
-      value: booking.checkedOutAt ? formatLocalDateTime(booking.checkedOutAt) : "Not yet",
-    },
-  ];
-
-  return (
-    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
-      <Box
-        sx={{
-          alignItems: "center",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          display: "flex",
-          gap: 1,
-          p: { xs: 1.5, sm: 2 },
-        }}
-      >
-        <ReceiptLongRoundedIcon color="primary" fontSize="small" />
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            Activity timeline
-          </Typography>
-          <Typography color="text.secondary" variant="caption">
-            What has happened to this reservation
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-        <Box
-          component="ol"
-          aria-label="Booking activity timeline"
-          sx={{
-            display: "grid",
-            gap: { xs: 1.25, md: 0 },
-            gridTemplateColumns: { xs: "1fr", md: "repeat(5, minmax(0, 1fr))" },
-            listStyle: "none",
-            m: 0,
-            p: 0,
-          }}
-        >
-          {events.map((event, index) => (
-            <Box
-              component="li"
-              key={event.label}
-              sx={{
-                minWidth: 0,
-                pl: { xs: 3.25, md: 0 },
-                position: "relative",
-                pt: { md: 3.25 },
-                textAlign: { md: "center" },
-              }}
-            >
-              {index < events.length - 1 ? (
-                <Box
-                  sx={{
-                    bgcolor: event.done ? "primary.main" : "divider",
-                    height: { xs: "calc(100% + 10px)", md: 2 },
-                    left: { xs: 7, md: "50%" },
-                    position: "absolute",
-                    top: { xs: 14, md: 7 },
-                    width: { xs: 2, md: "100%" },
-                  }}
-                />
-              ) : null}
-              <Box
-                sx={{
-                  bgcolor: event.done ? "primary.main" : "background.paper",
-                  border: "2px solid",
-                  borderColor: event.done ? "primary.main" : "divider",
-                  borderRadius: "50%",
-                  height: 16,
-                  left: { xs: 0, md: "calc(50% - 8px)" },
-                  position: "absolute",
-                  top: { xs: 3, md: 0 },
-                  width: 16,
-                  zIndex: 1,
-                }}
-              />
-              <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                {event.label}
-              </Typography>
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ display: "block", mt: 0.25, overflowWrap: "anywhere" }}
-              >
-                {event.value}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
-      </Box>
-    </Paper>
-  );
-}
-
-function BookingDetailsSection({
-  children,
-  defaultExpanded = false,
-  icon,
-  title,
-}: {
-  children: ReactNode;
-  defaultExpanded?: boolean;
-  icon: ReactNode;
-  title: string;
-}) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const sectionId = title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-  if (isMobile) {
-    return (
-      <Accordion
-        defaultExpanded={defaultExpanded}
-        disableGutters
-        elevation={0}
-        sx={{
-          border: "1px solid",
-          borderColor: "divider",
-          overflow: "hidden",
-        }}
-      >
-        <AccordionSummary
-          expandIcon={<ExpandMoreRoundedIcon />}
-          aria-controls={sectionId + "-content"}
-          id={sectionId + "-header"}
-          sx={{
-            minHeight: 58,
-            px: 1.5,
-            "& .MuiAccordionSummary-content": { alignItems: "center", gap: 1, my: 1.25 },
-          }}
-        >
-          <Box sx={{ color: "primary.main", display: "inline-flex" }}>{icon}</Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-            {title}
-          </Typography>
-        </AccordionSummary>
-        <AccordionDetails
-          id={sectionId + "-content"}
-          sx={{ borderTop: "1px solid", borderColor: "divider", px: 1.5, py: 0.5 }}
-        >
-          <Stack divider={<Divider flexItem />} spacing={0}>
-            {children}
+          <TextField select label="Booking source" value={source} onChange={(event) => setSource(event.target.value)}><MenuItem value="front_desk">Front desk / walk-in</MenuItem><MenuItem value="phone">Phone</MenuItem><MenuItem value="direct">Direct</MenuItem><MenuItem value="agent">Agent</MenuItem><MenuItem value="other">Other</MenuItem></TextField>
+          <TextField label="Special requests" multiline minRows={3} value={specialRequests} onChange={(event) => setSpecialRequests(event.target.value)} />
+          {error ? <Alert severity="error">{error}</Alert> : null}
           </Stack>
-        </AccordionDetails>
-      </Accordion>
-    );
-  }
-
-  return (
-    <Paper variant="outlined" sx={{ overflow: "hidden" }}>
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ alignItems: "center", borderBottom: "1px solid", borderColor: "divider", p: { sm: 2 } }}
-      >
-        <Box sx={{ color: "primary.main", display: "inline-flex" }}>{icon}</Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          {title}
-        </Typography>
-      </Stack>
-      <Stack divider={<Divider flexItem />} spacing={0} sx={{ px: 2 }}>
-        {children}
-      </Stack>
-    </Paper>
+        </DialogContent>
+        <DialogActions><Button disabled={working} onClick={onClose}>Cancel</Button><Button disabled={working || !changed} startIcon={<EditCalendarRoundedIcon />} type="submit" variant="contained">{working ? "Saving…" : "Save changes"}</Button></DialogActions>
+      </Box>
+    </ResponsiveModal>
   );
 }
 
-function Info({
-  icon,
-  label,
-  value,
-}: {
-  icon?: ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <Stack
-      direction={{ xs: "column", sm: "row" }}
-      spacing={{ xs: 0.35, sm: 1 }}
-      sx={{ alignItems: { sm: "center" }, py: 1.1 }}
-    >
-      {icon ? (
-        <Box sx={{ color: "primary.main", display: { xs: "none", sm: "inline-flex" } }}>
-          {icon}
-        </Box>
-      ) : null}
-      <Typography color="text.secondary" variant="body2">
-        {label}
-      </Typography>
-      <Typography
-        sx={{
-          fontSize: ".8125rem",
-          fontWeight: 700,
-          ml: { sm: "auto" },
-          overflowWrap: "anywhere",
-          textAlign: { sm: "right" },
-        }}
-      >
-        {value || "Not recorded"}
-      </Typography>
-    </Stack>
-  );
+function PaymentModal({ booking, open, propertyId, onClose, onSaved }: { booking: Booking; open: boolean; propertyId: string; onClose: () => void; onSaved: () => Promise<void> }) {
+  const client = useMemo(() => createClient(), []);
+  const idempotencyKey = useRef(crypto.randomUUID());
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("cash");
+  const [reference, setReference] = useState("");
+  const [notes, setNotes] = useState("");
+  const [working, setWorking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const balance = booking.balanceDue ?? 0;
+  const numericAmount = Number(amount);
+  const validAmount = numericAmount > 0 && numericAmount <= balance;
+
+  const changeAttempt = (change: () => void) => {
+    change();
+    idempotencyKey.current = crypto.randomUUID();
+    setError(null);
+  };
+
+  const save = async () => {
+    if (!validAmount) {
+      setError(`Enter an amount between TZS 1 and ${money.format(balance)}.`);
+      return;
+    }
+    setWorking(true);
+    setError(null);
+    try {
+      await recordBookingPayment(client, propertyId, booking.id, {
+        amount: numericAmount,
+        idempotencyKey: idempotencyKey.current,
+        method,
+        reference,
+        notes,
+      });
+      idempotencyKey.current = crypto.randomUUID();
+      setAmount("");
+      setReference("");
+      setNotes("");
+      await onSaved();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to record payment.");
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  return <ResponsiveModal open={open} onClose={working ? undefined : onClose} maxWidth="xs"><DialogTitle>Record payment</DialogTitle><Box aria-busy={working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void save(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}><DialogContent><Alert severity="info" sx={{ mb: 2 }}>Outstanding balance: {money.format(balance)}</Alert><Stack spacing={1.5}><TextField autoFocus disabled={working} label="Amount" type="number" value={amount} onChange={(event) => changeAttempt(() => setAmount(event.target.value))} slotProps={{ input: { startAdornment: <Typography color="text.secondary" sx={{ mr: 1 }}>TZS</Typography> }, htmlInput: { min: 1, max: balance } }} /><TextField disabled={working} select label="Method" value={method} onChange={(event) => changeAttempt(() => setMethod(event.target.value))}><MenuItem value="cash">Cash</MenuItem><MenuItem value="mobile_money">Mobile money</MenuItem><MenuItem value="card">Card</MenuItem><MenuItem value="bank_transfer">Bank transfer</MenuItem><MenuItem value="cheque">Cheque</MenuItem><MenuItem value="other">Other</MenuItem></TextField><TextField disabled={working} label="Reference (optional)" value={reference} onChange={(event) => changeAttempt(() => setReference(event.target.value))} /><TextField disabled={working} label="Notes (optional)" multiline minRows={2} value={notes} onChange={(event) => changeAttempt(() => setNotes(event.target.value))} />{error ? <Alert severity="error">{error}</Alert> : null}</Stack></DialogContent><DialogActions><Button disabled={working} onClick={onClose}>Cancel</Button><Button disabled={working || !validAmount} type="submit" variant="contained">{working ? "Recording…" : "Record payment"}</Button></DialogActions></Box></ResponsiveModal>;
+}
+
+function BookingDetailsSkeleton() {
+  return <Container maxWidth="xl" sx={{ py: 3 }}><Stack spacing={2}><Stack direction="row" spacing={1.5}><Skeleton variant="rounded" width={44} height={44} /><Box sx={{ flex: 1 }}><Skeleton width={180} /><Skeleton width={260} height={36} /></Box></Stack><Skeleton height={72} variant="rounded" /><Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: "1.35fr .75fr" } }}><Stack spacing={2}><Skeleton height={250} variant="rounded" /><Skeleton height={280} variant="rounded" /></Stack><Skeleton height={360} variant="rounded" /></Box></Stack></Container>;
+}
+
+function ErrorState({ actionLabel = "Try again", message, onRetry }: { actionLabel?: string; message: string; onRetry: () => void }) {
+  return <Container maxWidth="sm" sx={{ py: { xs: 6, md: 10 } }}><Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}><Alert severity="error">{message}</Alert><Button onClick={onRetry} startIcon={actionLabel === "Try again" ? <RefreshRoundedIcon /> : <ArrowBackRoundedIcon />} sx={{ mt: 2 }} variant="contained">{actionLabel}</Button></Paper></Container>;
 }

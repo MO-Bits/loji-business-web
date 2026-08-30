@@ -194,14 +194,14 @@ export function FaqSection({ variant = "feature" }: FaqSectionProps) {
               label={t("FREQUENTLY ASKED QUESTIONS", "MASWALI YANAYOULIZWA MARA KWA MARA")}
               color="primary"
               variant="outlined"
-              sx={{ alignSelf: "flex-start", fontWeight: 800, letterSpacing: ".04em" }}
+              sx={{ alignSelf: "flex-start", fontWeight: 700, letterSpacing: ".04em" }}
             />
             <Typography
               component="h2"
               id="faq-heading"
               sx={{
                 fontSize: { xs: "2rem", sm: "2.7rem", md: "3.15rem" },
-                fontWeight: 750,
+                fontWeight: 700,
                 letterSpacing: "-.045em",
                 lineHeight: 1.04,
               }}

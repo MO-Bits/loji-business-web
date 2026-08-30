@@ -1,19 +1,37 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import SearchOffRoundedIcon from "@mui/icons-material/SearchOffRounded";
-import { Box, Button, Paper, Stack, Typography } from "@mui/material";
+
+import { AppStateScreen } from "@/components/session/app-state-screen";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export default function NotFound() {
+  const router = useRouter();
+  const { t } = useLanguage();
+
   return (
-    <Box sx={{ display: "grid", minHeight: "100dvh", placeItems: "center", p: 3 }}>
-      <Paper variant="outlined" sx={{ maxWidth: 480, p: { xs: 3, sm: 5 }, textAlign: "center" }}>
-        <Stack spacing={2.5} sx={{ alignItems: "center" }}>
-          <SearchOffRoundedIcon color="primary" sx={{ fontSize: 56 }} />
-          <Box><Typography variant="h3">Page not found</Typography><Typography color="text.secondary" sx={{ mt: 1 }}>The page may have moved or the address is incorrect.</Typography></Box>
-          <Button component={Link} href="/dashboard" variant="contained">Back to dashboard</Button>
-        </Stack>
-      </Paper>
-    </Box>
+    <AppStateScreen
+      description={t(
+        "The address may be incorrect, or this page may have moved. Use the dashboard to continue working.",
+        "Anwani inaweza kuwa si sahihi, au ukurasa huu umehamishwa. Tumia dashibodi kuendelea na kazi.",
+      )}
+      eyebrow="404"
+      icon={<SearchOffRoundedIcon />}
+      primaryAction={{
+        href: "/dashboard",
+        icon: <DashboardRoundedIcon />,
+        label: t("Open dashboard", "Fungua dashibodi"),
+      }}
+      secondaryAction={{
+        icon: <ArrowBackRoundedIcon />,
+        label: t("Go back", "Rudi nyuma"),
+        onClick: () => router.back(),
+      }}
+      title={t("This page isn’t here", "Ukurasa huu haupo")}
+      tone="info"
+    />
   );
 }

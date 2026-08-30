@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import LayersRoundedIcon from "@mui/icons-material/LayersRounded";
@@ -12,7 +12,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Container,
   IconButton,
   InputAdornment,
   List,
@@ -32,6 +31,8 @@ import type {
 } from "@/features/property/models/property";
 import { createClient } from "@/lib/supabase/client";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
+import { useLanguage } from "@/components/providers/language-provider";
+import { useAppSession } from "@/features/session/hooks/use-app-session";
 
 type LatLng = { lat: number; lng: number };
 type MapInstance = {
@@ -366,6 +367,8 @@ function detailsFromGeocode(
 export function PropertyAddressMap() {
   const router = useRouter();
   const feedback = useAppFeedback();
+  const { t } = useLanguage();
+  const { session } = useAppSession();
   const mapElement = useRef<HTMLDivElement>(null);
   const map = useRef<MapInstance | null>(null);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -380,7 +383,7 @@ export function PropertyAddressMap() {
   const [sessionToken, setSessionToken] = useState(createSessionToken);
   const controller = usePropertyController();
 
-  const reverseGeocode = async (next: LatLng) => {
+  const reverseGeocode = useCallback(async (next: LatLng) => {
     setLoadingAddress(true);
     try {
       const response = await fetch(
@@ -388,19 +391,34 @@ export function PropertyAddressMap() {
       );
       const data = (await response.json()) as Record<string, unknown>;
       if (!response.ok)
-        throw new Error(String(data.error ?? "Unable to load this address."));
+        throw new Error(
+          String(
+            data.error ??
+              t(
+                "Unable to load this address.",
+                "Imeshindikana kupata anwani hii.",
+              ),
+          ),
+        );
       setSelected(detailsFromGeocode(data, next));
     } catch (cause) {
       setMapError(
-        cause instanceof Error ? cause.message : "Unable to load this address.",
+        cause instanceof Error
+          ? cause.message
+          : t(
+              "Unable to load this address.",
+              "Imeshindikana kupata anwani hii.",
+            ),
       );
     } finally {
       setLoadingAddress(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     let cancelled = false;
+    let idleListener: { remove(): void } | null = null;
+    let loadingScript: HTMLScriptElement | null = null;
 
     const start = () => {
       if (cancelled || !mapElement.current || !window.google || map.current)
@@ -413,7 +431,7 @@ export function PropertyAddressMap() {
         fullscreenControl: false,
         zoomControl: false,
       });
-      map.current.addListener("idle", () => {
+      idleListener = map.current.addListener("idle", () => {
         const center = map.current?.getCenter();
         if (!center) return;
         const next = { lat: center.lat(), lng: center.lng() };
@@ -442,6 +460,7 @@ export function PropertyAddressMap() {
           "script[data-loji-google-maps]",
         );
         if (existing) {
+          loadingScript = existing;
           existing.addEventListener("load", start, { once: true });
           return;
         }
@@ -470,9 +489,12 @@ export function PropertyAddressMap() {
 
     return () => {
       cancelled = true;
+      idleListener?.remove();
+      loadingScript?.removeEventListener("load", start);
       if (idleTimer.current) clearTimeout(idleTimer.current);
+      map.current = null;
     };
-  }, []);
+  }, [reverseGeocode]);
 
   useEffect(() => {
     if (query.trim().length < 2) return;
@@ -558,7 +580,12 @@ export function PropertyAddressMap() {
 
   const currentLocation = () => {
     if (!navigator.geolocation)
-      return setMapError("Location is not supported by this browser.");
+      return setMapError(
+        t(
+          "Location is not supported by this browser.",
+          "Kivinjari hiki hakitumii huduma ya eneo.",
+        ),
+      );
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const next = { lat: coords.latitude, lng: coords.longitude };
@@ -572,14 +599,26 @@ export function PropertyAddressMap() {
   };
 
   const confirm = async () => {
-    if (!selected) return setMapError("Please select a location.");
+    if (!selected)
+      return setMapError(
+        t("Please select a location.", "Tafadhali chagua eneo."),
+      );
     const {
       data: { user },
     } = await createClient().auth.getUser();
-    if (!user) return setMapError("Your session has expired.");
+    if (!user)
+      return setMapError(
+        t("Your session has expired.", "Muda wa akaunti yako umeisha."),
+      );
     try {
-      await controller.saveAddress(user.id, selected as PropertyAddress);
-      feedback.success("Property location saved successfully.");
+      await controller.saveAddress(
+        user.id,
+        session?.activePropertyId,
+        selected as PropertyAddress,
+      );
+      feedback.success(
+        t("Property location saved.", "Eneo la biashara limehifadhiwa."),
+      );
       router.replace("/");
     } catch {
       /* displayed below */
@@ -598,32 +637,98 @@ export function PropertyAddressMap() {
       <LocationOnRoundedIcon
         color="error"
         sx={{
-          fontSize: 56,
+          filter: "drop-shadow(0 5px 8px rgba(0,0,0,.22))",
+          fontSize: { xs: 50, sm: 56 },
           left: "50%",
           pointerEvents: "none",
           position: "absolute",
-          top: "50%",
+          top: { xs: "44%", md: "50%" },
           transform: "translate(-50%, -100%)",
         }}
       />
-      <Container
-        maxWidth="sm"
-        sx={{ left: 0, position: "absolute", right: 0, top: 0 }}
+
+      <IconButton
+        aria-label={t("Go back", "Rudi")}
+        onClick={() => router.back()}
+        sx={{
+          bgcolor: "background.paper",
+          boxShadow: 3,
+          left: { xs: 12, sm: 20 },
+          position: "absolute",
+          top: { xs: 12, sm: 20 },
+          "&:hover": { bgcolor: "background.paper" },
+        }}
       >
-        <Stack spacing={1.2} sx={{ pt: 2 }}>
-          <Paper elevation={3} sx={{ borderRadius: 1 }}>
+        <ArrowBackRoundedIcon />
+      </IconButton>
+
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          position: "absolute",
+          right: { xs: 12, sm: 20 },
+          top: { xs: 12, sm: 20 },
+        }}
+      >
+        <IconButton
+          aria-label={t("Change map style", "Badili aina ya ramani")}
+          onClick={() => {
+            const next = !satellite;
+            setSatellite(next);
+            map.current?.setMapTypeId(next ? "satellite" : "roadmap");
+          }}
+          sx={{
+            bgcolor: "background.paper",
+            boxShadow: 3,
+            "&:hover": { bgcolor: "background.paper" },
+          }}
+        >
+          <LayersRoundedIcon />
+        </IconButton>
+        <IconButton
+          aria-label={t("Use current location", "Tumia eneo la sasa")}
+          onClick={currentLocation}
+          sx={{
+            bgcolor: "background.paper",
+            boxShadow: 3,
+            "&:hover": { bgcolor: "background.paper" },
+          }}
+        >
+          <MyLocationRoundedIcon />
+        </IconButton>
+      </Stack>
+
+      <Box
+        sx={{
+          left: "50%",
+          maxWidth: 560,
+          px: { xs: 1.5, sm: 2.5 },
+          position: "absolute",
+          top: { xs: 70, sm: 20 },
+          transform: "translateX(-50%)",
+          width: "100%",
+        }}
+      >
+        <Stack spacing={1}>
+          <Paper elevation={4}>
             <TextField
-              value={query}
+              aria-label={t("Search property location", "Tafuta eneo la biashara")}
+              fullWidth
               onChange={(e) => {
                 setQuery(e.target.value);
                 if (e.target.value.trim().length < 2) setPredictions([]);
               }}
-              placeholder="Search for your property or area"
+              placeholder={t(
+                "Search for your property or area",
+                "Tafuta biashara au eneo lako",
+              )}
+              size="small"
               slotProps={{
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchRoundedIcon />
+                      <SearchRoundedIcon color="action" />
                     </InputAdornment>
                   ),
                   endAdornment: searching ? (
@@ -631,113 +736,120 @@ export function PropertyAddressMap() {
                   ) : null,
                 },
               }}
+              value={query}
             />
           </Paper>
-          {predictions.length > 0 && (
-            <Paper elevation={8}>
-              <List disablePadding>
+          {predictions.length > 0 ? (
+            <Paper elevation={8} sx={{ maxHeight: 280, overflowY: "auto" }}>
+              <List aria-label={t("Location suggestions", "Mapendekezo ya maeneo")} disablePadding>
                 {predictions.map((item) => (
                   <ListItemButton
                     key={item.placeId}
                     onClick={() => void choosePrediction(item)}
+                    sx={{ px: 2, py: 1.25 }}
                   >
                     <ListItemText
                       primary={item.primaryText}
                       secondary={item.secondaryText}
+                      slotProps={{
+                        primary: { sx: { fontSize: ".875rem", fontWeight: 500 } },
+                        secondary: { sx: { fontSize: ".75rem", mt: 0.25 } },
+                      }}
                     />
                   </ListItemButton>
                 ))}
               </List>
             </Paper>
-          )}
+          ) : null}
         </Stack>
-      </Container>
-      <Stack spacing={1} sx={{ left: 16, position: "absolute", top: 92 }}>
-        <IconButton
-          aria-label="Back"
-          onClick={() => router.back()}
-          sx={{ bgcolor: "background.paper", boxShadow: 3 }}
-        >
-          <ArrowBackRoundedIcon />
-        </IconButton>
-      </Stack>
-      <Stack spacing={1} sx={{ position: "absolute", right: 16, top: 92 }}>
-        <IconButton
-          aria-label="Change map style"
-          onClick={() => {
-            const next = !satellite;
-            setSatellite(next);
-            map.current?.setMapTypeId(next ? "satellite" : "roadmap");
-          }}
-          sx={{ bgcolor: "background.paper", boxShadow: 3 }}
-        >
-          <LayersRoundedIcon />
-        </IconButton>
-        <IconButton
-          aria-label="Use current location"
-          onClick={currentLocation}
-          sx={{ bgcolor: "background.paper", boxShadow: 3 }}
-        >
-          <MyLocationRoundedIcon />
-        </IconButton>
-      </Stack>
+      </Box>
+
       <Paper
         elevation={12}
         sx={{
-          borderRadius: "24px 24px 0 0",
-          bottom: 0,
-          left: 0,
+          borderRadius: { xs: "20px 20px 0 0", md: 3 },
+          bottom: { xs: 0, md: 24 },
+          left: { xs: 0, md: 24 },
+          maxHeight: { xs: "42dvh", md: "calc(100dvh - 48px)" },
+          overflowY: "auto",
           p: { xs: 2.5, sm: 3 },
           position: "absolute",
-          right: 0,
+          right: { xs: 0, md: "auto" },
+          width: { xs: "100%", md: 410 },
         }}
       >
-        <Container maxWidth="sm">
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="h6">
+        <Stack aria-live="polite" spacing={2}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+            <Box
+              sx={{
+                bgcolor:
+                  "color-mix(in srgb, var(--mui-palette-primary-main) 11%, transparent)",
+                borderRadius: 2,
+                color: "primary.main",
+                display: "grid",
+                flexShrink: 0,
+                height: 42,
+                placeItems: "center",
+                width: 42,
+              }}
+            >
+              {loadingAddress ? (
+                <CircularProgress size={20} />
+              ) : (
+                <LocationOnRoundedIcon fontSize="small" />
+              )}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography component="h1" variant="h4">
                 {loadingAddress
-                  ? "Finding this address…"
-                  : (selected?.name ?? "Choose your property location")}
+                  ? t("Finding this address…", "Inatafuta anwani hii…")
+                  : selected?.name ??
+                    t(
+                      "Choose the property location",
+                      "Chagua eneo la biashara",
+                    )}
               </Typography>
-              <Typography color="text.secondary">
+              <Typography color="text.secondary" sx={{ lineHeight: 1.6, mt: 0.5 }} variant="body2">
                 {selected?.formattedAddress ??
-                  "Search above or move the map so the pin sits on your property."}
+                  t(
+                    "Search above or move the map until the pin sits on your property entrance.",
+                    "Tafuta hapo juu au sogeza ramani hadi pini iwe kwenye mlango wa biashara yako.",
+                  )}
               </Typography>
             </Box>
-            {selected && (
-              <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="body2">
-                  {[
-                    selected.ward,
-                    selected.district,
-                    selected.region,
-                    selected.country,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </Typography>
-              </Stack>
-            )}
-            <Button
-              fullWidth
-              size="large"
-              variant="contained"
-              disabled={!selected || loadingAddress || controller.loading}
-              onClick={() => void confirm()}
-            >
-              {controller.loading ? "Saving location…" : "Confirm location"}
-            </Button>
           </Stack>
-        </Container>
+
+          {selected ? (
+            <Typography color="text.secondary" variant="caption">
+              {[selected.ward, selected.district, selected.region, selected.country]
+                .filter(Boolean)
+                .join(" · ")}
+            </Typography>
+          ) : null}
+
+          <Button
+            disabled={!selected || loadingAddress || controller.loading}
+            fullWidth
+            onClick={() => void confirm()}
+            size="large"
+            variant="contained"
+          >
+            {controller.loading
+              ? t("Saving location…", "Inahifadhi eneo…")
+              : t("Confirm location", "Thibitisha eneo")}
+          </Button>
+        </Stack>
       </Paper>
+
       <Snackbar
+        anchorOrigin={{ horizontal: "center", vertical: "top" }}
         open={Boolean(mapError || controller.error)}
         autoHideDuration={6000}
         onClose={() => {
           setMapError(null);
           controller.clearError();
         }}
+        sx={{ top: { xs: 132, sm: 84 } }}
       >
         <Alert severity="error" variant="filled">
           {mapError || controller.error}

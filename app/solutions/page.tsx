@@ -1,3 +1,86 @@
 "use client";
-import { Grid, Paper, Stack, Typography } from "@mui/material"; import { MarketingPageShell } from "@/components/content/marketing-page-shell"; import { useLanguage } from "@/components/providers/language-provider";
-export default function Solutions(){const {t}=useLanguage();const items=[["Lodges","Lodge","Keep rooms, bookings, arrivals and staff coordinated without relying on scattered notebooks.","Weka vyumba, uhifadhi, wanaoingia na wafanyakazi katika mpangilio bila kutegemea madaftari mengi."],["Guesthouses","Guesthouse","A focused workspace for independent guesthouses that need simple, reliable daily control.","Sehemu rahisi ya kazi kwa guesthouse zinazohitaji udhibiti wa shughuli za kila siku."],["Hotels","Hoteli","Give reception, management and ownership a shared view of property operations.","Wape mapokezi, menejimenti na wamiliki mwonekano mmoja wa shughuli za hoteli."],["Apartments & short stays","Apartments na short stays","Organise units, stays and guest information as your accommodation portfolio grows.","Panga units, ukaaji na taarifa za wageni kadri biashara yako ya malazi inavyokua."]];return <MarketingPageShell eyebrow={["SOLUTIONS","SULUHISHO"]} title={["Built around the way accommodation businesses actually work.","Imejengwa kuendana na namna biashara za malazi zinavyofanya kazi."]} description={["Whether you run a lodge, guesthouse, hotel or short-stay property, Loji Business gives your team one operational workspace.","Iwe una lodge, guesthouse, hoteli au short-stay, Loji Business inaipa timu yako sehemu moja ya kusimamia shughuli."]}><Grid container spacing={2}>{items.map(([en,sw,de,ds])=><Grid size={{xs:12,sm:6}} key={en}><Paper variant="outlined" sx={{p:3,height:"100%",borderRadius:2}}><Stack spacing={1}><Typography variant="h5" sx={{ fontWeight: 700 }}>{t(en,sw)}</Typography><Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>{t(de,ds)}</Typography></Stack></Paper></Grid>)}</Grid></MarketingPageShell>}
+
+import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
+import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
+import DomainRoundedIcon from "@mui/icons-material/DomainRounded";
+import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+
+import { MarketingPageShell } from "@/components/content/marketing-page-shell";
+import {
+  MarketingCallout,
+  MarketingCard,
+  MarketingGrid,
+} from "@/components/content/marketing-ui";
+import { useLanguage } from "@/components/providers/language-provider";
+
+const solutions = [
+  {
+    description: [
+      "Keep rooms, bookings, arrivals and staff coordinated without relying on scattered notebooks.",
+      "Weka vyumba, uhifadhi, wanaowasili na wafanyakazi katika mpangilio bila kutegemea madaftari yaliyotawanyika.",
+    ],
+    icon: CottageRoundedIcon,
+    title: ["Lodges", "Lodge"],
+  },
+  {
+    description: [
+      "Give an independent guesthouse a reliable daily workspace without adding unnecessary complexity.",
+      "Ipe guesthouse huru sehemu ya kuaminika ya shughuli za kila siku bila kuongeza ugumu usiohitajika.",
+    ],
+    icon: ApartmentRoundedIcon,
+    title: ["Guesthouses", "Nyumba za wageni"],
+  },
+  {
+    description: [
+      "Give reception, management and ownership one shared view of rooms, guests and performance.",
+      "Wape mapokezi, menejimenti na wamiliki mwonekano mmoja wa vyumba, wageni na utendaji.",
+    ],
+    icon: HotelRoundedIcon,
+    title: ["Hotels", "Hoteli"],
+  },
+  {
+    description: [
+      "Organise units, stays and guest records as your apartment or short-stay portfolio grows.",
+      "Panga nyumba, ukaaji na taarifa za wageni kadri biashara yako ya apartment au short-stay inavyokua.",
+    ],
+    icon: DomainRoundedIcon,
+    title: ["Apartments & short stays", "Apartment na short-stay"],
+  },
+] as const;
+
+export default function SolutionsPage() {
+  const { t } = useLanguage();
+
+  return (
+    <MarketingPageShell
+      description={[
+        "Whether you run one lodge or a growing accommodation portfolio, Loji Business gives your team one operational workspace.",
+        "Iwe una lodge moja au biashara ya malazi inayokua, Loji Business inaipa timu yako sehemu moja ya kusimamia shughuli.",
+      ]}
+      eyebrow={["SOLUTIONS", "SULUHISHO"]}
+      title={[
+        "Built around the way accommodation businesses work.",
+        "Imejengwa kuendana na namna biashara za malazi zinavyofanya kazi.",
+      ]}
+    >
+      <MarketingGrid columns={{ xs: 1, sm: 2 }}>
+        {solutions.map(({ description, icon: Icon, title }) => (
+          <MarketingCard
+            description={t(description[0], description[1])}
+            icon={<Icon />}
+            key={title[0]}
+            title={t(title[0], title[1])}
+          />
+        ))}
+      </MarketingGrid>
+      <MarketingCallout
+        action={{ href: "/contact", label: t("Talk to our team", "Wasiliana na timu") }}
+        description={t(
+          "Tell us your property type and room count. We will help you identify the clearest way to set up your workspace.",
+          "Tuambie aina ya biashara na idadi ya vyumba. Tutakusaidia kuona njia iliyo wazi zaidi ya kuandaa sehemu yako ya kazi.",
+        )}
+        title={t("Not sure where your property fits?", "Huna uhakika biashara yako inafaa wapi?")}
+      />
+    </MarketingPageShell>
+  );
+}

@@ -1,4 +1,116 @@
 "use client";
-import { Grid, Paper, Stack, Typography, Button } from "@mui/material"; import Link from "next/link"; import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded"; import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded"; import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded"; import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded"; import PersonRoundedIcon from "@mui/icons-material/PersonRounded"; import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
-import { MarketingPageShell } from "@/components/content/marketing-page-shell"; import { useLanguage } from "@/components/providers/language-provider";
-export default function HelpPage(){const {t}=useLanguage();const items=[[ApartmentRoundedIcon,"Property setup","Kuandaa biashara","Set up your property details, address and location.","Weka taarifa za biashara yako, anwani na eneo."],[MeetingRoomRoundedIcon,"Rooms","Vyumba","Add rooms, prices, capacity, amenities and photos.","Ongeza vyumba, bei, uwezo, huduma na picha."],[EventAvailableRoundedIcon,"Bookings","Uhifadhi","Understand availability, create bookings and manage check-in and check-out.","Elewa upatikanaji, tengeneza uhifadhi na simamia kuingia na kutoka."],[GroupsRoundedIcon,"Staff & access","Wafanyakazi na ruhusa","Invite team members and understand property roles and permissions.","Alika wafanyakazi na elewa majukumu na ruhusa."],[PersonRoundedIcon,"Guests","Wageni","Keep guest details and stay information organised.","Weka taarifa za wageni na ukaaji kwa mpangilio."],[HelpOutlineRoundedIcon,"Common questions","Maswali ya kawaida","Find quick answers to common product and account questions.","Pata majibu ya haraka kwa maswali ya bidhaa na akaunti."]];return <MarketingPageShell eyebrow={["HELP CENTRE","KITUO CHA MSAADA"]} title={["Learn Loji Business, one task at a time.","Jifunze Loji Business, hatua kwa hatua."]} description={["Use these guides as a starting point for property setup, rooms, bookings, guests and staff access.","Tumia miongozo hii kuanzia kwenye maandalizi ya biashara, vyumba, uhifadhi, wageni na ruhusa za wafanyakazi."]} cta={false}><Grid container spacing={2}>{items.map(([Icon,en,sw,de,ds],i)=><Grid size={{xs:12,sm:6,lg:4}} key={en as string}><Paper variant="outlined" sx={{p:3,height:"100%",borderRadius:2}}><Stack spacing={1.5}><Icon color="primary" sx={{fontSize:30}}/><Typography variant="h5" sx={{ fontWeight: 700 }}>{t(en as string,sw as string)}</Typography><Typography color="text.secondary" sx={{ lineHeight: 1.7 }}>{t(de as string,ds as string)}</Typography>{i===5&&<Button component={Link} href="/faq" variant="text" sx={{alignSelf:"flex-start",px:0}}>{t("Open FAQs","Fungua Maswali")}</Button>}</Stack></Paper></Grid>)}</Grid><Paper variant="outlined" sx={{mt:3,p:3,borderRadius:2}}><Typography sx={{ fontWeight: 700 }}>{t("Need direct support?","Unahitaji msaada wa moja kwa moja?")}</Typography><Typography color="text.secondary" sx={{ mt: .75, mb: 1.5 }}>{t("Contact the Loji Business team if you cannot find what you need here.","Wasiliana na timu ya Loji Business kama hujapata unachohitaji hapa.")}</Typography><Button component={Link} href="/contact" variant="contained">{t("Contact support","Wasiliana na msaada")}</Button></Paper></MarketingPageShell>}
+
+import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
+import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
+import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
+import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
+import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+
+import { MarketingPageShell } from "@/components/content/marketing-page-shell";
+import {
+  MarketingCallout,
+  MarketingCard,
+  MarketingGrid,
+} from "@/components/content/marketing-ui";
+import { useLanguage } from "@/components/providers/language-provider";
+
+const topics = [
+  {
+    action: false,
+    description: [
+      "Understand property details, photos, address and location setup.",
+      "Elewa taarifa za biashara, picha, anwani na usanidi wa eneo.",
+    ],
+    icon: ApartmentRoundedIcon,
+    title: ["Property setup", "Usanidi wa biashara"],
+  },
+  {
+    action: false,
+    description: [
+      "Learn how room types, prices, capacity, amenities and status work together.",
+      "Jifunze jinsi aina za vyumba, bei, uwezo, huduma na hali vinavyofanya kazi pamoja.",
+    ],
+    icon: MeetingRoomRoundedIcon,
+    title: ["Rooms", "Vyumba"],
+  },
+  {
+    action: false,
+    description: [
+      "Understand availability, booking creation, check-in and check-out.",
+      "Elewa upatikanaji, kutengeneza uhifadhi, kuingia na kuondoka.",
+    ],
+    icon: EventAvailableRoundedIcon,
+    title: ["Bookings", "Uhifadhi"],
+  },
+  {
+    action: false,
+    description: [
+      "Invite teammates and understand the access available to each property role.",
+      "Alika washiriki na elewa ruhusa zinazopatikana kwa kila jukumu.",
+    ],
+    icon: GroupsRoundedIcon,
+    title: ["Team & access", "Timu na ruhusa"],
+  },
+  {
+    action: false,
+    description: [
+      "Keep guest identity, contact and stay information organised.",
+      "Weka utambulisho, mawasiliano na taarifa za ukaaji wa wageni kwa mpangilio.",
+    ],
+    icon: PersonRoundedIcon,
+    title: ["Guests", "Wageni"],
+  },
+  {
+    action: true,
+    description: [
+      "Find concise answers about accounts, access, setup and daily use.",
+      "Pata majibu mafupi kuhusu akaunti, ruhusa, usanidi na matumizi ya kila siku.",
+    ],
+    icon: HelpOutlineRoundedIcon,
+    title: ["Common questions", "Maswali ya kawaida"],
+  },
+] as const;
+
+export default function HelpPage() {
+  const { t } = useLanguage();
+
+  return (
+    <MarketingPageShell
+      cta={false}
+      description={[
+        "Start with the topic that matches the work you are doing, or contact the Loji Business team for direct support.",
+        "Anza na mada inayolingana na kazi unayofanya, au wasiliana na timu ya Loji Business kwa msaada wa moja kwa moja.",
+      ]}
+      eyebrow={["HELP CENTRE", "KITUO CHA MSAADA"]}
+      title={[
+        "Find the right answer, one task at a time.",
+        "Pata jibu sahihi, kazi moja baada ya nyingine.",
+      ]}
+    >
+      <MarketingGrid>
+        {topics.map(({ action, description, icon: Icon, title }) => (
+          <MarketingCard
+            action={
+              action
+                ? { href: "/faq", label: t("Open FAQs", "Fungua maswali") }
+                : undefined
+            }
+            description={t(description[0], description[1])}
+            icon={<Icon />}
+            key={title[0]}
+            title={t(title[0], title[1])}
+          />
+        ))}
+      </MarketingGrid>
+      <MarketingCallout
+        action={{ href: "/contact", label: t("Contact support", "Wasiliana na msaada") }}
+        description={t(
+          "Share what you were trying to do, the screen you were on and any message you saw so we can help efficiently.",
+          "Eleza ulichokuwa unajaribu kufanya, ukurasa uliokuwa nao na ujumbe wowote ulioona ili tukusaidie haraka.",
+        )}
+        title={t("Need direct support?", "Unahitaji msaada wa moja kwa moja?")}
+      />
+    </MarketingPageShell>
+  );
+}

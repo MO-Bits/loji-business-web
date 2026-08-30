@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 
 import { GoogleAnalytics } from "@next/third-parties/google";
 
-import "@fontsource/roboto/300.css";
 import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
@@ -45,8 +44,8 @@ const websiteData = {
 export const viewport: Viewport = {
   colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F4F6F9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0D1117" },
+    { media: "(prefers-color-scheme: light)", color: "#F5F5F7" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B0D10" },
   ],
 };
 

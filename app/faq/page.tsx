@@ -62,14 +62,14 @@ export default function FaqPage() {
                 label={t("LOJI BUSINESS HELP", "MSAADA WA LOJI BUSINESS")}
                 color="primary"
                 variant="outlined"
-                sx={{ alignSelf: "flex-start", fontWeight: 800, letterSpacing: ".08em" }}
+                sx={{ alignSelf: "flex-start", fontWeight: 700, letterSpacing: ".08em" }}
               />
 
               <Typography
                 component="h1"
                 sx={{
                   fontSize: { xs: "2.7rem", sm: "3.9rem", md: "4.65rem" },
-                  fontWeight: 760,
+                  fontWeight: 700,
                   letterSpacing: "-.06em",
                   lineHeight: .96,
                 }}
@@ -138,7 +138,7 @@ export default function FaqPage() {
                   <VerifiedUserRoundedIcon />
                 </Box>
                 <Box>
-                  <Typography sx={{ fontSize: "1.05rem", fontWeight: 750 }}>
+                  <Typography sx={{ fontSize: "1.05rem", fontWeight: 700 }}>
                     {t("Need direct support?", "Unahitaji msaada wa moja kwa moja?")}
                   </Typography>
                   <Typography color="text.secondary" sx={{ lineHeight: 1.7, mt: .6 }} variant="body2">
@@ -153,7 +153,7 @@ export default function FaqPage() {
                   <MuiLink
                     href="mailto:lojipms@gmail.com"
                     underline="none"
-                    sx={{ alignItems: "center", color: "text.primary", display: "flex", fontSize: ".9rem", fontWeight: 650, gap: 1.25 }}
+                    sx={{ alignItems: "center", color: "text.primary", display: "flex", fontSize: ".9rem", fontWeight: 500, gap: 1.25 }}
                   >
                     <EmailRoundedIcon color="primary" fontSize="small" />
                     lojipms@gmail.com
@@ -161,7 +161,7 @@ export default function FaqPage() {
                   <MuiLink
                     href="tel:+255772290005"
                     underline="none"
-                    sx={{ alignItems: "center", color: "text.primary", display: "flex", fontSize: ".9rem", fontWeight: 650, gap: 1.25 }}
+                    sx={{ alignItems: "center", color: "text.primary", display: "flex", fontSize: ".9rem", fontWeight: 500, gap: 1.25 }}
                   >
                     <PhoneRoundedIcon color="primary" fontSize="small" />
                     +255 772 290 005
@@ -185,13 +185,13 @@ export default function FaqPage() {
           }}
         >
           <Stack spacing={1.4} sx={{ alignSelf: "start", position: { md: "sticky" }, top: { md: 96 } }}>
-            <Typography color="primary.main" variant="overline" sx={{ fontWeight: 800, letterSpacing: ".14em" }}>
+            <Typography color="primary.main" variant="overline" sx={{ fontWeight: 700, letterSpacing: ".14em" }}>
               {t("COMMON QUESTIONS", "MASWALI YA KAWAIDA")}
             </Typography>
             <Typography
               component="h2"
               id="faq-list-heading"
-              sx={{ fontSize: { xs: "2rem", md: "2.55rem" }, fontWeight: 750, letterSpacing: "-.045em", lineHeight: 1.05 }}
+              sx={{ fontSize: { xs: "2rem", md: "2.55rem" }, fontWeight: 700, letterSpacing: "-.045em", lineHeight: 1.05 }}
             >
               {t("Everything important, in one place.", "Mambo muhimu, sehemu moja.")}
             </Typography>
@@ -228,7 +228,7 @@ export default function FaqPage() {
             }}
           >
             <Stack spacing={1.25} sx={{ maxWidth: 680 }}>
-              <Typography component="h2" sx={{ fontSize: { xs: "1.8rem", sm: "2.35rem" }, fontWeight: 750, letterSpacing: "-.04em" }}>
+              <Typography component="h2" sx={{ fontSize: { xs: "1.8rem", sm: "2.35rem" }, fontWeight: 700, letterSpacing: "-.04em" }}>
                 {t("Ready to run your property more clearly?", "Uko tayari kusimamia biashara yako kwa urahisi zaidi?")}
               </Typography>
               <Typography sx={{ lineHeight: 1.7, opacity: .86 }}>

@@ -17,5 +17,12 @@ export async function getHomeDashboard(
   if (!isObject(data)) {
     throw new Error("The dashboard returned an invalid response.");
   }
-  return parseHomeDashboard(data);
+  const dashboard = parseHomeDashboard(data);
+  if (!dashboard.propertyId || dashboard.propertyId !== propertyId) {
+    throw new Error("The dashboard returned the wrong property context.");
+  }
+  if (Number.isNaN(dashboard.businessDate.getTime())) {
+    throw new Error("The dashboard returned an invalid business date.");
+  }
+  return dashboard;
 }

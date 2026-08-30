@@ -38,18 +38,22 @@ import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { createClient } from "@/lib/supabase/client";
 import {
   createRoom,
-  getRoom,
+  getRoomWorkspace,
+  removeRoomImages,
   updateRoom,
   uploadRoomImages,
 } from "@/features/rooms/services/room-service";
 import { roomAmenities, type Room } from "@/features/rooms/models/room";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
+import { getWorkspaceCapabilities } from "@/features/session/permissions";
+import { PageHeader } from "@/components/shared/page-header";
+import { WorkspacePage } from "@/components/shared/workspace-ui";
 
 const roomTypes = ["single", "master", "suite", "deluxe", "twin", "family"];
 
 export function RoomForm({ roomId }: { roomId?: string }) {
   const router = useRouter();
-  const { session } = useAppSession();
+  const { session, loading: sessionLoading } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const feedback = useAppFeedback();
   const [room, setRoom] = useState<Room | null>(null);
@@ -58,36 +62,53 @@ export function RoomForm({ roomId }: { roomId?: string }) {
   const [capacity, setCapacity] = useState(2);
   const [bedCount, setBedCount] = useState(1);
   const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
   const [amenities, setAmenities] = useState<string[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [files, setFiles] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [originalImages, setOriginalImages] = useState<string[]>([]);
+  const [coverIndex, setCoverIndex] = useState(0);
+  const [targetRoomId] = useState(() => roomId ?? crypto.randomUUID());
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(Boolean(roomId));
   const [error, setError] = useState<string | null>(null);
+  const canManage = getWorkspaceCapabilities(session?.activeRole).canManageRooms;
 
   useEffect(() => {
-    if (!roomId || !session?.activePropertyId) return;
-    getRoom(client, session.activePropertyId, roomId)
-      .then((value) => {
-        if (!value) throw new Error("Room not found.");
-        setRoom(value);
-        setName(value.name);
-        setRoomType(value.roomType);
-        setCapacity(value.capacity);
-        setBedCount(value.bedCount);
-        setPrice(String(value.pricePerNight));
-        setAmenities(value.amenities);
-        setExistingImages(value.images);
-        setIsActive(value.isActive);
-      })
-      .catch((cause) =>
-        setError(
-          cause instanceof Error ? cause.message : "Unable to load room.",
-        ),
-      )
-      .finally(() => setInitialLoading(false));
-  }, [client, roomId, session?.activePropertyId]);
+    if (sessionLoading || !roomId) return;
+    if (!canManage) return;
+    const timer = window.setTimeout(() => {
+      if (!session?.activePropertyId) {
+        setError("No active property selected.");
+        setInitialLoading(false);
+        return;
+      }
+      getRoomWorkspace(client, session.activePropertyId, roomId)
+        .then((workspace) => {
+          if (!workspace.capabilities.manageRooms) throw new Error("You do not have permission to manage rooms.");
+          const value = workspace.room;
+          setRoom(value);
+          setName(value.name);
+          setRoomType(value.roomType);
+          setCapacity(value.capacity);
+          setBedCount(value.bedCount);
+          setPrice(String(value.pricePerNight));
+          setDescription(value.description);
+          setAmenities(value.amenities);
+          setExistingImages(value.images);
+          setOriginalImages(value.images);
+          setIsActive(value.isActive);
+        })
+        .catch((cause) =>
+          setError(
+            cause instanceof Error ? cause.message : "Unable to load room.",
+          ),
+        )
+        .finally(() => setInitialLoading(false));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [canManage, client, roomId, session?.activePropertyId, sessionLoading]);
 
   const previews = useMemo(() => files.map(URL.createObjectURL), [files]);
   useEffect(() => () => previews.forEach(URL.revokeObjectURL), [previews]);
@@ -103,18 +124,23 @@ export function RoomForm({ roomId }: { roomId?: string }) {
   const pick = (event: ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? []);
     event.target.value = "";
-    if (existingImages.length + files.length + picked.length > 3) {
-      setError("Maximum 3 images allowed.");
+    if (existingImages.length + files.length + picked.length > 5) {
+      setError("Maximum 5 images allowed.");
       return;
     }
-    if (picked.some((file) => file.size > 5 * 1024 * 1024)) {
-      setError("Each image must be under 5 MB.");
+    if (picked.some((file) => !file.type.startsWith("image/") || file.type === "image/svg+xml")) {
+      setError("Choose JPG, PNG, HEIC or WebP image files.");
+      return;
+    }
+    if (picked.some((file) => file.size > 6 * 1024 * 1024)) {
+      setError("Each image must be under 6 MB.");
       return;
     }
     setFiles((current) => [...current, ...picked]);
   };
 
   const removeImage = (index: number) => {
+    setCoverIndex((current) => current === index ? 0 : index < current ? current - 1 : current);
     if (index < existingImages.length) {
       setExistingImages((current) => current.filter((_, item) => item !== index));
       return;
@@ -130,30 +156,42 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     if (!propertyId) return setError("No active property selected.");
     if (name.trim().length < 2) return setError("Enter a valid room name.");
     const amount = Number(price);
-    if (!amount || amount <= 0) return setError("Enter a valid room price.");
+    if (!amount || amount <= 0 || amount > 100_000_000) return setError("Enter a valid room price up to TZS 100,000,000.");
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 100) return setError("Guest capacity must be between 1 and 100.");
+    if (!Number.isInteger(bedCount) || bedCount < 1 || bedCount > capacity) return setError("Bed count must be at least 1 and no greater than guest capacity.");
     if (!amenities.length) return setError("Select at least one amenity.");
     if (!existingImages.length && !files.length)
       return setError("Add at least one room image.");
 
     setLoading(true);
     setError(null);
+    let uploaded: string[] = [];
     try {
-      const targetId = roomId ?? crypto.randomUUID();
-      const uploaded = files.length
-        ? await uploadRoomImages(client, propertyId, targetId, files)
+      uploaded = files.length
+        ? await uploadRoomImages(client, propertyId, targetRoomId, files)
         : [];
+      const unorderedImages = [...existingImages, ...uploaded];
+      const selectedCover = unorderedImages[coverIndex];
+      const orderedImages = selectedCover
+        ? [selectedCover, ...unorderedImages.filter((_, index) => index !== coverIndex)]
+        : unorderedImages;
       const input = {
         name,
         roomType,
         capacity,
         bedCount,
         pricePerNight: amount,
+        description,
         amenities,
-        images: [...existingImages, ...uploaded],
+        images: orderedImages,
         isActive,
       };
       if (roomId) await updateRoom(client, propertyId, roomId, input);
-      else await createRoom(client, propertyId, input, targetId);
+      else await createRoom(client, propertyId, input, targetRoomId);
+      const removedImages = originalImages.filter((url) => !existingImages.includes(url));
+      if (removedImages.length) {
+        void removeRoomImages(client, removedImages).catch(() => undefined);
+      }
       feedback.success(
         roomId
           ? "Room changes saved successfully."
@@ -162,11 +200,33 @@ export function RoomForm({ roomId }: { roomId?: string }) {
       router.replace(roomId ? `/rooms/${roomId}` : "/rooms");
       router.refresh();
     } catch (cause) {
+      if (uploaded.length) await removeRoomImages(client, uploaded).catch(() => undefined);
       setError(cause instanceof Error ? cause.message : "Unable to save room.");
     } finally {
       setLoading(false);
     }
   };
+
+  if (sessionLoading) {
+    return (
+      <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
+        <Paper variant="outlined" sx={{ p: 3.5 }}>
+          <Typography color="text.secondary">Loading room workspace…</Typography>
+        </Paper>
+      </Container>
+    );
+  }
+
+  if (!canManage) {
+    return (
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 7 } }}>
+        <Stack spacing={2}>
+          <Alert severity="warning">Only property owners and managers can create or edit rooms.</Alert>
+          <Button onClick={() => router.replace("/rooms")} startIcon={<ArrowBackRoundedIcon />} variant="outlined">Back to rooms</Button>
+        </Stack>
+      </Container>
+    );
+  }
 
   if (initialLoading) {
     return (
@@ -178,22 +238,23 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     );
   }
 
+  if (roomId && !room) {
+    return (
+      <Container maxWidth="sm" sx={{ py: { xs: 4, md: 7 } }}>
+        <Stack spacing={2}>
+          <Alert severity="error">{error ?? "This room is unavailable or you no longer have permission to edit it."}</Alert>
+          <Button onClick={() => router.replace("/rooms")} startIcon={<ArrowBackRoundedIcon />} variant="outlined">Back to rooms</Button>
+        </Stack>
+      </Container>
+    );
+  }
+
   const actionLabel = roomId ? "Save changes" : "Create room";
 
   return (
-    <Container
-      component="form"
-      maxWidth="xl"
-      onSubmit={submit}
-      sx={{ pb: { xs: 3, md: 5 }, pt: { xs: 2, md: 3 } }}
-    >
-      <Stack spacing={{ xs: 2, md: 2.5 }}>
-        <Stack
-          component="header"
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1.5, sm: 2 }}
-          sx={{ alignItems: { sm: "flex-start" }, justifyContent: "space-between" }}
-        >
+    <Box aria-busy={loading} component="form" onSubmit={submit}>
+      <WorkspacePage>
+        <Stack spacing={{ xs: 2.25, sm: 3 }}>
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
             <IconButton
               aria-label="Go back to rooms"
@@ -202,31 +263,21 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             >
               <ArrowBackRoundedIcon fontSize="small" />
             </IconButton>
-            <Box>
-              <Typography
-                color="text.secondary"
-                component="p"
-                variant="overline"
-                sx={{ fontSize: ".625rem", letterSpacing: ".1em" }}
-              >
-                Room inventory
-              </Typography>
-              <Typography component="h1" variant="h3" sx={{ mt: 0.25 }}>
-                {roomId ? `Edit ${room?.name ?? "room"}` : "Add a room"}
-              </Typography>
-              <Typography color="text.secondary" sx={{ fontSize: ".875rem", mt: 0.5 }}>
-                Define the room’s commercial profile, service setup, and media once.
-              </Typography>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <PageHeader
+                eyebrow="Room inventory"
+                title={roomId ? `Edit ${room?.name ?? "room"}` : "Add a room"}
+                description="Define the room’s commercial profile, service setup, and media once."
+                action={(
+                  <Chip
+                    color={roomId ? (isActive ? "success" : "default") : "primary"}
+                    label={roomId ? (isActive ? "Active inventory" : "Inactive inventory") : "Draft room"}
+                    size="small"
+                  />
+                )}
+              />
             </Box>
           </Stack>
-
-          <Chip
-            color={roomId ? (isActive ? "success" : "default") : "primary"}
-            label={roomId ? (isActive ? "Active inventory" : "Inactive inventory") : "Draft room"}
-            size="small"
-            sx={{ alignSelf: { xs: "flex-start", sm: "center" } }}
-          />
-        </Stack>
 
         <Box
           sx={{
@@ -263,6 +314,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                   label="Room name or number"
                   onChange={(event) => setName(event.target.value)}
                   placeholder="e.g. Suite 204"
+                  slotProps={{ htmlInput: { maxLength: 100 } }}
                   value={name}
                 />
                 <TextField
@@ -284,12 +336,23 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                   onChange={(event) => setPrice(event.target.value)}
                   placeholder="0"
                   slotProps={{
-                    htmlInput: { min: 1, step: 1 },
+                    htmlInput: { min: 1, max: 100000000, step: 1 },
                     input: { startAdornment: <InputAdornment position="start">TZS</InputAdornment> },
                   }}
                   sx={{ gridColumn: { sm: "1 / -1" } }}
                   type="number"
                   value={price}
+                />
+                <TextField
+                  helperText="A concise guest-facing overview of the room."
+                  label="Room description"
+                  minRows={3}
+                  multiline
+                  onChange={(event) => setDescription(event.target.value)}
+                  placeholder="Describe the layout, outlook, and what makes this room special."
+                  slotProps={{ htmlInput: { maxLength: 1000 } }}
+                  sx={{ gridColumn: { sm: "1 / -1" } }}
+                  value={description}
                 />
               </Box>
             </SectionCard>
@@ -310,24 +373,24 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                 <TextField
                   helperText="Maximum guests in this room."
                   label="Guest capacity"
-                  onBlur={() => setCapacity((value) => Math.min(20, Math.max(1, value)))}
+                  onBlur={() => setCapacity((value) => Math.min(100, Math.max(1, value)))}
                   onChange={(event) => {
                     const value = Number(event.target.value);
                     setCapacity(Number.isFinite(value) ? value : 1);
                   }}
-                  slotProps={{ htmlInput: { min: 1, max: 20, step: 1 } }}
+                  slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
                   type="number"
                   value={capacity}
                 />
                 <TextField
                   helperText="Physical beds currently available."
                   label="Bed count"
-                  onBlur={() => setBedCount((value) => Math.min(20, Math.max(1, value)))}
+                  onBlur={() => setBedCount((value) => Math.min(100, Math.max(1, value)))}
                   onChange={(event) => {
                     const value = Number(event.target.value);
                     setBedCount(Number.isFinite(value) ? value : 1);
                   }}
-                  slotProps={{ htmlInput: { min: 1, max: 20, step: 1 } }}
+                  slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
                   type="number"
                   value={bedCount}
                 />
@@ -365,7 +428,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </SectionCard>
 
             <SectionCard
-              description="Upload up to three images. The first image is used as the room cover."
+              description="Upload up to five images and choose the strongest one as the cover."
               icon={<ImageRoundedIcon fontSize="small" />}
               kicker="Photo library"
               title="Add room visuals"
@@ -382,11 +445,11 @@ export function RoomForm({ roomId }: { roomId?: string }) {
               >
                 {[...existingImages, ...previews].map((image, index) => (
                   <Box
-                    key={image}
+                    key={`${index}:${image}`}
                     sx={{
                       aspectRatio: "4 / 3",
                       border: "1px solid",
-                      borderColor: index === 0 ? "primary.main" : "divider",
+                      borderColor: index === coverIndex ? "primary.main" : "divider",
                       borderRadius: 1.25,
                       overflow: "hidden",
                       position: "relative",
@@ -398,13 +461,22 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                       src={image}
                       sx={{ height: "100%", objectFit: "cover", width: "100%" }}
                     />
-                    {index === 0 ? (
+                    {index === coverIndex ? (
                       <Chip
                         color="primary"
                         label="Cover"
                         size="small"
                         sx={{ left: 8, position: "absolute", top: 8 }}
                       />
+                    ) : null}
+                    {index !== coverIndex ? (
+                      <Button
+                        onClick={() => setCoverIndex(index)}
+                        size="small"
+                        sx={{ bgcolor: "rgba(15,23,42,.72)", bottom: 8, color: "white", fontSize: ".75rem", left: 8, minWidth: 0, px: 1, position: "absolute", "&:hover": { bgcolor: "rgba(15,23,42,.88)" } }}
+                      >
+                        Use as cover
+                      </Button>
                     ) : null}
                     <Tooltip title="Remove image">
                       <IconButton
@@ -426,7 +498,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                   </Box>
                 ))}
 
-                {imageCount < 3 ? (
+                {imageCount < 5 ? (
                   <Button
                     component="label"
                     startIcon={<PhotoLibraryRoundedIcon />}
@@ -437,6 +509,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                       color: "text.secondary",
                       flexDirection: "column",
                       gap: 0.75,
+                      "& .MuiButton-startIcon": { m: 0 },
                     }}
                     variant="outlined"
                   >
@@ -489,9 +562,9 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             />
           </Box>
         </Box>
-      </Stack>
-
-    </Container>
+        </Stack>
+      </WorkspacePage>
+    </Box>
   );
 }
 
@@ -519,6 +592,7 @@ function SectionCard({
               borderRadius: 1,
               color: "primary.main",
               display: "flex",
+              flexShrink: 0,
               height: 34,
               justifyContent: "center",
               mt: 0.1,
@@ -595,12 +669,19 @@ function ActionPanel({
               <SummaryLine label="Guest capacity" value={`${capacity ?? 0} guests`} />
               <SummaryLine label="Beds" value={`${beds ?? 0}`} />
               <SummaryLine label="Amenities" value={`${amenities ?? 0} selected`} />
-              <SummaryLine label="Images" value={`${imageCount ?? 0} of 3`} />
+              <SummaryLine label="Images" value={`${imageCount ?? 0} of 5`} />
             </Stack>
             <Divider />
           </>
         ) : null}
-        <Stack direction={{ xs: "column-reverse", sm: "row", lg: "column-reverse" }} spacing={1}>
+        <Stack
+          direction={{ xs: "column-reverse", sm: "row", lg: "column-reverse" }}
+          spacing={1}
+          sx={{
+            justifyContent: { sm: "flex-end", lg: "initial" },
+            "& .MuiButton-root": { minWidth: { sm: 128, lg: "auto" } },
+          }}
+        >
           <Button disabled={loading} onClick={onCancel} variant="text">
             Cancel
           </Button>
@@ -615,11 +696,11 @@ function ActionPanel({
 
 function SummaryLine({ label, value }: { label: string; value: string }) {
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", justifyContent: "space-between" }}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", justifyContent: "space-between", minWidth: 0 }}>
       <Typography color="text.secondary" variant="body2">
         {label}
       </Typography>
-      <Typography sx={{ fontSize: ".8125rem", fontWeight: 700, textAlign: "right" }}>
+      <Typography sx={{ fontSize: ".8125rem", fontWeight: 700, minWidth: 0, overflowWrap: "anywhere", textAlign: "right" }}>
         {value}
       </Typography>
     </Stack>

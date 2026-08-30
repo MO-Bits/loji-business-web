@@ -4,8 +4,12 @@ import { useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { PropertyAddress } from "../models/property";
 import {
+  clearPendingPropertySetup,
   createPropertyBasicInfo,
+  getPendingPropertySetup,
+  removePropertyImages,
   savePropertyImages,
+  savePendingPropertySetup,
   updatePropertyAddress,
   uploadPropertyImages,
   type PropertyBasicInput,
@@ -14,6 +18,9 @@ import {
 export function usePropertyController() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phase, setPhase] = useState<
+    "idle" | "creating" | "uploading" | "saving" | "saving-address"
+  >("idle");
 
   const run = useCallback(async <T,>(task: () => Promise<T>) => {
     setLoading(true);
@@ -26,6 +33,7 @@ export function usePropertyController() {
       throw cause;
     } finally {
       setLoading(false);
+      setPhase("idle");
     }
   }, []);
 
@@ -33,19 +41,56 @@ export function usePropertyController() {
     (input: PropertyBasicInput, files: File[]) =>
       run(async () => {
         const supabase = createClient();
-        const propertyId = await createPropertyBasicInfo(supabase, input);
-        const urls = await uploadPropertyImages(supabase, propertyId, files);
-        await savePropertyImages(supabase, propertyId, urls);
+        setPhase("creating");
+        const { data, error: userError } = await supabase.auth.getUser();
+        if (userError || !data.user) {
+          throw new Error("Your session has expired. Sign in and try again.");
+        }
+
+        const pending = getPendingPropertySetup(data.user.id);
+        const propertyId =
+          pending.propertyId ??
+          (await createPropertyBasicInfo(supabase, input, pending.requestKey));
+
+        if (!pending.propertyId) {
+          savePendingPropertySetup({ ...pending, propertyId });
+        }
+
+        setPhase("uploading");
+        const uploaded = await uploadPropertyImages(supabase, propertyId, files);
+        try {
+          setPhase("saving");
+          await savePropertyImages(supabase, propertyId, uploaded.urls);
+        } catch (cause) {
+          await removePropertyImages(supabase, uploaded.paths);
+          throw cause;
+        }
+
         return propertyId;
       }),
     [run],
   );
 
   const saveAddress = useCallback(
-    (ownerId: string, address: PropertyAddress) =>
-      run(() => updatePropertyAddress(createClient(), ownerId, address)),
+    (ownerId: string, sessionPropertyId: string | undefined, address: PropertyAddress) =>
+      run(async () => {
+        setPhase("saving-address");
+        const propertyId = sessionPropertyId ?? getPendingPropertySetup(ownerId).propertyId;
+        if (!propertyId) {
+          throw new Error("We could not identify the property being configured. Return to property details and try again.");
+        }
+        await updatePropertyAddress(createClient(), propertyId, address);
+        clearPendingPropertySetup(ownerId);
+      }),
     [run],
   );
 
-  return { loading, error, clearError: () => setError(null), createProperty, saveAddress };
+  return {
+    loading,
+    phase,
+    error,
+    clearError: () => setError(null),
+    createProperty,
+    saveAddress,
+  };
 }

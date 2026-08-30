@@ -32,6 +32,23 @@ function parseStep(value: unknown): AppStep {
   }
 }
 
+function parseProperty(value: unknown): Property | null {
+  return isObject(value) ? (value as Property) : null;
+}
+
+function parseMembership(value: unknown): Membership | null {
+  if (!isObject(value)) return null;
+
+  return {
+    ...value,
+    id: typeof value.id === "string" ? value.id : undefined,
+    property: parseProperty(value.property),
+    property_id:
+      typeof value.property_id === "string" ? value.property_id : undefined,
+    role: typeof value.role === "string" ? value.role : undefined,
+  } as Membership;
+}
+
 async function getCurrentUser(
   supabase: SupabaseClient<Database>,
 ): Promise<User | null> {
@@ -41,7 +58,7 @@ async function getCurrentUser(
   } = await supabase.auth.getUser();
 
   if (error) {
-    return null;
+    throw new Error(`Unable to verify the authenticated user: ${error.message}`);
   }
 
   return user;
@@ -72,6 +89,21 @@ export async function evaluateAppSession(
   }
 
   const user = await getCurrentUser(supabase);
+  if (!user) {
+    throw new Error("The authenticated user could not be verified. Sign in again to continue.");
+  }
+  const memberships = Array.isArray(raw.memberships)
+    ? raw.memberships
+        .map(parseMembership)
+        .filter((membership): membership is Membership => Boolean(membership))
+    : [];
+  const property = parseProperty(raw.property);
+  const activePropertyId =
+    typeof raw.active_property_id === "string"
+      ? raw.active_property_id
+      : undefined;
+  const activeRole =
+    typeof raw.active_role === "string" ? raw.active_role : undefined;
 
   if (status === "inactive") {
     return {
@@ -84,25 +116,13 @@ export async function evaluateAppSession(
   }
 
   if (status === "ready") {
-    const memberships = Array.isArray(raw.memberships)
-      ? (raw.memberships.filter(isObject) as Membership[])
-      : [];
-
-    const property = isObject(raw.property)
-      ? (raw.property as Property)
-      : null;
-
     return {
       user,
       status: AppStatus.Ready,
       step: AppStep.Done,
       memberships,
-      activePropertyId:
-        typeof raw.active_property_id === "string"
-          ? raw.active_property_id
-          : undefined,
-      activeRole:
-        typeof raw.active_role === "string" ? raw.active_role : undefined,
+      activePropertyId,
+      activeRole,
       property,
     };
   }
@@ -111,6 +131,9 @@ export async function evaluateAppSession(
     user,
     status: AppStatus.Onboarding,
     step: parseStep(raw.step),
-    memberships: [],
+    memberships,
+    activePropertyId,
+    activeRole,
+    property,
   };
 }

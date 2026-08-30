@@ -1,16 +1,26 @@
 "use client";
 
+import { useState, type FormEvent, type ReactNode } from "react";
 import NextLink from "next/link";
+import BedRoundedIcon from "@mui/icons-material/BedRounded";
+import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
   Container,
+  Divider,
+  IconButton,
+  InputAdornment,
   Link,
   Snackbar,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { useLanguage } from "@/components/providers/language-provider";
@@ -19,9 +29,50 @@ import { BrandLockup } from "@/components/shared/brand-lockup";
 
 import { GoogleMark } from "./google-mark";
 
-export function LoginScreen() {
+export function LoginScreen({ initialError = null }: { initialError?: string | null }) {
   const auth = useAuthController();
   const { t } = useLanguage();
+  const [callbackError, setCallbackError] = useState(initialError);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const visibleError = auth.error || callbackError;
+  const normalizedEmail = email.trim().toLowerCase();
+  const emailIsValid = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(normalizedEmail);
+
+  const submitPassword = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setCallbackError(null);
+    setResetSent(false);
+    if (!emailIsValid || !password) {
+      setCallbackError(
+        t(
+          "Enter a valid email address and password.",
+          "Weka barua pepe sahihi na nenosiri.",
+        ),
+      );
+      return;
+    }
+    const error = await auth.signInWithPassword(normalizedEmail, password);
+    if (!error) window.location.replace("/");
+  };
+
+  const sendPasswordReset = async () => {
+    setCallbackError(null);
+    setResetSent(false);
+    if (!emailIsValid) {
+      setCallbackError(
+        t(
+          "Enter your account email before requesting a reset link.",
+          "Weka barua pepe ya akaunti kabla ya kuomba kiungo cha kubadili nenosiri.",
+        ),
+      );
+      return;
+    }
+    const error = await auth.requestPasswordReset(normalizedEmail);
+    if (!error) setResetSent(true);
+  };
 
   return (
     <Box
@@ -56,25 +107,71 @@ export function LoginScreen() {
               spacing={3}
               sx={{
                 background:
-                  "radial-gradient(circle at 82% 20%, rgba(103,173,143,.38), transparent 34%), #173A30",
-                borderRadius: { xs: "10px 10px 0 0", md: 2 },
+                  "radial-gradient(circle at 88% 12%, rgba(100,210,255,.42), transparent 32%), linear-gradient(145deg, #07162C 0%, #0A3B73 58%, #007AFF 150%)",
+                borderRadius: 3,
                 color: "#F8FAFC",
                 display: { xs: "none", md: "flex" },
                 justifyContent: "space-between",
-                minHeight: 500,
+                minHeight: 560,
+                overflow: "hidden",
                 p: { md: 5, lg: 6 },
+                position: "relative",
               }}
             >
               <BrandLockup color="#F8FAFC" priority symbolSize={34} textSize="1.05rem" />
-              <Box>
-                <Typography sx={{ fontSize: { md: "2.35rem", lg: "2.8rem" }, fontWeight: 750, letterSpacing: "-.05em", lineHeight: 1.04, maxWidth: 430 }}>
+              <Stack spacing={3.5} sx={{ position: "relative", zIndex: 1 }}>
+                <Box>
+                <Typography sx={{ fontSize: { md: "2.35rem", lg: "2.8rem" }, fontWeight: 700, letterSpacing: "-.05em", lineHeight: 1.04, maxWidth: 430 }}>
                   {t("Run every stay with confidence.", "Simamia kila ukaaji kwa uhakika.")}
                 </Typography>
-                <Typography sx={{ color: "rgba(226,232,240,.72)", fontSize: ".95rem", lineHeight: 1.65, mt: 2, maxWidth: 410 }}>
+                <Typography sx={{ color: "rgba(235,245,255,.76)", fontSize: ".9375rem", lineHeight: 1.65, mt: 2, maxWidth: 410 }}>
                   {t("Rooms, reservations, guests and staff—one focused workspace for your hospitality business.", "Vyumba, uhifadhi, wageni na wafanyakazi—eneo moja la kazi kwa biashara yako ya ukarimu.")}
                 </Typography>
-              </Box>
-              <Typography sx={{ color: "rgba(226,232,240,.56)", fontSize: ".78rem" }}>
+                </Box>
+                <Box
+                  aria-hidden
+                  sx={{
+                    backdropFilter: "blur(20px)",
+                    bgcolor: "rgba(255,255,255,.10)",
+                    border: "1px solid rgba(255,255,255,.18)",
+                    borderRadius: 2.5,
+                    boxShadow: "0 24px 56px rgba(0,0,0,.18)",
+                    p: 2,
+                  }}
+                >
+                  <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+                    <Box>
+                      <Typography sx={{ color: "rgba(255,255,255,.68)", fontSize: ".6875rem", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}>
+                        {t("Today at a glance", "Muhtasari wa leo")}
+                      </Typography>
+                      <Typography sx={{ fontSize: "1rem", fontWeight: 700, mt: 0.35 }}>
+                        {t("Property operations", "Uendeshaji wa biashara")}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ bgcolor: "rgba(255,255,255,.14)", borderRadius: 2, display: "grid", height: 34, placeItems: "center", width: 34 }}>
+                      <EventAvailableRoundedIcon sx={{ fontSize: 18 }} />
+                    </Box>
+                  </Stack>
+                  <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: "repeat(3, minmax(0, 1fr))", mt: 2 }}>
+                    <LoginCapability
+                      detail={t("Arrivals & stays", "Wanaowasili na ukaaji")}
+                      icon={<EventAvailableRoundedIcon />}
+                      label={t("Bookings", "Uhifadhi")}
+                    />
+                    <LoginCapability
+                      detail={t("Ready & occupied", "Tayari na vilivyotumika")}
+                      icon={<BedRoundedIcon />}
+                      label={t("Rooms", "Vyumba")}
+                    />
+                    <LoginCapability
+                      detail={t("Balances & receipts", "Salio na risiti")}
+                      icon={<PaymentsRoundedIcon />}
+                      label={t("Finance", "Fedha")}
+                    />
+                  </Box>
+                </Box>
+              </Stack>
+              <Typography sx={{ color: "rgba(235,245,255,.58)", fontSize: ".75rem" }}>
                 {t("Built for lodges, hotels and guesthouses.", "Imeundwa kwa lodge, hoteli na guesthouse.")}
               </Typography>
             </Stack>
@@ -160,16 +257,100 @@ export function LoginScreen() {
                   : t("Continue with Google", "Endelea na Google")}
               </Button>
 
-              <Stack
-              direction="row"
-              spacing={0.75}
-                sx={{ alignItems: "center" }}
-              >
+              <Divider>
+                <Typography color="text.secondary" variant="caption">
+                  {t("or use your email", "au tumia barua pepe")}
+                </Typography>
+              </Divider>
+
+              <Box component="form" noValidate onSubmit={(event) => void submitPassword(event)}>
+                <Stack spacing={1.25}>
+                  <TextField
+                    autoComplete="email"
+                    fullWidth
+                    label={t("Email address", "Barua pepe")}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                    size="small"
+                    type="email"
+                    value={email}
+                  />
+                  <TextField
+                    autoComplete="current-password"
+                    fullWidth
+                    label={t("Password", "Nenosiri")}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    size="small"
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label={showPassword
+                                ? t("Hide password", "Ficha nenosiri")
+                                : t("Show password", "Onyesha nenosiri")}
+                              edge="end"
+                              onClick={() => setShowPassword((visible) => !visible)}
+                              size="small"
+                              type="button"
+                            >
+                              {showPassword
+                                ? <VisibilityOffOutlinedIcon fontSize="small" />
+                                : <VisibilityOutlinedIcon fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
+                      htmlInput: { maxLength: 128 },
+                    }}
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                  />
+                  <Button
+                    aria-busy={auth.activeAction === "password"}
+                    disabled={auth.loading}
+                    fullWidth
+                    startIcon={auth.activeAction === "password"
+                      ? <CircularProgress color="inherit" size={18} />
+                      : <LockOutlinedIcon />}
+                    type="submit"
+                    variant="contained"
+                  >
+                    {auth.activeAction === "password"
+                      ? t("Signing in…", "Inaingia…")
+                      : t("Sign in with password", "Ingia kwa nenosiri")}
+                  </Button>
+                  <Button
+                    disabled={auth.loading}
+                    onClick={() => void sendPasswordReset()}
+                    size="small"
+                    sx={{ alignSelf: "flex-start", px: 0.5 }}
+                    type="button"
+                    variant="text"
+                  >
+                    {auth.activeAction === "passwordReset"
+                      ? t("Sending reset link…", "Inatuma kiungo…")
+                      : t("Forgot password?", "Umesahau nenosiri?")}
+                  </Button>
+                </Stack>
+              </Box>
+
+              {resetSent ? (
+                <Alert severity="success">
+                  {t(
+                    "If an account exists for that email, a password reset link is on its way.",
+                    "Ikiwa akaunti ipo kwa barua pepe hiyo, kiungo cha kubadili nenosiri kimetumwa.",
+                  )}
+                </Alert>
+              ) : null}
+
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
                 <LockOutlinedIcon sx={{ color: "text.disabled", fontSize: 15 }} />
                 <Typography color="text.secondary" variant="caption">
                   {t(
-                    "Secure sign-in. No password to remember.",
-                    "Kuingia salama. Hakuna nenosiri la kukumbuka.",
+                    "Secure sign-in with Google or your account password.",
+                    "Ingia salama kwa Google au nenosiri la akaunti.",
                   )}
                 </Typography>
               </Stack>
@@ -247,13 +428,45 @@ export function LoginScreen() {
       <Snackbar
         anchorOrigin={{ horizontal: "center", vertical: "bottom" }}
         autoHideDuration={6000}
-        onClose={auth.clearError}
-        open={Boolean(auth.error)}
+        onClose={() => {
+          auth.clearError();
+          setCallbackError(null);
+        }}
+        open={Boolean(visibleError)}
       >
-        <Alert onClose={auth.clearError} severity="error" variant="filled">
-          {auth.error}
+        <Alert
+          onClose={() => {
+            auth.clearError();
+            setCallbackError(null);
+          }}
+          severity="error"
+          variant="filled"
+        >
+          {visibleError}
         </Alert>
       </Snackbar>
+    </Box>
+  );
+}
+
+function LoginCapability({
+  detail,
+  icon,
+  label,
+}: {
+  detail: string;
+  icon: ReactNode;
+  label: string;
+}) {
+  return (
+    <Box sx={{ bgcolor: "rgba(3,17,35,.24)", borderRadius: 2, minWidth: 0, p: 1.25 }}>
+      <Box sx={{ color: "rgba(255,255,255,.7)", display: "flex", "& .MuiSvgIcon-root": { fontSize: 16 } }}>{icon}</Box>
+      <Typography noWrap sx={{ fontSize: ".75rem", fontWeight: 700, mt: 1 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ color: "rgba(255,255,255,.62)", fontSize: ".625rem", lineHeight: 1.35, mt: 0.25 }}>
+        {detail}
+      </Typography>
     </Box>
   );
 }

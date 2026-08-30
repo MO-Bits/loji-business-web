@@ -2,7 +2,6 @@
 
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
@@ -18,51 +17,53 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import type { ReactNode } from "react";
 
-import { BrandSymbol } from "@/components/shared/brand-symbol";
-import { BrandWordmark } from "@/components/shared/brand-wordmark";
+import { useLanguage } from "@/components/providers/language-provider";
+import { BrandLockup } from "@/components/shared/brand-lockup";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
 
 export function InactiveUserScreen() {
   const auth = useAuthController();
+  const { t } = useLanguage();
 
   async function signOut() {
     const error = await auth.signOut();
-
-    if (!error) {
-      window.location.replace("/login");
-    }
+    if (!error) window.location.replace("/login");
   }
 
   return (
-    <Box component="main" sx={{ bgcolor: "background.default", minHeight: "100dvh" }}>
+    <Box
+      component="main"
+      sx={{
+        background:
+          "radial-gradient(circle at 88% 3%, color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent), transparent 32%)",
+        bgcolor: "background.default",
+        minHeight: "100dvh",
+      }}
+    >
       <Box
         component="header"
-        sx={{
-          bgcolor: "background.paper",
-          borderBottom: 1,
-          borderColor: "divider",
-        }}
+        sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider" }}
       >
         <Container maxWidth="lg">
           <Stack
             direction="row"
-            sx={{ alignItems: "center", justifyContent: "space-between", minHeight: { xs: 64, sm: 72 } }}
+            sx={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              minHeight: { xs: 64, sm: 72 },
+            }}
           >
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-              <BrandSymbol priority size={36} />
-              <BrandWordmark priority sx={{ width: { xs: 148, sm: 172 } }} />
-            </Stack>
+            <BrandLockup priority symbolSize={32} textSize="1rem" />
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-              <LockOutlinedIcon
-                sx={{ color: "text.secondary", fontSize: 17 }}
-              />
+              <LockOutlinedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
               <Typography
                 color="text.secondary"
                 sx={{ display: { xs: "none", sm: "block" } }}
                 variant="caption"
               >
-                Secure account status
+                {t("Secure account status", "Hali salama ya akaunti")}
               </Typography>
             </Stack>
           </Stack>
@@ -73,25 +74,24 @@ export function InactiveUserScreen() {
         <Paper
           variant="outlined"
           sx={{
-            borderColor: "divider",
-            borderRadius: 1,
             boxShadow: "0 22px 65px rgba(15,23,42,.08)",
             display: "grid",
             gridTemplateColumns: {
-              xs: "1fr",
+              xs: "minmax(0, 1fr)",
               md: "minmax(300px, .82fr) minmax(430px, 1.18fr)",
             },
             mx: "auto",
             overflow: "hidden",
-            width: "100%",
+            width: "min(100%, 1040px)",
           }}
         >
           <Box
             sx={{
-              background: "linear-gradient(145deg, #102A43 0%, #173F68 100%)",
+              background:
+                "radial-gradient(circle at 92% 8%, rgba(100,210,255,.42), transparent 34%), linear-gradient(145deg, #001E3C 0%, #0055B3 68%, #007AFF 130%)",
               color: "common.white",
               display: "flex",
-              minHeight: { md: 580 },
+              minHeight: { md: 560 },
               p: { xs: 3, sm: 4, md: 5 },
             }}
           >
@@ -102,103 +102,103 @@ export function InactiveUserScreen() {
               <Stack spacing={3}>
                 <Box
                   sx={{
-                    alignItems: "center",
-                    bgcolor: "rgba(255,255,255,.10)",
-                    border: "1px solid rgba(255,255,255,.16)",
-                    borderRadius: 1,
-                    display: "flex",
+                    bgcolor: "rgba(255,255,255,.12)",
+                    border: "1px solid rgba(255,255,255,.2)",
+                    borderRadius: 2,
+                    display: "grid",
                     height: 58,
-                    justifyContent: "center",
+                    placeItems: "center",
                     width: 58,
                   }}
                 >
-                  <BusinessRoundedIcon sx={{ fontSize: 29 }} />
+                  <LockOutlinedIcon sx={{ fontSize: 29 }} />
                 </Box>
-
                 <Box>
                   <Typography
-                    variant="overline"
                     sx={{
-                      color: "#9CC8F5",
+                      color: "rgba(255,255,255,.72)",
                       fontWeight: 700,
                       letterSpacing: ".12em",
                     }}
+                    variant="overline"
                   >
-                    WORKSPACE STATUS
+                    {t("WORKSPACE STATUS", "HALI YA SEHEMU YA KAZI")}
                   </Typography>
                   <Typography
                     component="h1"
-                    variant="h4"
-                    sx={{ color: "common.white", mt: 1 }}
+                    sx={{
+                      color: "common.white",
+                      fontSize: { xs: "2rem", sm: "2.4rem" },
+                      fontWeight: 700,
+                      letterSpacing: "-.045em",
+                      lineHeight: 1.08,
+                      mt: 1,
+                    }}
                   >
-                    Access temporarily paused
+                    {t("Access temporarily paused", "Ufikiaji umesitishwa kwa muda")}
                   </Typography>
                   <Typography
-                    variant="body1"
-                    sx={{ color: "rgba(255,255,255,.72)", mt: 2 }}
+                    sx={{ color: "rgba(255,255,255,.76)", lineHeight: 1.7, mt: 2 }}
                   >
-                    Your Loji Business account is safe, but it is not currently
-                    connected to an active property membership.
+                    {t(
+                      "Your account is safe, but it is not currently connected to an active property membership.",
+                      "Akaunti yako iko salama, lakini kwa sasa haijaunganishwa na uanachama hai wa biashara.",
+                    )}
                   </Typography>
                 </Box>
               </Stack>
 
               <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
-                <CheckCircleRoundedIcon
-                  sx={{ color: "#79D4AE", fontSize: 21 }}
-                />
+                <CheckCircleRoundedIcon sx={{ color: "#66D4A6", fontSize: 21 }} />
                 <Typography
+                  sx={{ color: "rgba(255,255,255,.8)", fontWeight: 500 }}
                   variant="body2"
-                  sx={{ color: "rgba(255,255,255,.78)", fontWeight: 650 }}
                 >
-                  Your property and booking data remain protected
+                  {t(
+                    "Your property and booking data remain protected",
+                    "Taarifa za biashara na uhifadhi zinaendelea kulindwa",
+                  )}
                 </Typography>
               </Stack>
             </Stack>
           </Box>
 
-          <Box
-            sx={{ bgcolor: "background.paper", p: { xs: 3, sm: 4.5, md: 6 } }}
-          >
+          <Box sx={{ bgcolor: "background.paper", p: { xs: 3, sm: 4.5, md: 6 } }}>
             <Stack spacing={{ xs: 3, sm: 4 }}>
               <Box>
-                <Typography
-                  component="h2"
-                  variant="h5"
-                  sx={{ fontWeight: 700, letterSpacing: "-.025em" }}
-                >
-                  Restore your workspace access
+                <Typography component="h2" variant="h3">
+                  {t("Restore workspace access", "Rudisha ufikiaji wa sehemu ya kazi")}
                 </Typography>
-                <Typography
-                  color="text.secondary"
-                  sx={{ lineHeight: 1.7, mt: 1 }}
-                >
-                  Follow these steps to get back into your property workspace.
+                <Typography color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
+                  {t(
+                    "Complete these two checks to return to your property workspace.",
+                    "Kamilisha ukaguzi huu miwili ili urudi kwenye sehemu yako ya kazi.",
+                  )}
                 </Typography>
               </Box>
 
-              {auth.error && (
-                <Alert severity="error" variant="outlined">
-                  {auth.error}
-                </Alert>
-              )}
+              {auth.error ? <Alert severity="error">{auth.error}</Alert> : null}
 
               <Stack divider={<Divider flexItem />}>
                 <RecoveryStep
                   icon={<AdminPanelSettingsRoundedIcon />}
                   number="01"
-                  title="Contact your administrator"
+                  title={t("Contact your administrator", "Wasiliana na msimamizi")}
                 >
-                  Ask the property owner or manager to confirm your staff role
-                  and reactivate your membership.
+                  {t(
+                    "Ask the property owner or manager to confirm your staff role and reactivate your membership.",
+                    "Mwombe mmiliki au meneja athibitishe jukumu lako na kuwasha tena uanachama wako.",
+                  )}
                 </RecoveryStep>
                 <RecoveryStep
                   icon={<RefreshRoundedIcon />}
                   number="02"
-                  title="Check your access again"
+                  title={t("Check access again", "Kagua ufikiaji tena")}
                 >
-                  Once they confirm the change, return here and refresh your
-                  workspace status.
+                  {t(
+                    "After they confirm the change, refresh your workspace status here.",
+                    "Baada ya kuthibitisha mabadiliko, sasisha hali ya sehemu yako ya kazi hapa.",
+                  )}
                 </RecoveryStep>
               </Stack>
 
@@ -207,16 +207,15 @@ export function InactiveUserScreen() {
                 fullWidth
                 onClick={() => window.location.replace("/")}
                 size="large"
-                sx={{ minHeight: 52 }}
                 variant="contained"
               >
-                Check access again
+                {t("Check access again", "Kagua ufikiaji tena")}
               </Button>
 
               <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
                 <Divider sx={{ flex: 1 }} />
                 <Typography color="text.secondary" variant="caption">
-                  or
+                  {t("or", "au")}
                 </Typography>
                 <Divider sx={{ flex: 1 }} />
               </Stack>
@@ -233,23 +232,17 @@ export function InactiveUserScreen() {
                     <LogoutRoundedIcon />
                   )
                 }
-                variant="text"
               >
                 {auth.loading
-                  ? "Signing out…"
-                  : "Sign out and use another account"}
+                  ? t("Signing out…", "Inatoka…")
+                  : t(
+                      "Sign out and use another account",
+                      "Toka na utumie akaunti nyingine",
+                    )}
               </Button>
             </Stack>
           </Box>
         </Paper>
-
-        <Typography
-          color="text.secondary"
-          sx={{ mt: 3, textAlign: "center" }}
-          variant="caption"
-        >
-          Loji Business · Secure hospitality operations
-        </Typography>
       </Container>
     </Box>
   );
@@ -261,23 +254,23 @@ function RecoveryStep({
   number,
   title,
 }: {
-  children: React.ReactNode;
-  icon: React.ReactNode;
+  children: ReactNode;
+  icon: ReactNode;
   number: string;
-  title: string;
+  title: ReactNode;
 }) {
   return (
     <Stack direction="row" spacing={2} sx={{ py: 2.25 }}>
       <Box
         sx={{
-          alignItems: "center",
-          bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
-          borderRadius: 1,
+          bgcolor:
+            "color-mix(in srgb, var(--mui-palette-primary-main) 11%, transparent)",
+          borderRadius: 2,
           color: "primary.main",
-          display: "flex",
+          display: "grid",
           flexShrink: 0,
           height: 44,
-          justifyContent: "center",
+          placeItems: "center",
           width: 44,
           "& svg": { fontSize: 22 },
         }}
@@ -285,21 +278,13 @@ function RecoveryStep({
         {icon}
       </Box>
       <Box sx={{ minWidth: 0 }}>
-        <Typography
-          color="primary.main"
-          variant="caption"
-          sx={{ fontWeight: 700, letterSpacing: ".08em" }}
-        >
-          STEP {number}
+        <Typography color="primary.main" sx={{ fontWeight: 700 }} variant="caption">
+          {number}
         </Typography>
-        <Typography variant="subtitle1" sx={{ mt: 0.25 }}>
+        <Typography sx={{ mt: 0.25 }} variant="subtitle1">
           {title}
         </Typography>
-        <Typography
-          color="text.secondary"
-          variant="body2"
-          sx={{ lineHeight: 1.65, mt: 0.5 }}
-        >
+        <Typography color="text.secondary" sx={{ lineHeight: 1.65, mt: 0.5 }} variant="body2">
           {children}
         </Typography>
       </Box>

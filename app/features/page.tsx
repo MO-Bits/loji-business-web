@@ -6,10 +6,10 @@ import DomainRoundedIcon from "@mui/icons-material/DomainRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
-import { Grid, Paper, Stack, Typography } from "@mui/material";
 import type { SvgIconComponent } from "@mui/icons-material";
 
 import { MarketingPageShell } from "@/components/content/marketing-page-shell";
+import { MarketingCard, MarketingGrid } from "@/components/content/marketing-ui";
 import { useLanguage } from "@/components/providers/language-provider";
 
 type FeatureItem = {
@@ -80,26 +80,19 @@ export default function FeaturesPage() {
         "Loji Business inaunganisha vyumba, uhifadhi, wageni, wafanyakazi na shughuli za kila siku katika sehemu moja.",
       ]}
     >
-      <Grid container spacing={2}>
+      <MarketingGrid columns={{ xs: 1, sm: 2, lg: 3 }}>
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <Grid size={{ xs: 12, md: 6 }} key={item.title}>
-              <Paper variant="outlined" sx={{ height: "100%", p: { xs: 2.5, sm: 3 }, borderRadius: 2 }}>
-                <Stack spacing={2}>
-                  <Icon color="primary" sx={{ fontSize: 32 }} />
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {t(item.title, item.swTitle)}
-                  </Typography>
-                  <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
-                    {t(item.description, item.swDescription)}
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Grid>
+            <MarketingCard
+              description={t(item.description, item.swDescription)}
+              icon={<Icon />}
+              key={item.title}
+              title={t(item.title, item.swTitle)}
+            />
           );
         })}
-      </Grid>
+      </MarketingGrid>
     </MarketingPageShell>
   );
 }

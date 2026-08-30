@@ -6,6 +6,23 @@ export const metadata: Metadata = {
   title: "Sign in",
 };
 
-export default function LoginPage() {
-  return <LoginScreen />;
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const hasCallbackError = Boolean(
+    Array.isArray(params.error) ? params.error[0] : params.error,
+  );
+
+  return (
+    <LoginScreen
+      initialError={
+        hasCallbackError
+          ? "We could not finish signing you in. Please try again."
+          : null
+      }
+    />
+  );
 }

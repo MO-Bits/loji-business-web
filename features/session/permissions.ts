@@ -8,7 +8,15 @@ export type WorkspaceCapabilities = {
   canManageRooms: boolean;
   canManageStaff: boolean;
   canRecordPayment: boolean;
+  canViewActivity: boolean;
+  canViewBookings: boolean;
+  canViewCalendar: boolean;
   canViewFinance: boolean;
+  canViewGuests: boolean;
+  canViewNotifications: boolean;
+  canViewOperations: boolean;
+  canViewReports: boolean;
+  canViewRooms: boolean;
 };
 
 const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
@@ -20,7 +28,15 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageRooms: true,
     canManageStaff: true,
     canRecordPayment: true,
+    canViewActivity: true,
+    canViewBookings: true,
+    canViewCalendar: true,
     canViewFinance: true,
+    canViewGuests: true,
+    canViewNotifications: true,
+    canViewOperations: true,
+    canViewReports: true,
+    canViewRooms: true,
   },
   manager: {
     canCheckIn: true,
@@ -30,7 +46,15 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageRooms: true,
     canManageStaff: true,
     canRecordPayment: false,
+    canViewActivity: true,
+    canViewBookings: true,
+    canViewCalendar: true,
     canViewFinance: false,
+    canViewGuests: true,
+    canViewNotifications: true,
+    canViewOperations: true,
+    canViewReports: false,
+    canViewRooms: true,
   },
   receptionist: {
     canCheckIn: true,
@@ -40,7 +64,15 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageRooms: false,
     canManageStaff: false,
     canRecordPayment: false,
+    canViewActivity: false,
+    canViewBookings: true,
+    canViewCalendar: true,
     canViewFinance: false,
+    canViewGuests: true,
+    canViewNotifications: true,
+    canViewOperations: true,
+    canViewReports: false,
+    canViewRooms: true,
   },
   member: {
     canCheckIn: false,
@@ -50,7 +82,15 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageRooms: false,
     canManageStaff: false,
     canRecordPayment: false,
+    canViewActivity: false,
+    canViewBookings: false,
+    canViewCalendar: false,
     canViewFinance: false,
+    canViewGuests: false,
+    canViewNotifications: false,
+    canViewOperations: false,
+    canViewReports: false,
+    canViewRooms: false,
   },
 };
 

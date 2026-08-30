@@ -1,7 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-import type { Database } from "@/types/database.types";
-import type { Membership } from "../models/app-session";
+import type { Membership, Property } from "../models/app-session";
 import { trackEvent } from "@/lib/analytics";
 
 export const ACTIVE_PROPERTY_STORAGE_KEY = "loji.activePropertyId";
@@ -19,19 +16,9 @@ export function savePreferredPropertyId(propertyId: string) {
   }
 }
 
-export async function loadPropertyForMembership(
-  supabase: SupabaseClient<Database>,
-  membership: Membership,
-) {
-  const propertyId = membership.property_id;
-  if (!propertyId) return null;
-
-  const { data, error } = await supabase
-    .from("properties")
-    .select("*")
-    .eq("id", propertyId)
-    .single();
-
-  if (error) throw new Error(error.message);
-  return data;
+export function loadPropertyForMembership(membership: Membership): Property {
+  if (!membership.property || typeof membership.property !== "object") {
+    throw new Error("The workspace session is missing property details.");
+  }
+  return membership.property;
 }

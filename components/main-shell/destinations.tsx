@@ -1,69 +1,213 @@
+import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
+import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
+import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
-import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
+import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
+import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
-import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
-import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
+import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
+import PeopleOutlineRoundedIcon from "@mui/icons-material/PeopleOutlineRounded";
+import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import type { WorkspaceCapabilities } from "@/features/session/permissions";
 
 export type MainDestination = {
-  label: string;
-  path: string;
-  icon: React.ReactNode;
   activeIcon: React.ReactNode;
+  capability?: keyof WorkspaceCapabilities;
+  icon: React.ReactNode;
+  label: string;
+  localizedLabel: [english: string, swahili: string];
   match: (pathname: string) => boolean;
+  path: string;
 };
 
 export const workspaceDestinations: MainDestination[] = [
   {
     label: "Home",
+    localizedLabel: ["Home", "Nyumbani"],
     path: "/dashboard",
-    icon: <DashboardOutlinedIcon />,
-    activeIcon: <DashboardRoundedIcon />,
+    icon: <HomeOutlinedIcon />,
+    activeIcon: <HomeRoundedIcon />,
     match: (path) => path === "/dashboard",
   },
   {
+    label: "Calendar",
+    localizedLabel: ["Calendar", "Kalenda"],
+    path: "/calendar",
+    capability: "canViewCalendar",
+    icon: <CalendarMonthOutlinedIcon />,
+    activeIcon: <CalendarMonthRoundedIcon />,
+    match: (path) => path.startsWith("/calendar"),
+  },
+  {
     label: "Bookings",
+    localizedLabel: ["Bookings", "Uhifadhi"],
     path: "/bookings",
-    icon: <MenuBookOutlinedIcon />,
-    activeIcon: <MenuBookRoundedIcon />,
+    capability: "canViewBookings",
+    icon: <EventNoteOutlinedIcon />,
+    activeIcon: <EventNoteRoundedIcon />,
     match: (path) => path === "/bookings" || path.startsWith("/bookings/"),
   },
   {
     label: "Rooms",
+    localizedLabel: ["Rooms", "Vyumba"],
     path: "/rooms",
+    capability: "canViewRooms",
     icon: <BedOutlinedIcon />,
     activeIcon: <BedRoundedIcon />,
     match: (path) => path.startsWith("/rooms"),
+  },
+  {
+    label: "Guests",
+    localizedLabel: ["Guests", "Wageni"],
+    path: "/guests",
+    capability: "canViewGuests",
+    icon: <PeopleOutlineRoundedIcon />,
+    activeIcon: <PeopleRoundedIcon />,
+    match: (path) => path.startsWith("/guests"),
+  },
+];
+
+export const operationsDestinations: MainDestination[] = [
+  {
+    label: "Notifications",
+    localizedLabel: ["Notifications", "Arifa"],
+    path: "/notifications",
+    capability: "canViewNotifications",
+    icon: <NotificationsNoneRoundedIcon />,
+    activeIcon: <NotificationsRoundedIcon />,
+    match: (path) => path.startsWith("/notifications"),
+  },
+  {
+    label: "Operations",
+    localizedLabel: ["Operations", "Shughuli"],
+    path: "/operations",
+    capability: "canViewOperations",
+    icon: <FactCheckOutlinedIcon />,
+    activeIcon: <FactCheckRoundedIcon />,
+    match: (path) => path.startsWith("/operations"),
+  },
+  {
+    label: "Activity",
+    localizedLabel: ["Activity", "Matukio"],
+    path: "/activity",
+    capability: "canViewActivity",
+    icon: <HistoryOutlinedIcon />,
+    activeIcon: <HistoryRoundedIcon />,
+    match: (path) => path.startsWith("/activity"),
+  },
+];
+
+export const businessDestinations: MainDestination[] = [
+  {
+    label: "Finance",
+    localizedLabel: ["Finance", "Fedha"],
+    path: "/finance",
+    capability: "canViewFinance",
+    icon: <AccountBalanceWalletOutlinedIcon />,
+    activeIcon: <AccountBalanceWalletRoundedIcon />,
+    match: (path) => path.startsWith("/finance"),
+  },
+  {
+    label: "Reports",
+    localizedLabel: ["Reports", "Ripoti"],
+    path: "/reports",
+    capability: "canViewReports",
+    icon: <AssessmentOutlinedIcon />,
+    activeIcon: <AssessmentRoundedIcon />,
+    match: (path) => path.startsWith("/reports"),
   },
 ];
 
 export const managementDestinations: MainDestination[] = [
   {
     label: "Property",
-    path: "/more/property",
+    localizedLabel: ["Property", "Biashara"],
+    path: "/settings/property",
+    capability: "canManageProperty",
     icon: <ApartmentOutlinedIcon />,
     activeIcon: <ApartmentRoundedIcon />,
-    match: (path) => path === "/more/property",
+    match: (path) => path.startsWith("/settings/property"),
   },
   {
     label: "Staff",
-    path: "/more/staff",
+    localizedLabel: ["Staff", "Wafanyakazi"],
+    path: "/settings/team",
+    capability: "canManageStaff",
     icon: <GroupsOutlinedIcon />,
     activeIcon: <GroupsRoundedIcon />,
-    match: (path) => path === "/more/staff",
+    match: (path) => path.startsWith("/settings/team"),
   },
 ];
 
+export const settingsDestination: MainDestination = {
+  label: "Settings",
+  localizedLabel: ["Settings", "Mipangilio"],
+  path: "/settings",
+  icon: <SettingsOutlinedIcon />,
+  activeIcon: <SettingsRoundedIcon />,
+  match: (path) =>
+    path === "/settings" ||
+    path.startsWith("/settings/profile") ||
+    path.startsWith("/settings/appearance") ||
+    path.startsWith("/settings/security"),
+};
+
 export const accountDestination: MainDestination = {
   label: "My account",
-  path: "/more/account",
+  localizedLabel: ["My account", "Akaunti yangu"],
+  path: "/settings/profile",
   icon: <PersonOutlineRoundedIcon />,
   activeIcon: <PersonRoundedIcon />,
-  match: (path) => path === "/more/account",
+  match: (path) => path === "/more/account" || path === "/settings/profile",
 };
+
+export function visibleDestinations(
+  items: MainDestination[],
+  capabilities: WorkspaceCapabilities,
+) {
+  return items.filter(
+    (item) => !item.capability || capabilities[item.capability],
+  );
+}
+
+export function requiredCapabilityForPath(
+  pathname: string,
+): keyof WorkspaceCapabilities | null {
+  if (pathname === "/bookings/new") return "canCreateBooking";
+  if (
+    pathname === "/rooms/new" ||
+    (pathname.startsWith("/rooms/") && pathname.endsWith("/edit"))
+  ) {
+    return "canManageRooms";
+  }
+
+  const guardedDestinations = [
+    ...managementDestinations,
+    ...businessDestinations,
+    ...operationsDestinations,
+    ...workspaceDestinations,
+  ];
+  return (
+    guardedDestinations.find(
+      (destination) => destination.capability && destination.match(pathname),
+    )?.capability ?? null
+  );
+}

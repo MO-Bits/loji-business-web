@@ -1,2 +1,5 @@
-import { PropertyDetails } from "@/components/more/property-details";
-export default function PropertyPage() { return <PropertyDetails />; }
+import { redirect } from "next/navigation";
+
+export default function LegacyPropertySettingsPage() {
+  redirect("/settings/property");
+}

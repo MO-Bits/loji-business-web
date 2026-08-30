@@ -1,118 +1,137 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
-import {
-  Box,
-  Button,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Box, Button, Divider, Stack, Typography } from "@mui/material";
+
+import { OnboardingFrame } from "@/components/auth/onboarding-frame";
+import { useLanguage } from "@/components/providers/language-provider";
 import { createClient } from "@/lib/supabase/client";
-import { BrandWordmark } from "@/components/shared/brand-wordmark";
 
 const features = [
-  [
-    ApartmentRoundedIcon,
-    "Property Presence",
-    "Define your space with photos and essential amenities.",
-  ],
-  [
-    EventAvailableRoundedIcon,
-    "Smart Bookings",
-    "Manage guest arrivals and stay logistics effortlessly.",
-  ],
-  [
-    GroupsRoundedIcon,
-    "Team Collaboration",
-    "Invite your staff and streamline operational access.",
-  ],
+  {
+    description: [
+      "Add the details, facilities and photos your team will recognise.",
+      "Ongeza taarifa, huduma na picha ambazo timu yako itatambua.",
+    ],
+    icon: ApartmentRoundedIcon,
+    title: ["Property profile", "Wasifu wa biashara"],
+  },
+  {
+    description: [
+      "Set the entrance location so the workspace uses a reliable address.",
+      "Weka eneo la kuingilia ili mfumo utumie anwani sahihi.",
+    ],
+    icon: EventAvailableRoundedIcon,
+    title: ["Location & operations", "Eneo na shughuli"],
+  },
+  {
+    description: [
+      "Invite staff later and give each person the right level of access.",
+      "Alika wafanyakazi baadaye na mpe kila mmoja ruhusa inayofaa.",
+    ],
+    icon: GroupsRoundedIcon,
+    title: ["Team access", "Ruhusa za timu"],
+  },
 ] as const;
 
 export function PropertySetupIntro() {
   const router = useRouter();
-  const signOut = async () => {
+  const { t } = useLanguage();
+
+  async function signOut() {
     await createClient().auth.signOut();
     router.replace("/login");
     router.refresh();
-  };
+  }
 
   return (
-    <Box component="main" sx={{ minHeight: "100dvh", py: { xs: 3, md: 7 } }}>
-      <Container maxWidth="md">
-        <Stack spacing={{ xs: 4, md: 6 }}>
-          <Stack spacing={2} sx={{ maxWidth: 680 }}>
-            <BrandWordmark priority sx={{ width: { xs: 170, sm: 210 } }} />
-            <Typography
-              variant="h1"
-              sx={{ fontSize: { xs: "2.7rem", md: "4.5rem" } }}
+    <OnboardingFrame
+      action={
+        <Button
+          color="inherit"
+          onClick={() => void signOut()}
+          startIcon={<LogoutRoundedIcon />}
+        >
+          {t("Sign out", "Toka")}
+        </Button>
+      }
+      description={t(
+        "A short guided setup creates the shared workspace your rooms, bookings and team will use.",
+        "Usanidi mfupi unaongozwa utatengeneza sehemu ya kazi ambayo vyumba, uhifadhi na timu yako vitatumia.",
+      )}
+      eyebrow={t("Property setup", "Usanidi wa biashara")}
+      icon={<ApartmentRoundedIcon />}
+      panelDescription={t(
+        "You can update these details later in Settings",
+        "Unaweza kubadili taarifa hizi baadaye kwenye Mipangilio",
+      )}
+      panelTitle={t("What you will set up", "Utakachoweka")}
+      step={2}
+      steps={[
+        t("Personal profile", "Wasifu binafsi"),
+        t("Property details", "Taarifa za biashara"),
+        t("Location & finish", "Eneo na kumaliza"),
+      ]}
+      title={t(
+        "Build your property workspace.",
+        "Tengeneza sehemu ya kazi ya biashara yako.",
+      )}
+    >
+      <Stack divider={<Divider flexItem />}>
+        {features.map(({ description, icon: Icon, title }) => (
+          <Stack
+            direction="row"
+            key={title[0]}
+            spacing={2}
+            sx={{ alignItems: "flex-start", py: 2 }}
+          >
+            <Box
+              sx={{
+                bgcolor:
+                  "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+                borderRadius: 2,
+                color: "primary.main",
+                display: "grid",
+                flexShrink: 0,
+                height: 42,
+                placeItems: "center",
+                width: 42,
+              }}
             >
-              Setup your property.
-            </Typography>
-            <Typography
-              color="text.secondary"
-              sx={{ fontSize: "1.15rem", lineHeight: 1.7 }}
-            >
-              Bring your hospitality business to life with a few simple steps.
-              Designed to save you time.
-            </Typography>
+              <Icon fontSize="small" />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 700 }}>
+                {t(title[0], title[1])}
+              </Typography>
+              <Typography
+                color="text.secondary"
+                sx={{ lineHeight: 1.65, mt: 0.35 }}
+                variant="body2"
+              >
+                {t(description[0], description[1])}
+              </Typography>
+            </Box>
           </Stack>
+        ))}
+      </Stack>
 
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-            {features.map(([Icon, title, description]) => (
-              <Paper key={title} variant="outlined" sx={{ flex: 1, p: 3 }}>
-                <Stack spacing={2}>
-                  <Box
-                    sx={{
-                      bgcolor: "primary.main",
-                      borderRadius: 1,
-                      color: "primary.contrastText",
-                      display: "grid",
-                      height: 52,
-                      placeItems: "center",
-                      width: 52,
-                    }}
-                  >
-                    <Icon />
-                  </Box>
-                  <Typography variant="h6">{title}</Typography>
-                  <Typography color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    {description}
-                  </Typography>
-                </Stack>
-              </Paper>
-            ))}
-          </Stack>
-
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Button
-              component={Link}
-              href="/onboarding/property/basic"
-              variant="contained"
-              size="large"
-              endIcon={<ArrowForwardRoundedIcon />}
-            >
-              Continue
-            </Button>
-            <Button
-              variant="text"
-              color="inherit"
-              startIcon={<LogoutRoundedIcon />}
-              onClick={signOut}
-            >
-              Sign out
-            </Button>
-          </Stack>
-        </Stack>
-      </Container>
-    </Box>
+      <Button
+        component={Link}
+        endIcon={<ArrowForwardRoundedIcon />}
+        fullWidth
+        href="/onboarding/property/basic"
+        size="large"
+        variant="contained"
+      >
+        {t("Start property setup", "Anza usanidi wa biashara")}
+      </Button>
+    </OnboardingFrame>
   );
 }

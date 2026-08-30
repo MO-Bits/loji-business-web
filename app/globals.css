@@ -24,13 +24,13 @@ html {
 }
 
 html {
-  background: var(--mui-palette-background-default, #f4f6f9);
+  background: var(--mui-palette-background-default, #f5f5f7);
   text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--mui-palette-background-default, #f4f6f9);
-  color: var(--mui-palette-text-primary, #17191c);
+  background: var(--mui-palette-background-default, #f5f5f7);
+  color: var(--mui-palette-text-primary, #1d1d1f);
   min-height: 100dvh;
   min-width: 320px;
   -moz-osx-font-smoothing: grayscale;
@@ -40,7 +40,7 @@ body {
 ::selection {
   background: color-mix(
     in srgb,
-    var(--mui-palette-primary-main, #1769d2) 22%,
+    var(--mui-palette-primary-main, #007aff) 22%,
     transparent
   );
 }
@@ -73,7 +73,7 @@ button:focus-visible,
 [role="menuitem"]:focus-visible,
 [tabindex]:not([tabindex="-1"]):focus-visible,
 .MuiButtonBase-root.Mui-focusVisible {
-  outline: 3px solid var(--mui-palette-primary-main, #1769d2);
+  outline: 3px solid var(--mui-palette-primary-main, #007aff);
   outline-offset: 2px;
 }
 
@@ -85,7 +85,7 @@ button:focus-visible,
 input:not(.MuiInputBase-input):focus-visible,
 textarea:not(.MuiInputBase-input):focus-visible,
 select:not(.MuiInputBase-input):focus-visible {
-  outline: 3px solid var(--mui-palette-primary-main, #1769d2);
+  outline: 3px solid var(--mui-palette-primary-main, #007aff);
   outline-offset: 2px;
 }
 
@@ -93,7 +93,7 @@ input::placeholder,
 textarea::placeholder {
   color: color-mix(
     in srgb,
-    var(--mui-palette-text-secondary, #667085) 78%,
+    var(--mui-palette-text-secondary, #6e6e73) 78%,
     transparent
   );
   opacity: 1;
@@ -142,7 +142,7 @@ div {
     var(--mui-palette-primary-main) 34%,
     var(--mui-palette-divider)
   );
-  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   transform: translateY(-1px);
 }
 
@@ -160,7 +160,7 @@ div {
 }
 
 [data-mui-color-scheme="dark"] .surface-hover:hover {
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
 }
 
 .MuiButton-root,
@@ -307,7 +307,7 @@ input:-webkit-autofill:focus {
   }
 }
 
-@media (max-width: 959px), (hover: none) {
+@media (max-width: 899px), (hover: none) {
   .surface-hover:hover {
     box-shadow: none;
     transform: none;
@@ -353,7 +353,7 @@ input:-webkit-autofill:focus {
 ::-webkit-scrollbar-thumb {
   background: color-mix(
     in srgb,
-    var(--mui-palette-text-secondary, #667085) 28%,
+    var(--mui-palette-text-secondary, #6e6e73) 28%,
     transparent
   );
   border: 3px solid transparent;
@@ -364,7 +364,7 @@ input:-webkit-autofill:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(
     in srgb,
-    var(--mui-palette-text-secondary, #667085) 45%,
+    var(--mui-palette-text-secondary, #6e6e73) 45%,
     transparent
   );
   border: 3px solid transparent;

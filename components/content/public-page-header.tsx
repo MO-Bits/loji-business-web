@@ -56,7 +56,7 @@ export function PublicPageHeader() {
               startIcon={<ArrowBackRoundedIcon />}
               sx={{
                 display: { xs: "none", sm: "inline-flex" },
-                fontWeight: 600,
+                fontWeight: 500,
               }}
             >
               {t("Sign in", "Ingia")}

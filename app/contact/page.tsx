@@ -1,4 +1,83 @@
 "use client";
-import { Grid, Paper, Stack, Typography, Button } from "@mui/material"; import EmailRoundedIcon from "@mui/icons-material/EmailRounded"; import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded"; import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import { MarketingPageShell } from "@/components/content/marketing-page-shell"; import { useLanguage } from "@/components/providers/language-provider";
-export default function ContactPage(){const {t}=useLanguage();const cards=[[EmailRoundedIcon,"Email support","Msaada kwa barua pepe","lojipms@gmail.com","mailto:lojipms@gmail.com"],[PhoneRoundedIcon,"Call us","Piga simu","+255 772 290 005","tel:+255772290005"],[WhatsAppIcon,"WhatsApp","WhatsApp","+255 772 290 005","https://wa.me/255772290005"]];return <MarketingPageShell eyebrow={["CONTACT & SUPPORT","WASILIANA NASI"]} title={["Talk to the Loji Business team.","Wasiliana na timu ya Loji Business."]} description={["Whether you need help getting started, have a product question, or need technical support, use the channel that is most convenient for you.","Iwe unahitaji msaada kuanza, una swali kuhusu bidhaa, au unahitaji msaada wa kiufundi, tumia njia iliyo rahisi kwako."]} cta={false}><Grid container spacing={2}>{cards.map(([Icon,en,sw,value,href])=><Grid size={{xs:12,md:4}} key={en as string}><Paper variant="outlined" sx={{p:3,height:"100%",borderRadius:2}}><Stack spacing={1.5}><Icon color="primary" sx={{fontSize:30}}/><Typography variant="h5" sx={{ fontWeight: 700 }}>{t(en as string,sw as string)}</Typography><Typography color="text.secondary">{value as string}</Typography><Button component="a" href={href as string} target={(href as string).startsWith("http")?"_blank":undefined} rel="noreferrer" variant="outlined" sx={{alignSelf:"flex-start"}}>{t("Contact now","Wasiliana sasa")}</Button></Stack></Paper></Grid>)}</Grid><Paper variant="outlined" sx={{mt:3,p:{xs:2.5,sm:3.5},borderRadius:2}}><Typography variant="h5" sx={{ fontWeight: 700 }}>{t("For business enquiries","Kwa maswali ya biashara")}</Typography><Typography color="text.secondary" sx={{ lineHeight: 1.75, mt: 1 }}>{t("Tell us your property type, number of rooms and what you would like Loji Business to help you improve. This helps us respond with more useful guidance.","Tuambie aina ya biashara yako, idadi ya vyumba na eneo ambalo ungependa Loji Business ikusaidie kuboresha. Hii hutusaidia kukupa mwongozo unaofaa zaidi.")}</Typography></Paper></MarketingPageShell>}
+
+import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+
+import { MarketingPageShell } from "@/components/content/marketing-page-shell";
+import {
+  MarketingCallout,
+  MarketingCard,
+  MarketingGrid,
+} from "@/components/content/marketing-ui";
+import { useLanguage } from "@/components/providers/language-provider";
+
+const channels = [
+  {
+    href: "mailto:lojipms@gmail.com",
+    icon: EmailRoundedIcon,
+    label: ["Send an email", "Tuma barua pepe"],
+    newTab: false,
+    title: ["Email support", "Msaada kwa barua pepe"],
+    value: "lojipms@gmail.com",
+  },
+  {
+    href: "tel:+255772290005",
+    icon: PhoneRoundedIcon,
+    label: ["Call now", "Piga sasa"],
+    newTab: false,
+    title: ["Phone", "Simu"],
+    value: "+255 772 290 005",
+  },
+  {
+    href: "https://wa.me/255772290005",
+    icon: WhatsAppIcon,
+    label: ["Open WhatsApp", "Fungua WhatsApp"],
+    newTab: true,
+    title: ["WhatsApp", "WhatsApp"],
+    value: "+255 772 290 005",
+  },
+] as const;
+
+export default function ContactPage() {
+  const { t } = useLanguage();
+
+  return (
+    <MarketingPageShell
+      cta={false}
+      description={[
+        "Whether you need setup guidance, have a product question or need technical support, choose the channel that suits you.",
+        "Iwe unahitaji mwongozo wa usanidi, una swali la bidhaa au unahitaji msaada wa kiufundi, chagua njia inayokufaa.",
+      ]}
+      eyebrow={["CONTACT & SUPPORT", "MAWASILIANO NA MSAADA"]}
+      title={[
+        "Talk to the Loji Business team.",
+        "Wasiliana na timu ya Loji Business.",
+      ]}
+    >
+      <MarketingGrid>
+        {channels.map(({ href, icon: Icon, label, newTab, title, value }) => (
+          <MarketingCard
+            action={{
+              external: true,
+              href,
+              label: t(label[0], label[1]),
+              newTab,
+            }}
+            description={value}
+            icon={<Icon />}
+            key={href}
+            title={t(title[0], title[1])}
+          />
+        ))}
+      </MarketingGrid>
+      <MarketingCallout
+        description={t(
+          "Include your property type, approximate room count and the task you want to improve. For technical issues, add the screen name and exact error message.",
+          "Taja aina ya biashara, takriban idadi ya vyumba na kazi unayotaka kuboresha. Kwa tatizo la kiufundi, ongeza jina la ukurasa na ujumbe halisi wa hitilafu.",
+        )}
+        title={t("Help us understand your request", "Tusaidie kuelewa ombi lako")}
+      />
+    </MarketingPageShell>
+  );
+}

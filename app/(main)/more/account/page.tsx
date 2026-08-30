@@ -1,2 +1,5 @@
-import { AccountScreen } from "@/components/more/account-screen";
-export default function AccountPage() { return <AccountScreen />; }
+import { redirect } from "next/navigation";
+
+export default function AccountPage() {
+  redirect("/settings/profile");
+}

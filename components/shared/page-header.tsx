@@ -19,11 +19,11 @@ export function PageHeader({
     <Stack
       component="header"
       direction={{ xs: "column", sm: "row" }}
-      spacing={{ xs: 2, sm: 3 }}
+      spacing={{ xs: 1.5, sm: 3 }}
       sx={{
-        alignItems: { sm: "flex-end" },
+        alignItems: { sm: "center" },
         justifyContent: "space-between",
-        mb: { xs: 0.25, sm: 0.5 },
+        minWidth: 0,
       }}
     >
       <Box sx={{ minWidth: 0 }}>
@@ -34,10 +34,11 @@ export function PageHeader({
             variant="overline"
             sx={{
               display: "block",
-              fontSize: ".625rem",
+              fontSize: ".6875rem",
               fontWeight: 700,
-              letterSpacing: ".09em",
-              mb: 0.5,
+              letterSpacing: ".07em",
+              mb: 0.4,
+              textTransform: "uppercase",
             }}
           >
             {eyebrow}
@@ -47,10 +48,10 @@ export function PageHeader({
         <Typography
           component="h1"
           sx={{
-            fontSize: { xs: "1.4rem", sm: "1.6rem" },
+            fontSize: { xs: "1.5rem", sm: "1.75rem" },
             fontWeight: 700,
-            letterSpacing: "-.03em",
-            lineHeight: 1.2,
+            letterSpacing: "-.025em",
+            lineHeight: 1.22,
             maxWidth: 760,
           }}
         >
@@ -61,10 +62,10 @@ export function PageHeader({
           <Typography
             color="text.secondary"
             sx={{
-              fontSize: { xs: ".8125rem", sm: ".875rem" },
-              lineHeight: 1.55,
+              fontSize: ".875rem",
+              lineHeight: 1.6,
               maxWidth: 680,
-              mt: 0.75,
+              mt: 0.55,
             }}
           >
             {description}
@@ -76,7 +77,7 @@ export function PageHeader({
         <Box
           sx={{
             flexShrink: 0,
-            pt: { sm: 0.25 },
+            alignSelf: { xs: "stretch", sm: "center" },
             "& .MuiButton-root": { width: { xs: "100%", sm: "auto" } },
           }}
         >

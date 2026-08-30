@@ -37,7 +37,7 @@ export function BrandLockup({
         sx={{
           color: color ?? "text.primary",
           fontSize: textSize,
-          fontWeight: 750,
+          fontWeight: 700,
           letterSpacing: "-.025em",
           lineHeight: 1,
           transform: "translateY(-.5px)",

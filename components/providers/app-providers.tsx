@@ -8,6 +8,7 @@ import { theme } from "@/theme";
 import { FeedbackProvider } from "@/components/providers/feedback-provider";
 import { LanguageProvider } from "@/components/providers/language-provider";
 import { PwaRegister } from "@/components/providers/pwa-register";
+import { AppSessionProvider } from "@/components/providers/app-session-provider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +22,9 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         <CssBaseline />
         <PwaRegister />
         <LanguageProvider>
-          <FeedbackProvider>{children}</FeedbackProvider>
+          <AppSessionProvider>
+            <FeedbackProvider>{children}</FeedbackProvider>
+          </AppSessionProvider>
         </LanguageProvider>
       </ThemeProvider>
     </AppRouterCacheProvider>

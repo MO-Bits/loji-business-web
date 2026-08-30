@@ -3,19 +3,31 @@ import { Box } from "@mui/material";
 export function GoogleMark() {
   return (
     <Box
-      component="span"
       aria-hidden="true"
+      component="svg"
+      viewBox="0 0 18 18"
       sx={{
-        background:
-          "conic-gradient(from -45deg, #4285F4 0 25%, #34A853 0 50%, #FBBC05 0 75%, #EA4335 0)",
-        backgroundClip: "text",
-        color: "transparent",
-        fontSize: 22,
-        fontWeight: 900,
-        lineHeight: 1,
+        display: "block",
+        height: 18,
+        width: 18,
       }}
     >
-      G
+      <path
+        d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.482h4.844a4.14 4.14 0 0 1-1.797 2.716v2.258h2.909c1.703-1.568 2.684-3.878 2.684-6.615Z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.468-.806 5.956-2.18l-2.909-2.258c-.806.54-1.836.859-3.047.859-2.344 0-4.328-1.584-5.037-3.711H.956v2.332A9 9 0 0 0 9 18Z"
+        fill="#34A853"
+      />
+      <path
+        d="M3.963 10.71A5.41 5.41 0 0 1 3.682 9c0-.594.102-1.172.281-1.71V4.958H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.042l3.007-2.332Z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.579c1.322 0 2.507.454 3.441 1.346l2.581-2.581C13.464.892 11.426 0 9 0A9 9 0 0 0 .956 4.958L3.963 7.29C4.672 5.163 6.656 3.579 9 3.579Z"
+        fill="#EA4335"
+      />
     </Box>
   );
 }

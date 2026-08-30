@@ -302,7 +302,7 @@ export function LegalPage({
                 color="text.primary"
                 sx={{
                   fontSize: { xs: "1.05rem", sm: "1.2rem" },
-                  fontWeight: 600,
+                  fontWeight: 700,
                   letterSpacing: "-.015em",
                 }}
               >
@@ -323,7 +323,7 @@ export function LegalPage({
                 sx={{ alignItems: "center", color: "text.secondary" }}
               >
                 <CalendarMonthRoundedIcon sx={{ fontSize: 16 }} />
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                <Typography variant="caption" sx={{ fontWeight: 500 }}>
                   {t(
                     "Effective 7 August 2026",
                     "Inaanza kutumika 7 Agosti 2026",

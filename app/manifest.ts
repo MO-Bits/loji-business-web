@@ -8,8 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#F4F6F9",
-    theme_color: "#155EEF",
+    background_color: "#F5F5F7",
+    theme_color: "#007AFF",
     icons: [
       {
         src: "/loji-symbol.svg",

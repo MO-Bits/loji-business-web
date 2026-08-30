@@ -1,30 +1,284 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/types/database.types";
-import { parseAvailableRoom, parseBooking, type AvailableRoom, type Booking } from "../models/booking";
+import {
+  parseAvailableRoom,
+  parseBookingList,
+  parseBookingWorkspace,
+  type AvailableRoom,
+  type BookingListResult,
+  type BookingWorkspace,
+} from "../models/booking";
 
-const dateOnly = (value: Date | string) => (typeof value === "string" ? value : value.toISOString()).slice(0, 10);
-const object = (value: Json): Record<string, Json | undefined> => value && typeof value === "object" && !Array.isArray(value) ? value : {};
+type RpcError = { message: string } | null;
+type RpcResponse = { data: Json; error: RpcError };
+type JsonRpc = (
+  name: string,
+  args?: Record<string, unknown>,
+) => PromiseLike<RpcResponse>;
 
-export async function getBookings(client: SupabaseClient<Database>, propertyId: string): Promise<Booking[]> {
-  const { data, error } = await client.from("bookings_with_details").select("*").eq("property_id", propertyId).order("created_at", { ascending: false });
-  if (error) throw new Error(error.message); return (data ?? []).map(parseBooking);
+const object = (value: Json | undefined): Record<string, Json | undefined> =>
+  value && typeof value === "object" && !Array.isArray(value) ? value : {};
+
+async function callJsonRpc(
+  client: SupabaseClient<Database>,
+  name: string,
+  args: Record<string, unknown>,
+) {
+  const call = client.rpc.bind(client) as unknown as JsonRpc;
+  const { data, error } = await call(name, args);
+  if (error) throw new Error(error.message);
+  return data;
 }
-export async function getBooking(client: SupabaseClient<Database>, propertyId: string, id: string): Promise<Booking | null> {
-  const { data, error } = await client.from("bookings_with_details").select("*").eq("property_id", propertyId).eq("id", id).maybeSingle();
-  if (error) throw new Error(error.message); return data ? parseBooking(data) : null;
+
+export type BookingListFilters = {
+  status?: string;
+  view?: "all" | "arrivals" | "departures" | "in_house" | "attention" | "upcoming" | "past";
+  query?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export async function listPropertyBookings(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  filters: BookingListFilters = {},
+): Promise<BookingListResult> {
+  const data = await callJsonRpc(client, "list_property_bookings", {
+    p_property_id: propertyId,
+    p_query: filters.query?.trim() || null,
+    p_view: filters.view ?? "all",
+    p_status: filters.status?.trim() || null,
+    p_from: filters.from || null,
+    p_to: filters.to || null,
+    p_limit: filters.limit ?? 50,
+    p_offset: filters.offset ?? 0,
+  });
+  return parseBookingList(data);
 }
-export async function getAvailableRooms(client: SupabaseClient<Database>, propertyId: string, checkIn: string, checkOut: string, guests: number): Promise<AvailableRoom[]> {
-  const { data, error } = await client.rpc("get_walkin_available_rooms", { p_property_id: propertyId, p_check_in: checkIn, p_check_out: checkOut, p_guests: guests });
-  if (error) throw new Error(error.message); return Array.isArray(data) ? data.map((item) => parseAvailableRoom(object(item))) : [];
+
+export async function getBookingWorkspace(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  bookingId: string,
+): Promise<BookingWorkspace | null> {
+  const data = await callJsonRpc(client, "get_booking_workspace", {
+    p_property_id: propertyId,
+    p_booking_id: bookingId,
+  });
+  return parseBookingWorkspace(data);
 }
-export type CreateBookingInput = { roomId: string; firstName: string; lastName: string; gender: string; nationality: string; occupation: string; email: string; phone: string; whereFrom?: string; whereTo?: string; idType?: string; idNumber?: string; emergencyContactName?: string; emergencyContactPhone?: string; checkIn: string; checkOut: string; totalPrice: number; adults: number; children: number; specialRequests?: string; paymentMethod: string; transactionRef?: string };
-export async function createWalkInBooking(client: SupabaseClient<Database>, propertyId: string, input: CreateBookingInput) {
-  const { data, error } = await client.rpc("create_walkin_booking", { p_property_id: propertyId, p_room_id: input.roomId, p_first_name: input.firstName, p_last_name: input.lastName, p_gender: input.gender, p_nationality: input.nationality, p_occupation: input.occupation, p_email: input.email, p_phone: input.phone, p_where_from: input.whereFrom || null, p_where_to: input.whereTo || null, p_id_type: input.idType || null, p_id_number: input.idNumber || null, p_emergency_contact_name: input.emergencyContactName || null, p_emergency_contact_phone: input.emergencyContactPhone || null, p_check_in: dateOnly(input.checkIn), p_check_out: dateOnly(input.checkOut), p_adults: input.adults, p_children: input.children, p_total_price: input.totalPrice, p_special_requests: input.specialRequests || null, p_payment_method: input.paymentMethod, p_transaction_ref: input.transactionRef || null });
-  if (error) throw new Error(error.message); const result = object(data); if (result.success !== true) throw new Error(String(result.message ?? "Booking failed.")); return result;
+
+export async function getAvailableRooms(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  checkIn: string,
+  checkOut: string,
+  guests: number,
+): Promise<AvailableRoom[]> {
+  const { data, error } = await client.rpc("get_walkin_available_rooms", {
+    p_property_id: propertyId,
+    p_check_in: checkIn,
+    p_check_out: checkOut,
+    p_guests: guests,
+  });
+  if (error) throw new Error(error.message);
+  return Array.isArray(data)
+    ? data.map((item) => parseAvailableRoom(object(item)))
+    : [];
 }
-export async function checkInBooking(client: SupabaseClient<Database>, id: string) { const { data, error } = await client.rpc("check_in_booking", { p_booking_id: id }); if (error) throw new Error(error.message); const result = object(data); if (result.success !== true) throw new Error(String(result.message ?? "Unable to check in guest.")); return result; }
-export async function checkoutBooking(client: SupabaseClient<Database>, id: string, allowBalance = false) {
-  const { data, error } = await client.rpc("checkout_booking", { p_booking_id: id, p_allow_balance: allowBalance });
+
+export type GuestInput = {
+  firstName: string;
+  lastName: string;
+  gender: string;
+  nationality?: string;
+  occupation?: string;
+  email?: string;
+  phone: string;
+  whereFrom?: string;
+  whereTo?: string;
+  idType?: string;
+  idNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+};
+
+export type InitialPaymentInput = {
+  amount: number;
+  idempotencyKey: string;
+  method: string;
+  reference?: string;
+  notes?: string;
+};
+
+export type CreateBookingInput = {
+  roomId: string;
+  guest: GuestInput;
+  existingGuestId?: string | null;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  source: string;
+  specialRequests?: string;
+  initialPayment?: Omit<InitialPaymentInput, "idempotencyKey"> | null;
+  idempotencyKey: string;
+};
+
+export async function createPropertyBooking(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  input: CreateBookingInput,
+) {
+  const data = await callJsonRpc(client, "create_property_booking", {
+    p_property_id: propertyId,
+    p_idempotency_key: input.idempotencyKey,
+    p_room_id: input.roomId,
+    p_guest: input.existingGuestId
+      ? {}
+      : {
+          first_name: input.guest.firstName.trim(),
+          last_name: input.guest.lastName.trim(),
+          gender: input.guest.gender,
+          nationality: input.guest.nationality?.trim() || null,
+          occupation: input.guest.occupation?.trim() || null,
+          email: input.guest.email?.trim() || null,
+          phone: input.guest.phone.trim(),
+          where_from: input.guest.whereFrom?.trim() || null,
+          where_to: input.guest.whereTo?.trim() || null,
+          id_type: input.guest.idType || null,
+          id_number: input.guest.idNumber?.trim() || null,
+          emergency_contact_name: input.guest.emergencyContactName?.trim() || null,
+          emergency_contact_phone: input.guest.emergencyContactPhone?.trim() || null,
+        },
+    p_existing_guest_id: input.existingGuestId || null,
+    p_check_in: input.checkIn,
+    p_check_out: input.checkOut,
+    p_adults: input.adults,
+    p_children: input.children,
+    p_special_requests: input.specialRequests?.trim() || null,
+    p_source: input.source,
+    p_initial_payment_amount: input.initialPayment?.amount ?? null,
+    p_initial_payment_method: input.initialPayment?.method ?? null,
+    p_initial_payment_reference: input.initialPayment?.reference?.trim() || null,
+  });
+  const result = object(data);
+  if (result.success !== true) {
+    throw new Error(String(result.message ?? "Unable to create booking."));
+  }
+  const booking = object(result.booking);
+  return {
+    bookingId: String(result.booking_id ?? booking.id ?? ""),
+    bookingNumber: String(result.booking_number ?? booking.booking_number ?? ""),
+  };
+}
+
+export type BookingLifecycleAction =
+  | "confirm"
+  | "check_in"
+  | "check_out"
+  | "cancel"
+  | "mark_no_show"
+  | "reinstate";
+
+export async function updateBookingLifecycle(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  bookingId: string,
+  action: BookingLifecycleAction,
+  options: { reason?: string; allowBalance?: boolean } = {},
+) {
+  const data = await callJsonRpc(client, "update_booking_lifecycle", {
+    p_property_id: propertyId,
+    p_booking_id: bookingId,
+    p_action: action,
+    p_reason: options.reason?.trim() || null,
+    p_allow_balance: options.allowBalance ?? false,
+  });
+  const result = object(data);
+  if (result.success !== true) {
+    throw new Error(String(result.message ?? "Unable to update booking."));
+  }
+  return result;
+}
+
+export type UpdateBookingInput = {
+  roomId: string;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  source: string;
+  specialRequests?: string;
+};
+
+export async function updatePropertyBooking(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  bookingId: string,
+  input: UpdateBookingInput,
+) {
+  const data = await callJsonRpc(client, "update_property_booking", {
+    p_property_id: propertyId,
+    p_booking_id: bookingId,
+    p_room_id: input.roomId,
+    p_check_in: input.checkIn,
+    p_check_out: input.checkOut,
+    p_adults: input.adults,
+    p_children: input.children,
+    p_source: input.source,
+    p_special_requests: input.specialRequests?.trim() || null,
+  });
+  const result = object(data);
+  if (result.success !== true) {
+    throw new Error(String(result.message ?? "Unable to amend booking."));
+  }
+  return result;
+}
+
+export async function recordBookingPayment(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  bookingId: string,
+  input: InitialPaymentInput,
+) {
+  const data = await callJsonRpc(client, "record_booking_payment", {
+    p_property_id: propertyId,
+    p_booking_id: bookingId,
+    p_idempotency_key: input.idempotencyKey,
+    p_amount: input.amount,
+    p_method: input.method,
+    p_reference: input.reference?.trim() || null,
+    p_notes: input.notes?.trim() || null,
+  });
+  const result = object(data);
+  if (result.success !== true) {
+    throw new Error(String(result.message ?? "Unable to record payment."));
+  }
+  return result;
+}
+
+// Kept for callers that still use the dedicated operations functions. The
+// canonical lifecycle RPC remains the source of allowed transitions.
+export async function checkInBooking(client: SupabaseClient<Database>, id: string) {
+  const { data, error } = await client.rpc("check_in_booking", { p_booking_id: id });
+  if (error) throw new Error(error.message);
+  const result = object(data);
+  if (result.success !== true) throw new Error(String(result.message ?? "Unable to check in guest."));
+  return result;
+}
+
+export async function checkoutBooking(
+  client: SupabaseClient<Database>,
+  id: string,
+  allowBalance = false,
+) {
+  const { data, error } = await client.rpc("checkout_booking", {
+    p_booking_id: id,
+    p_allow_balance: allowBalance,
+  });
   if (error) throw new Error(error.message);
   const result = object(data);
   if (result.success !== true) throw new Error(String(result.message ?? "Unable to check out guest."));

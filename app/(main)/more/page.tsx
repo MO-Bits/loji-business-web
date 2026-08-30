@@ -1,3 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function MorePage() { redirect("/more/account"); }
+export default function MorePage() {
+  redirect("/settings");
+}

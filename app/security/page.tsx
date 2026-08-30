@@ -5,9 +5,13 @@ import CloudDoneRoundedIcon from "@mui/icons-material/CloudDoneRounded";
 import DomainVerificationRoundedIcon from "@mui/icons-material/DomainVerificationRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import type { SvgIconComponent } from "@mui/icons-material";
-import { Grid, Paper, Stack, Typography } from "@mui/material";
 
 import { MarketingPageShell } from "@/components/content/marketing-page-shell";
+import {
+  MarketingCallout,
+  MarketingCard,
+  MarketingGrid,
+} from "@/components/content/marketing-ui";
 import { useLanguage } from "@/components/providers/language-provider";
 
 type SecurityItem = {
@@ -64,38 +68,27 @@ export default function SecurityPage() {
         "Loji Business imeundwa ili taarifa za biashara zifikikiwe kupitia watumiaji waliothibitishwa, uanachama wa jengo na ruhusa za majukumu.",
       ]}
     >
-      <Grid container spacing={2}>
+      <MarketingGrid columns={{ xs: 1, sm: 2 }}>
         {items.map((item) => {
           const Icon = item.icon;
           return (
-            <Grid size={{ xs: 12, sm: 6 }} key={item.title}>
-              <Paper variant="outlined" sx={{ p: 3, height: "100%", borderRadius: 2 }}>
-                <Stack spacing={1.5}>
-                  <Icon color="primary" sx={{ fontSize: 30 }} />
-                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    {t(item.title, item.swTitle)}
-                  </Typography>
-                  <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
-                    {t(item.description, item.swDescription)}
-                  </Typography>
-                </Stack>
-              </Paper>
-            </Grid>
+            <MarketingCard
+              description={t(item.description, item.swDescription)}
+              icon={<Icon />}
+              key={item.title}
+              title={t(item.title, item.swTitle)}
+            />
           );
         })}
-      </Grid>
+      </MarketingGrid>
 
-      <Paper variant="outlined" sx={{ mt: 3, p: { xs: 2.5, sm: 3.5 }, borderRadius: 2 }}>
-        <Typography sx={{ fontWeight: 700, mb: 1 }}>
-          {t("Your responsibilities", "Wajibu wako")}
-        </Typography>
-        <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
-          {t(
-            "Property owners and authorised administrators remain responsible for choosing appropriate staff access, removing access when roles change, and handling guest and business information according to applicable requirements.",
-            "Wamiliki na wasimamizi walioidhinishwa wanaendelea kuwajibika kutoa ruhusa zinazofaa, kuondoa ruhusa majukumu yanapobadilika, na kushughulikia taarifa za wageni na biashara kwa mujibu wa masharti yanayotumika.",
-          )}
-        </Typography>
-      </Paper>
+      <MarketingCallout
+        description={t(
+          "Property owners and authorised administrators remain responsible for choosing appropriate staff access, removing access when roles change, and handling guest and business information according to applicable requirements.",
+          "Wamiliki na wasimamizi walioidhinishwa wanaendelea kuwajibika kutoa ruhusa zinazofaa, kuondoa ruhusa majukumu yanapobadilika, na kushughulikia taarifa za wageni na biashara kwa mujibu wa masharti yanayotumika.",
+        )}
+        title={t("Your responsibilities", "Wajibu wako")}
+      />
     </MarketingPageShell>
   );
 }

@@ -1,3 +1,82 @@
 "use client";
-import { Paper, Stack, Typography, Chip } from "@mui/material"; import { MarketingPageShell } from "@/components/content/marketing-page-shell"; import { useLanguage } from "@/components/providers/language-provider";
-export default function WhatsNewPage(){const {t}=useLanguage();const updates=[["August 2026","Agosti 2026","Public experience improvements","Maboresho ya sehemu ya umma","New FAQ, Features, How It Works, Solutions, Security, Contact and Help Centre pages, plus improved mobile navigation and bilingual coverage."],["August 2026","Agosti 2026","Property switching","Kubadili majengo","Users with access to more than one property can switch between their authorised property workspaces from the interface."],["August 2026","Agosti 2026","Room status visibility","Mwonekano wa hali ya vyumba","Rooms now show clearer operational states such as available, occupied, checking out today and inactive."],["August 2026","Agosti 2026","Dark mode and language polish","Maboresho ya hali ya giza na lugha","Illustrations and public content were refined for dark mode and broader English/Swahili consistency."]];return <MarketingPageShell eyebrow={["WHAT’S NEW","MABORESHO MAPYA"]} title={["Loji Business keeps getting better.","Loji Business inaendelea kuboreshwa."]} description={["Follow meaningful product improvements as we make property operations clearer, faster and easier for hospitality teams.","Fuatilia maboresho muhimu tunapoendelea kufanya shughuli za biashara za malazi kuwa wazi, za haraka na rahisi zaidi."]} cta={false}><Stack spacing={2}>{updates.map(([date,swDate,title,swTitle,desc],i)=><Paper variant="outlined" key={title} sx={{p:{xs:2.5,sm:3.5},borderRadius:2}}><Stack spacing={1.2}><Chip label={t(date,swDate)} size="small" variant="outlined" sx={{alignSelf:"flex-start"}}/><Typography variant="h5" sx={{ fontWeight: 700 }}>{t(title,swTitle)}</Typography><Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>{i===0?t(desc,"Kurasa mpya za Maswali, Vipengele, Jinsi Inavyofanya Kazi, Suluhisho, Usalama, Mawasiliano na Kituo cha Msaada, pamoja na maboresho ya menyu ya simu na lugha mbili."):i===1?t(desc,"Watumiaji wenye ruhusa kwenye majengo zaidi ya moja wanaweza kubadilisha kati ya majengo yao yaliyoidhinishwa kupitia mfumo."):i===2?t(desc,"Vyumba sasa vinaonyesha hali za uendeshaji kwa uwazi zaidi kama kinapatikana, kimelaliwa, anatoka leo na kimezimwa."):t(desc,"Michoro na maudhui ya umma yameboreshwa kwa hali ya giza na matumizi thabiti zaidi ya Kiingereza/Kiswahili.")}</Typography></Stack></Paper>)}</Stack></MarketingPageShell>}
+
+import { MarketingPageShell } from "@/components/content/marketing-page-shell";
+import {
+  MarketingCallout,
+  MarketingCard,
+  MarketingGrid,
+} from "@/components/content/marketing-ui";
+import { useLanguage } from "@/components/providers/language-provider";
+
+const updates = [
+  {
+    date: ["August 2026", "Agosti 2026"],
+    description: [
+      "A unified responsive shell, role-aware dashboards and focused workspaces for calendar, guests, operations, finance, reports and activity.",
+      "Muundo mmoja unaobadilika kwa skrini, dashibodi kulingana na jukumu na sehemu maalum za kalenda, wageni, shughuli, fedha, ripoti na matukio.",
+    ],
+    title: ["A clearer operations workspace", "Sehemu ya shughuli iliyo wazi zaidi"],
+  },
+  {
+    date: ["August 2026", "Agosti 2026"],
+    description: [
+      "Property setup now keeps an incomplete property and retries its photo upload safely instead of creating duplicates.",
+      "Usanidi wa biashara sasa huhifadhi biashara ambayo haijakamilika na kujaribu kupakia picha tena bila kutengeneza nakala.",
+    ],
+    title: ["Resumable property setup", "Usanidi wa biashara unaoendelea"],
+  },
+  {
+    date: ["August 2026", "Agosti 2026"],
+    description: [
+      "Users with access to more than one property can switch between authorised workspaces from the application shell.",
+      "Watumiaji wenye ruhusa kwenye biashara zaidi ya moja wanaweza kubadili kati ya sehemu zao zilizoidhinishwa.",
+    ],
+    title: ["Property switching", "Kubadili biashara"],
+  },
+  {
+    date: ["August 2026", "Agosti 2026"],
+    description: [
+      "Public pages, onboarding and account settings now use one Apple-blue visual system across light and dark modes.",
+      "Kurasa za umma, usanidi na mipangilio ya akaunti sasa zinatumia mfumo mmoja wa Apple-blue katika mwanga na giza.",
+    ],
+    title: ["Design and language consistency", "Uthabiti wa muundo na lugha"],
+  },
+] as const;
+
+export default function WhatsNewPage() {
+  const { t } = useLanguage();
+
+  return (
+    <MarketingPageShell
+      cta={false}
+      description={[
+        "Follow meaningful improvements that make property operations clearer, safer and easier for hospitality teams.",
+        "Fuatilia maboresho yanayofanya shughuli za biashara kuwa wazi, salama na rahisi kwa timu za malazi.",
+      ]}
+      eyebrow={["WHAT’S NEW", "MABORESHO MAPYA"]}
+      title={[
+        "Loji Business keeps getting better.",
+        "Loji Business inaendelea kuboreshwa.",
+      ]}
+    >
+      <MarketingGrid columns={{ xs: 1, md: 2 }}>
+        {updates.map(({ date, description, title }) => (
+          <MarketingCard
+            description={t(description[0], description[1])}
+            key={title[0]}
+            meta={t(date[0], date[1])}
+            title={t(title[0], title[1])}
+          />
+        ))}
+      </MarketingGrid>
+      <MarketingCallout
+        action={{ href: "/features", label: t("Explore the product", "Angalia bidhaa") }}
+        description={t(
+          "See how rooms, bookings, guests, team access and operational visibility work together.",
+          "Ona jinsi vyumba, uhifadhi, wageni, ruhusa za timu na mwonekano wa shughuli vinavyofanya kazi pamoja.",
+        )}
+        title={t("See the complete workspace", "Ona sehemu kamili ya kazi")}
+      />
+    </MarketingPageShell>
+  );
+}

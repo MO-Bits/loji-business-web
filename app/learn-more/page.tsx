@@ -130,7 +130,7 @@ export default function LearnMorePage() {
               <Typography
                 color="primary.main"
                 variant="overline"
-                sx={{ fontWeight: 800, letterSpacing: ".14em" }}
+                sx={{ fontWeight: 700, letterSpacing: ".14em" }}
               >
                 {t("HOSPITALITY, SIMPLIFIED", "MALAZI, YAMERAHISISHWA")}
               </Typography>

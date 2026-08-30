@@ -1,25 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import BedRoundedIcon from "@mui/icons-material/BedRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
-import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import BedRoundedIcon from "@mui/icons-material/BedRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
+import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
+import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
+import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
+import LockRoundedIcon from "@mui/icons-material/LockRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
+import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
+import PeopleOutlineRoundedIcon from "@mui/icons-material/PeopleOutlineRounded";
+import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
   BottomNavigation,
   BottomNavigationAction,
   Box,
+  Button,
   Collapse,
   Divider,
   Drawer,
@@ -39,14 +44,23 @@ import { BrandSymbol } from "@/components/shared/brand-symbol";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
+import type { Membership, Property } from "@/features/session/models/app-session";
 import { AppStatus } from "@/features/session/models/app-status";
-import { getWorkspaceCapabilities } from "@/features/session/permissions";
+import {
+  getWorkspaceCapabilities,
+  type WorkspaceCapabilities,
+} from "@/features/session/permissions";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/components/providers/language-provider";
 import {
   accountDestination,
+  businessDestinations,
   managementDestinations,
+  operationsDestinations,
+  requiredCapabilityForPath,
+  settingsDestination,
   type MainDestination,
+  visibleDestinations,
   workspaceDestinations,
 } from "./destinations";
 import { PropertySwitcher } from "./property-switcher";
@@ -59,23 +73,28 @@ function getLocationLabel(
   translate: (english: string, swahili: string) => string,
 ) {
   if (pathname === "/dashboard") return translate("Home", "Nyumbani");
-  if (pathname === "/bookings/new")
-    return translate("New booking", "Uhifadhi mpya");
-  if (pathname.startsWith("/bookings/"))
-    return translate("Booking details", "Maelezo ya uhifadhi");
+  if (pathname.startsWith("/calendar")) return translate("Calendar", "Kalenda");
+  if (pathname === "/bookings/new") return translate("New booking", "Uhifadhi mpya");
+  if (pathname.startsWith("/bookings/")) return translate("Booking details", "Maelezo ya uhifadhi");
   if (pathname === "/bookings") return translate("Bookings", "Uhifadhi");
   if (pathname === "/rooms/new") return translate("Add room", "Ongeza chumba");
-  if (pathname.endsWith("/edit") && pathname.startsWith("/rooms/"))
-    return translate("Edit room", "Hariri chumba");
-  if (pathname.startsWith("/rooms/"))
-    return translate("Room details", "Maelezo ya chumba");
+  if (pathname.endsWith("/edit") && pathname.startsWith("/rooms/")) return translate("Edit room", "Hariri chumba");
+  if (pathname.startsWith("/rooms/")) return translate("Room details", "Maelezo ya chumba");
   if (pathname === "/rooms") return translate("Rooms", "Vyumba");
-  if (pathname === "/updates") return translate("Updates", "Maboresho");
-  if (pathname === "/more") return translate("Menu", "Menyu");
-  if (pathname === "/more/property") return translate("Property", "Jengo");
-  if (pathname === "/more/staff") return translate("Staff", "Wafanyakazi");
-  if (pathname === "/more/account")
-    return translate("My account", "Akaunti yangu");
+  if (pathname.startsWith("/guests/")) return translate("Guest profile", "Taarifa za mgeni");
+  if (pathname.startsWith("/guests")) return translate("Guests", "Wageni");
+  if (pathname.startsWith("/operations")) return translate("Operations", "Shughuli");
+  if (pathname.startsWith("/finance")) return translate("Finance", "Fedha");
+  if (pathname.startsWith("/reports")) return translate("Reports", "Ripoti");
+  if (pathname.startsWith("/activity")) return translate("Activity", "Matukio");
+  if (pathname.startsWith("/notifications")) return translate("Notifications", "Arifa");
+  if (pathname.startsWith("/settings/property")) return translate("Property", "Biashara");
+  if (pathname.startsWith("/settings/team")) return translate("Team & access", "Timu na ruhusa");
+  if (pathname.startsWith("/settings")) return translate("Settings", "Mipangilio");
+  if (pathname === "/more/property") return translate("Property", "Biashara");
+  if (pathname === "/more/staff") return translate("Team & access", "Timu na ruhusa");
+  if (pathname === "/more/account") return translate("My account", "Akaunti yangu");
+  if (pathname === "/more") return translate("Settings", "Mipangilio");
   return translate("Workspace", "Eneo la kazi");
 }
 
@@ -85,14 +104,15 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const { session, loading, error, refresh, switchProperty } = useAppSession();
   const { t } = useLanguage();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const mobileNavValue = pathname.startsWith("/bookings")
-    ? "/bookings"
-    : pathname.startsWith("/rooms")
-      ? "/rooms"
-      : pathname === "/dashboard"
-        ? "/dashboard"
-        : "menu";
-  const locationLabel = getLocationLabel(pathname, t);
+  const capabilities = getWorkspaceCapabilities(session?.activeRole);
+  const requiredCapability = requiredCapabilityForPath(pathname);
+  const dashboardAllowed =
+    capabilities.canViewBookings && capabilities.canViewRooms;
+  const routeAllowed =
+    pathname === "/dashboard"
+      ? dashboardAllowed
+      : !requiredCapability || capabilities[requiredCapability];
+  const homePath = dashboardAllowed ? "/dashboard" : "/settings/profile";
 
   useEffect(() => {
     if (!loading && session && session.status !== AppStatus.Ready) {
@@ -103,23 +123,50 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   if (error) {
     return <SessionErrorScreen error={error} onRetry={() => void refresh()} />;
   }
-  if (loading || !session || session.status !== AppStatus.Ready) {
+  if (
+    loading ||
+    !session ||
+    session.status !== AppStatus.Ready
+  ) {
     return <FullPageLoader />;
   }
 
-  const capabilities = getWorkspaceCapabilities(session.activeRole);
-  const canManage =
-    capabilities.canManageProperty || capabilities.canManageStaff;
+  if (!routeAllowed) {
+    return (
+      <PermissionDeniedScreen
+        dashboardAllowed={dashboardAllowed}
+      />
+    );
+  }
+
+  const locationLabel = getLocationLabel(pathname, t);
+  const mobileNavValue = pathname.startsWith("/bookings")
+    ? "/bookings"
+    : pathname.startsWith("/rooms")
+      ? "/rooms"
+      : pathname.startsWith("/guests")
+        ? "/guests"
+        : pathname === "/dashboard"
+          ? "/dashboard"
+          : "menu";
   const name = String(
     session.user?.user_metadata?.full_name ??
       session.user?.user_metadata?.name ??
       session.user?.email?.split("@")[0] ??
-      "Account",
+      t("Account", "Akaunti"),
   );
   const avatar =
     typeof session.user?.user_metadata?.avatar_url === "string"
       ? session.user.user_metadata.avatar_url
       : undefined;
+  const pageOwnsBookingAction = [
+    "/dashboard",
+    "/bookings",
+    "/calendar",
+    "/guests",
+    "/operations",
+    "/rooms",
+  ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
   const signOut = async () => {
     await createClient().auth.signOut();
@@ -134,25 +181,31 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
   const sidebar = (
     <SidebarContent
+      activePropertyId={session.activePropertyId}
       avatar={avatar}
-      canManage={canManage}
+      capabilities={capabilities}
+      dashboardAllowed={dashboardAllowed}
+      homePath={homePath}
+      memberships={session.memberships}
       name={name}
       onClose={() => setMobileOpen(false)}
       onSignOut={signOut}
+      onSwitchProperty={switchActiveProperty}
       pathname={pathname}
-      role={session.activeRole ?? "Member"}
+      property={session.property}
+      role={session.activeRole ?? "member"}
     />
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100dvh" }}>
+    <Box sx={{ bgcolor: "background.default", display: "flex", minHeight: "100dvh" }}>
       <Box
         component="a"
         href="#main-content"
         sx={{
           bgcolor: "primary.main",
-          color: "primary.contrastText",
           borderRadius: 1,
+          color: "primary.contrastText",
           left: 12,
           px: 2,
           py: 1,
@@ -172,10 +225,11 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flexShrink: 0,
           width: drawerWidth,
           "& .MuiDrawer-paper": {
-            bgcolor: "#173A30",
-            borderRight: 0,
+            bgcolor: "background.paper",
+            borderRight: 1,
+            borderColor: "divider",
             boxSizing: "border-box",
-            color: "#F8FAFC",
+            color: "text.primary",
             width: drawerWidth,
           },
         }}
@@ -190,10 +244,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
-            bgcolor: "#173A30",
+            bgcolor: "background.paper",
             boxSizing: "border-box",
-            color: "#F8FAFC",
-            width: "min(88vw, 300px)",
+            color: "text.primary",
+            width: "min(90vw, 328px)",
           },
         }}
       >
@@ -208,18 +262,19 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flex: 1,
           minWidth: 0,
           overflowX: "clip",
-          pb: { xs: 9, md: 0 },
-          pt: "64px",
+          pb: { xs: "calc(72px + env(safe-area-inset-bottom))", md: 0 },
+          pt: { xs: "calc(56px + env(safe-area-inset-top))", md: "60px" },
           "& .MuiFab-root": {
-            "@media (max-width: 959.95px)": {
+            "@media (max-width: 899.95px)": {
               bottom: "calc(76px + env(safe-area-inset-bottom)) !important",
             },
           },
         }}
       >
         <Box
+          component="header"
           sx={{
-            backdropFilter: "saturate(145%) blur(18px)",
+            backdropFilter: "saturate(150%) blur(18px)",
             bgcolor:
               "color-mix(in srgb, var(--mui-palette-background-paper) 92%, transparent)",
             borderBottom: 1,
@@ -235,9 +290,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             sx={{
               alignItems: "center",
               display: "flex",
-              height: 64,
+              height: { xs: "calc(56px + env(safe-area-inset-top))", md: 60 },
               justifyContent: "space-between",
-              px: { xs: 2, sm: 3, md: 2.5 },
+              pt: { xs: "env(safe-area-inset-top)", md: 0 },
+              px: { xs: 2, sm: 3, md: 3 },
             }}
           >
             <Stack
@@ -252,65 +308,89 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             >
               <Box
                 component={Link}
-                href="/dashboard"
-                aria-label={t("Loji Business home", "Nyumbani Loji Business")}
+                href={homePath}
+                aria-label={dashboardAllowed
+                  ? t("Loji Business home", "Nyumbani Loji Business")
+                  : t("Open my account", "Fungua akaunti yangu")}
                 sx={{ display: "inline-flex", flexShrink: 0 }}
               >
-                <BrandSymbol priority size={34} />
+                <BrandSymbol priority size={30} />
               </Box>
               <PropertySwitcher
                 activePropertyId={session.activePropertyId}
                 memberships={session.memberships}
                 property={session.property}
                 onSwitch={switchActiveProperty}
+                placement="topbar"
               />
             </Stack>
 
-            <Stack
-              direction="row"
-              spacing={1.5}
+            <Typography
+              noWrap
               sx={{
-                alignItems: "center",
-                display: { xs: "none", md: "flex" },
-                flex: 1,
-                minWidth: 0,
+                display: { xs: "none", md: "block" },
+                fontSize: ".875rem",
+                fontWeight: 700,
+                letterSpacing: "-.01em",
               }}
             >
-              <PropertySwitcher
-                activePropertyId={session.activePropertyId}
-                memberships={session.memberships}
-                property={session.property}
-                onSwitch={switchActiveProperty}
-              />
-              <Divider flexItem orientation="vertical" sx={{ my: 1.75 }} />
-              <Typography
-                color="text.secondary"
-                noWrap
-                variant="body2"
-                sx={{ fontWeight: 500 }}
-              >
-                {locationLabel}
-              </Typography>
-            </Stack>
+              {locationLabel}
+            </Typography>
 
-            <Stack
-              direction="row"
-              spacing={{ xs: 0.5, sm: 1 }}
-              sx={{ alignItems: "center", flexShrink: 0 }}
-            >
-              <TopBarLanguageSwitch />
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexShrink: 0 }}>
+              {capabilities.canCreateBooking && !pageOwnsBookingAction ? (
+                <Button
+                  component={Link}
+                  href="/bookings/new"
+                  size="small"
+                  startIcon={<AddRoundedIcon />}
+                  sx={{ display: { xs: "none", sm: "inline-flex" } }}
+                  variant="contained"
+                >
+                  {t("New booking", "Uhifadhi mpya")}
+                </Button>
+              ) : null}
+              {capabilities.canViewNotifications ? (
+                <Tooltip title={t("Notifications", "Arifa")}>
+                  <IconButton
+                    aria-label={t("Open notifications", "Fungua arifa")}
+                    component={Link}
+                    href="/notifications"
+                    size="small"
+                    sx={{ display: { xs: "none", md: "inline-flex" } }}
+                  >
+                    <NotificationsNoneRoundedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+              <Box sx={{ display: { xs: "none", md: "block" } }}>
+                <TopBarLanguageSwitch compact />
+              </Box>
+              <Tooltip title={t("My account", "Akaunti yangu")}>
+                <IconButton
+                  aria-label={t("Open my account", "Fungua akaunti yangu")}
+                  component={Link}
+                  href="/settings/profile"
+                  size="small"
+                  sx={{ p: 0.25 }}
+                >
+                  <Avatar src={avatar} sx={{ bgcolor: "primary.main", height: 32, width: 32 }}>
+                    {name[0]?.toUpperCase()}
+                  </Avatar>
+                </IconButton>
+              </Tooltip>
             </Stack>
           </Box>
         </Box>
 
-        {children}
+        <Fragment key={session.activePropertyId}>{children}</Fragment>
       </Box>
 
       <Paper
         component="nav"
         aria-label={t("Primary navigation", "Menyu kuu")}
         square
-        elevation={8}
+        elevation={0}
         sx={{
           bottom: 0,
           display: { xs: "block", md: "none" },
@@ -323,7 +403,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       >
         <BottomNavigation
           showLabels
-          value={mobileNavValue}
+          value={mobileOpen ? "menu" : mobileNavValue}
           onChange={(_, value) => {
             if (value === "menu") {
               setMobileOpen(true);
@@ -335,78 +415,53 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             borderTop: 1,
             borderColor: "divider",
             height: 64,
-            px: 0.5,
+            px: 0.25,
             "& .MuiBottomNavigationAction-root": {
-              minWidth: 56,
+              color: "text.secondary",
+              minWidth: 52,
               position: "relative",
-              transition: "color 160ms ease, transform 160ms ease",
-              "&::before": {
-                bgcolor: "primary.main",
-                borderRadius: 99,
-                content: '""',
-                height: 3,
-                opacity: 0,
-                position: "absolute",
-                top: 0,
-                transform: "scaleX(.45)",
-                transition: "opacity 160ms ease, transform 160ms ease",
-                width: 24,
-              },
-              "&.Mui-selected": {
-                transform: "translateY(-1px)",
-                "&::before": { opacity: 1, transform: "scaleX(1)" },
-              },
+              "&.Mui-selected": { color: "primary.main" },
             },
             "& .MuiBottomNavigationAction-label": {
-              fontSize: ".75rem",
+              fontSize: ".6875rem",
               fontWeight: 500,
               mt: 0.25,
+              "&.Mui-selected": { fontSize: ".6875rem", fontWeight: 700 },
             },
           }}
         >
+          {dashboardAllowed ? (
+            <BottomNavigationAction
+              label={t("Home", "Nyumbani")}
+              value="/dashboard"
+              icon={mobileNavValue === "/dashboard" ? <HomeRoundedIcon /> : <HomeOutlinedIcon />}
+            />
+          ) : null}
+          {capabilities.canViewBookings ? (
+            <BottomNavigationAction
+              label={t("Bookings", "Uhifadhi")}
+              value="/bookings"
+              icon={mobileNavValue === "/bookings" ? <EventNoteRoundedIcon /> : <EventNoteOutlinedIcon />}
+            />
+          ) : null}
+          {capabilities.canViewRooms ? (
+            <BottomNavigationAction
+              label={t("Rooms", "Vyumba")}
+              value="/rooms"
+              icon={mobileNavValue === "/rooms" ? <BedRoundedIcon /> : <BedOutlinedIcon />}
+            />
+          ) : null}
+          {capabilities.canViewGuests ? (
+            <BottomNavigationAction
+              label={t("Guests", "Wageni")}
+              value="/guests"
+              icon={mobileNavValue === "/guests" ? <PeopleRoundedIcon /> : <PeopleOutlineRoundedIcon />}
+            />
+          ) : null}
           <BottomNavigationAction
-            label={t("Home", "Nyumbani")}
-            value="/dashboard"
-            icon={
-              mobileNavValue === "/dashboard" ? (
-                <HomeRoundedIcon />
-              ) : (
-                <HomeOutlinedIcon />
-              )
-            }
-          />
-          <BottomNavigationAction
-            label={t("Bookings", "Uhifadhi")}
-            value="/bookings"
-            icon={
-              mobileNavValue === "/bookings" ? (
-                <CalendarMonthRoundedIcon />
-              ) : (
-                <CalendarMonthOutlinedIcon />
-              )
-            }
-          />
-          <BottomNavigationAction
-            label={t("Rooms", "Vyumba")}
-            value="/rooms"
-            icon={
-              mobileNavValue === "/rooms" ? (
-                <BedRoundedIcon />
-              ) : (
-                <BedOutlinedIcon />
-              )
-            }
-          />
-          <BottomNavigationAction
-            label={t("Menu", "Menyu")}
+            label={t("More", "Zaidi")}
             value="menu"
-            icon={
-              mobileNavValue === "menu" ? (
-                <MenuRoundedIcon />
-              ) : (
-                <MenuOutlinedIcon />
-              )
-            }
+            icon={<MoreHorizRoundedIcon />}
           />
         </BottomNavigation>
       </Paper>
@@ -414,27 +469,99 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function PermissionDeniedScreen({ dashboardAllowed }: { dashboardAllowed: boolean }) {
+  const { t } = useLanguage();
+
+  return (
+    <Box
+      component="main"
+      sx={{
+        bgcolor: "background.default",
+        display: "grid",
+        minHeight: "100dvh",
+        p: 2,
+        placeItems: "center",
+      }}
+    >
+      <Paper
+        variant="outlined"
+        sx={{ maxWidth: 460, p: { xs: 3, sm: 4 }, textAlign: "center", width: "100%" }}
+      >
+        <Box
+          sx={{
+            bgcolor:
+              "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+            borderRadius: 2,
+            color: "primary.main",
+            display: "grid",
+            height: 48,
+            mx: "auto",
+            placeItems: "center",
+            width: 48,
+          }}
+        >
+          <LockRoundedIcon />
+        </Box>
+        <Typography component="h1" sx={{ mt: 2 }} variant="h3">
+          {t("You do not have access to this page", "Huna ruhusa ya kufungua ukurasa huu")}
+        </Typography>
+        <Typography color="text.secondary" sx={{ lineHeight: 1.7, mt: 1 }}>
+          {t(
+            "Your workspace role does not include this area. Ask an owner or manager if your responsibilities have changed.",
+            "Jukumu lako kwenye biashara halijumuishi sehemu hii. Wasiliana na mmiliki au meneja ikiwa majukumu yako yamebadilika.",
+          )}
+        </Typography>
+        <Button
+          component={Link}
+          href={dashboardAllowed ? "/dashboard" : "/settings/profile"}
+          sx={{ mt: 3 }}
+          variant="contained"
+        >
+          {dashboardAllowed
+            ? t("Return home", "Rudi nyumbani")
+            : t("Open my account", "Fungua akaunti yangu")}
+        </Button>
+      </Paper>
+    </Box>
+  );
+}
+
 type SidebarContentProps = {
+  activePropertyId?: string;
   avatar?: string;
-  canManage: boolean;
+  capabilities: WorkspaceCapabilities;
+  dashboardAllowed: boolean;
+  homePath: string;
+  memberships: Membership[];
   name: string;
   onClose: () => void;
   onSignOut: () => Promise<void>;
+  onSwitchProperty: (propertyId: string) => Promise<void>;
   pathname: string;
+  property?: Property | null;
   role: string;
 };
 
 function SidebarContent({
+  activePropertyId,
   avatar,
-  canManage,
+  capabilities,
+  dashboardAllowed,
+  homePath,
+  memberships,
   name,
   onClose,
   onSignOut,
+  onSwitchProperty,
   pathname,
+  property,
   role,
 }: SidebarContentProps) {
   const { t } = useLanguage();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const operations = visibleDestinations(operationsDestinations, capabilities);
+  const business = visibleDestinations(businessDestinations, capabilities);
+  const management = visibleDestinations(managementDestinations, capabilities);
 
   return (
     <Box
@@ -443,176 +570,193 @@ function SidebarContent({
         flex: 1,
         flexDirection: "column",
         minHeight: 0,
+        pb: { xs: "env(safe-area-inset-bottom)", md: 0 },
       }}
     >
       <Stack
         direction="row"
         sx={{
           alignItems: "center",
-          borderBottom: "1px solid rgba(255,255,255,.11)",
-          height: 64,
+          borderBottom: 1,
+          borderColor: "divider",
+          height: { xs: "calc(60px + env(safe-area-inset-top))", md: 60 },
           justifyContent: "space-between",
           px: 1.5,
+          pt: { xs: "env(safe-area-inset-top)", md: 0 },
         }}
       >
         <Box
           component={Link}
-          href="/dashboard"
-          aria-label="Loji Business home"
+          href={homePath}
+          aria-label={dashboardAllowed
+            ? t("Loji Business home", "Nyumbani Loji Business")
+            : t("Open my account", "Fungua akaunti yangu")}
           onClick={onClose}
-          sx={{ display: "inline-flex", p: 0.5 }}
+          sx={{ display: "inline-flex", p: 0.5, textDecoration: "none" }}
         >
-          <BrandLockup color="#F8FAFC" symbolSize={28} textSize=".92rem" />
+          <BrandLockup symbolSize={28} textSize=".9375rem" />
         </Box>
         <IconButton
           aria-label={t("Close navigation", "Funga menyu")}
           onClick={onClose}
           size="small"
-          sx={{
-            color: "rgba(248,250,252,.78)",
-            display: { xs: "inline-flex", md: "none" },
-          }}
+          sx={{ display: { xs: "inline-flex", md: "none" } }}
         >
           <CloseRoundedIcon fontSize="small" />
         </IconButton>
       </Stack>
 
+      <Box sx={{ borderBottom: 1, borderColor: "divider", p: 1.25 }}>
+        <PropertySwitcher
+          activePropertyId={activePropertyId}
+          memberships={memberships}
+          property={property}
+          onSwitch={onSwitchProperty}
+          placement="sidebar"
+        />
+      </Box>
+
       <Box
-        aria-label={t("Primary navigation", "Menyu kuu")}
         component="nav"
+        aria-label={t("Workspace navigation", "Menyu ya eneo la kazi")}
         sx={{
           display: "flex",
           flex: 1,
           flexDirection: "column",
           minHeight: 0,
           overflowY: "auto",
-          px: 1.25,
+          px: 1,
           py: 1.5,
         }}
       >
-        <NavigationList items={workspaceDestinations} onNavigate={onClose} pathname={pathname} />
-
-        {canManage ? (
-          <Box sx={{ mt: 2 }}>
-            <Typography
-              component="p"
-              variant="overline"
-              sx={{ color: "rgba(226,232,240,.5)", px: 1.25, pb: 0.75 }}
-            >
-              {t("Manage", "Usimamizi")}
-            </Typography>
-            <NavigationList items={managementDestinations} onNavigate={onClose} pathname={pathname} />
-          </Box>
+        <NavigationSection
+          items={visibleDestinations(workspaceDestinations, capabilities).filter(
+            (item) => item.path !== "/dashboard" || dashboardAllowed,
+          )}
+          label={t("Workspace", "Eneo la kazi")}
+          onNavigate={onClose}
+          pathname={pathname}
+        />
+        {operations.length ? (
+          <NavigationSection
+            items={operations}
+            label={t("Operations", "Shughuli")}
+            onNavigate={onClose}
+            pathname={pathname}
+          />
+        ) : null}
+        {business.length ? (
+          <NavigationSection
+            items={business}
+            label={t("Business", "Biashara")}
+            onNavigate={onClose}
+            pathname={pathname}
+          />
+        ) : null}
+        {management.length ? (
+          <NavigationSection
+            items={management}
+            label={t("Manage", "Usimamizi")}
+            onNavigate={onClose}
+            pathname={pathname}
+          />
         ) : null}
 
-        <Box sx={{ mt: 2 }}>
-          <ListItemButton
-            aria-expanded={preferencesOpen}
-            onClick={() => setPreferencesOpen((open) => !open)}
+        <Box sx={{ flex: 1, minHeight: 20 }} />
+
+        <NavigationList
+          items={[settingsDestination]}
+          onNavigate={onClose}
+          pathname={pathname}
+        />
+
+        <ListItemButton
+          aria-expanded={preferencesOpen}
+          onClick={() => setPreferencesOpen((open) => !open)}
+          sx={{ borderRadius: 1, minHeight: 40, px: 1.25 }}
+        >
+          <ListItemIcon sx={{ color: "text.secondary", minWidth: 30 }}>
+            <TuneRoundedIcon sx={{ fontSize: 19 }} />
+          </ListItemIcon>
+          <ListItemText
+            primary={t("Preferences", "Mapendeleo")}
+            slotProps={{ primary: { sx: { fontSize: ".8125rem", fontWeight: 500 } } }}
+          />
+          <ExpandMoreRoundedIcon
             sx={{
+              color: "text.secondary",
+              fontSize: 18,
+              transform: preferencesOpen ? "rotate(180deg)" : "none",
+              transition: "transform 160ms ease",
+            }}
+          />
+        </ListItemButton>
+
+        <Collapse in={preferencesOpen} timeout="auto" unmountOnExit>
+          <Stack
+            spacing={1.25}
+            sx={{
+              bgcolor: "background.default",
+              border: 1,
+              borderColor: "divider",
               borderRadius: 1,
-              color: "rgba(226,232,240,.78)",
-              minHeight: 40,
-              px: 1.25,
-              "&:hover": { bgcolor: "rgba(255,255,255,.07)" },
+              mt: 0.5,
+              p: 1.25,
             }}
           >
-            <ListItemIcon sx={{ minWidth: 26 }}>
-              <TuneRoundedIcon sx={{ color: "rgba(226,232,240,.62)", fontSize: 17 }} />
-            </ListItemIcon>
-            <ListItemText
-              primary={t("Preferences", "Mapendeleo")}
-              slotProps={{ primary: { variant: "caption", sx: { color: "rgba(226,232,240,.72)" } } }}
-            />
-            <ExpandMoreRoundedIcon
-              sx={{
-                color: "rgba(226,232,240,.62)",
-                fontSize: 18,
-                transform: preferencesOpen ? "rotate(180deg)" : "none",
-                transition: "transform 160ms ease",
-              }}
-            />
-          </ListItemButton>
+            <Box>
+              <Typography color="text.secondary" variant="caption" sx={{ display: "block", fontWeight: 500, mb: 0.6 }}>
+                {t("Appearance", "Mwonekano")}
+              </Typography>
+              <ThemeModeSelect fullWidth />
+            </Box>
+            <Box>
+              <Typography color="text.secondary" variant="caption" sx={{ display: "block", fontWeight: 500, mb: 0.6 }}>
+                {t("Language", "Lugha")}
+              </Typography>
+              <TopBarLanguageSwitch fullWidth />
+            </Box>
+          </Stack>
+        </Collapse>
 
-          <Collapse in={preferencesOpen} timeout="auto" unmountOnExit>
-            <Stack
-              spacing={1.25}
-              sx={{
-                bgcolor: "rgba(255,255,255,.06)",
-                border: "1px solid rgba(255,255,255,.1)",
-                borderRadius: 1,
-                mt: 0.5,
-                p: 1.25,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "rgba(226,232,240,.62)", display: "block", fontWeight: 500, mb: 0.6 }}
-                >
-                  {t("Appearance", "Mwonekano")}
-                </Typography>
-                <ThemeModeSelect fullWidth />
-              </Box>
-            </Stack>
-          </Collapse>
-        </Box>
-
-        <Box sx={{ flex: 1, minHeight: 24 }} />
-        <Divider sx={{ borderColor: "rgba(255,255,255,.11)", mb: 1 }} />
-
+        <Divider sx={{ my: 1 }} />
         <Stack
           direction="row"
-          spacing={1.1}
-          sx={{
-            alignItems: "center",
-            borderRadius: 1,
-            minHeight: 48,
-            px: 1,
-            py: 0.75,
-            "&:hover": { bgcolor: "rgba(255,255,255,.07)" },
-          }}
+          spacing={0.75}
+          sx={{ alignItems: "center", borderRadius: 1, minHeight: 52, p: 0.5 }}
         >
           <Stack
-            aria-current={
-              pathname === accountDestination.path ? "page" : undefined
-            }
             component={Link}
             direction="row"
             href={accountDestination.path}
             onClick={onClose}
-            spacing={1.1}
+            spacing={1}
             sx={{
               alignItems: "center",
+              borderRadius: 1,
               color: "inherit",
               flex: 1,
               minWidth: 0,
+              p: 0.5,
               textDecoration: "none",
+              "&:hover": { bgcolor: "action.hover" },
             }}
           >
-            <Avatar
-              src={avatar}
-              sx={{ bgcolor: "text.primary", height: 32, width: 32 }}
-            >
+            <Avatar src={avatar} sx={{ bgcolor: "primary.main", height: 32, width: 32 }}>
               {name[0]?.toUpperCase()}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography noWrap variant="body2" sx={{ color: "#F8FAFC", fontWeight: 600 }}>
+              <Typography noWrap sx={{ fontSize: ".8125rem", fontWeight: 700 }}>
                 {name}
               </Typography>
-              <Typography
-                noWrap
-                variant="caption"
-                sx={{ color: "rgba(226,232,240,.6)", textTransform: "capitalize" }}
-              >
-                {role}
+              <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>
+                {role.replaceAll("_", " ")}
               </Typography>
             </Box>
           </Stack>
           <Tooltip title={t("Sign out", "Ondoka")}>
             <IconButton
               aria-label={t("Sign out", "Ondoka")}
-              sx={{ color: "rgba(248,250,252,.78)" }}
               onClick={() => void onSignOut()}
               size="small"
             >
@@ -621,6 +765,38 @@ function SidebarContent({
           </Tooltip>
         </Stack>
       </Box>
+    </Box>
+  );
+}
+
+function NavigationSection({
+  items,
+  label,
+  onNavigate,
+  pathname,
+}: {
+  items: MainDestination[];
+  label: string;
+  onNavigate: () => void;
+  pathname: string;
+}) {
+  return (
+    <Box sx={{ mb: 1.5 }}>
+      <Typography
+        color="text.secondary"
+        component="p"
+        sx={{
+          fontSize: ".6875rem",
+          fontWeight: 700,
+          letterSpacing: ".07em",
+          mb: 0.5,
+          px: 1.25,
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </Typography>
+      <NavigationList items={items} onNavigate={onNavigate} pathname={pathname} />
     </Box>
   );
 }
@@ -635,13 +811,6 @@ function NavigationList({
   pathname: string;
 }) {
   const { t } = useLanguage();
-  const labels: Record<string, [string, string]> = {
-    "/dashboard": ["Home", "Nyumbani"],
-    "/bookings": ["Bookings", "Uhifadhi"],
-    "/rooms": ["Rooms", "Vyumba"],
-    "/more/property": ["Property", "Jengo"],
-    "/more/staff": ["Staff", "Wafanyakazi"],
-  };
 
   return (
     <List disablePadding>
@@ -656,42 +825,38 @@ function NavigationList({
             onClick={onNavigate}
             selected={selected}
             sx={{
-              alignItems: "center",
               borderRadius: 1,
-              columnGap: 1.25,
-              mb: 0.25,
+              columnGap: 1.1,
+              mb: 0.2,
               minHeight: 40,
               px: 1.25,
-              color: "rgba(226,232,240,.78)",
-              "&:hover": { bgcolor: "rgba(255,255,255,.07)" },
               "&.Mui-selected": {
-                bgcolor: "rgba(255,255,255,.13)",
-                color: "#FFFFFF",
-                "&:hover": { bgcolor: "rgba(255,255,255,.17)" },
+                bgcolor: "action.selected",
+                color: "primary.main",
+                "&:hover": { bgcolor: "action.selected" },
               },
             }}
           >
             <ListItemIcon
               sx={{
-                color: selected ? "#FFFFFF" : "rgba(226,232,240,.62)",
                 alignItems: "center",
+                color: selected ? "primary.main" : "text.secondary",
                 justifyContent: "center",
-                minWidth: 20,
-                width: 20,
-                "& .MuiSvgIcon-root": { fontSize: 19 },
+                minWidth: 22,
+                width: 22,
+                "& .MuiSvgIcon-root": { fontSize: 20 },
               }}
             >
               {selected ? item.activeIcon : item.icon}
             </ListItemIcon>
             <ListItemText
-              primary={labels[item.path] ? t(...labels[item.path]) : item.label}
+              primary={t(...item.localizedLabel)}
               sx={{ m: 0 }}
               slotProps={{
                 primary: {
                   sx: {
-                    color: selected ? "#FFFFFF" : "rgba(226,232,240,.78)",
-                    fontSize: "0.875rem",
-                    fontWeight: selected ? 600 : 450,
+                    fontSize: ".875rem",
+                    fontWeight: selected ? 700 : 500,
                   },
                 },
               }}
