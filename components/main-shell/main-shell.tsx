@@ -51,7 +51,32 @@ import {
 import { PropertySwitcher } from "./property-switcher";
 import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 
-const drawerWidth = 232;
+const drawerWidth = 240;
+
+function getLocationLabel(
+  pathname: string,
+  translate: (english: string, swahili: string) => string,
+) {
+  if (pathname === "/dashboard") return translate("Home", "Nyumbani");
+  if (pathname === "/bookings/new")
+    return translate("New booking", "Uhifadhi mpya");
+  if (pathname.startsWith("/bookings/"))
+    return translate("Booking details", "Maelezo ya uhifadhi");
+  if (pathname === "/bookings") return translate("Bookings", "Uhifadhi");
+  if (pathname === "/rooms/new") return translate("Add room", "Ongeza chumba");
+  if (pathname.endsWith("/edit") && pathname.startsWith("/rooms/"))
+    return translate("Edit room", "Hariri chumba");
+  if (pathname.startsWith("/rooms/"))
+    return translate("Room details", "Maelezo ya chumba");
+  if (pathname === "/rooms") return translate("Rooms", "Vyumba");
+  if (pathname === "/updates") return translate("Updates", "Maboresho");
+  if (pathname === "/more") return translate("Menu", "Menyu");
+  if (pathname === "/more/property") return translate("Property", "Jengo");
+  if (pathname === "/more/staff") return translate("Staff", "Wafanyakazi");
+  if (pathname === "/more/account")
+    return translate("My account", "Akaunti yangu");
+  return translate("Workspace", "Eneo la kazi");
+}
 
 export function MainShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -66,6 +91,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       : pathname === "/dashboard"
         ? "/dashboard"
         : "menu";
+  const locationLabel = getLocationLabel(pathname, t);
 
   useEffect(() => {
     if (!loading && session && session.status !== AppStatus.Ready) {
@@ -125,6 +151,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           bgcolor: "primary.main",
           color: "primary.contrastText",
+          borderRadius: 1,
           left: 12,
           px: 2,
           py: 1,
@@ -140,7 +167,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       <Drawer
         variant="permanent"
         sx={{
-          display: { xs: "none", lg: "block" },
+          display: { xs: "none", md: "block" },
           flexShrink: 0,
           width: drawerWidth,
           "& .MuiDrawer-paper": {
@@ -159,7 +186,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         onClose={() => setMobileOpen(false)}
         ModalProps={{ keepMounted: true }}
         sx={{
-          display: { xs: "block", lg: "none" },
+          display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
             bgcolor: "background.paper",
             boxSizing: "border-box",
@@ -178,10 +205,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flex: 1,
           minWidth: 0,
           overflowX: "clip",
-          pb: { xs: 9, lg: 0 },
+          pb: { xs: 9, md: 0 },
           pt: "64px",
           "& .MuiFab-root": {
-            "@media (max-width: 1199.95px)": {
+            "@media (max-width: 959.95px)": {
               bottom: "calc(76px + env(safe-area-inset-bottom)) !important",
             },
           },
@@ -192,7 +219,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             bgcolor: "background.paper",
             borderBottom: 1,
             borderColor: "divider",
-            left: { xs: 0, lg: `${drawerWidth}px` },
+            left: { xs: 0, md: `${drawerWidth}px` },
             position: "fixed",
             right: 0,
             top: 0,
@@ -205,7 +232,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               display: "flex",
               height: 64,
               justifyContent: "space-between",
-              px: { xs: 2.25, sm: 3, lg: 2.5 },
+              px: { xs: 2, sm: 3, md: 2.5 },
             }}
           >
             <Stack
@@ -213,7 +240,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               spacing={1}
               sx={{
                 alignItems: "center",
-                display: { xs: "flex", lg: "none" },
+                display: { xs: "flex", md: "none" },
                 flex: 1,
                 minWidth: 0,
               }}
@@ -234,9 +261,12 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               />
             </Stack>
 
-            <Box
+            <Stack
+              direction="row"
+              spacing={1.5}
               sx={{
-                display: { xs: "none", lg: "flex" },
+                alignItems: "center",
+                display: { xs: "none", md: "flex" },
                 flex: 1,
                 minWidth: 0,
               }}
@@ -247,17 +277,25 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                 property={session.property}
                 onSwitch={switchActiveProperty}
               />
-            </Box>
+              <Divider flexItem orientation="vertical" sx={{ my: 1.75 }} />
+              <Typography
+                color="text.secondary"
+                noWrap
+                variant="body2"
+                sx={{ fontWeight: 500 }}
+              >
+                {locationLabel}
+              </Typography>
+            </Stack>
 
             <Stack
               direction="row"
-              spacing={{ xs: 0.5, sm: 1, lg: 1 }}
+              spacing={{ xs: 0.5, sm: 1 }}
               sx={{ alignItems: "center", flexShrink: 0 }}
             >
               <TopBarLanguageSwitch />
             </Stack>
           </Box>
-
         </Box>
 
         {children}
@@ -270,7 +308,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         elevation={8}
         sx={{
           bottom: 0,
-          display: { xs: "block", lg: "none" },
+          display: { xs: "block", md: "none" },
           left: 0,
           pb: "env(safe-area-inset-bottom)",
           position: "fixed",
@@ -315,37 +353,55 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               },
             },
             "& .MuiBottomNavigationAction-label": {
-              fontSize: "0.68rem",
-              fontWeight: 600,
+              fontSize: ".75rem",
+              fontWeight: 500,
               mt: 0.25,
-            },
-            "@media (max-width: 350px)": {
-              "& .MuiBottomNavigationAction-label:not(.Mui-selected)": {
-                opacity: 0,
-                height: 0,
-              },
             },
           }}
         >
           <BottomNavigationAction
             label={t("Home", "Nyumbani")}
             value="/dashboard"
-            icon={mobileNavValue === "/dashboard" ? <HomeRoundedIcon /> : <HomeOutlinedIcon />}
+            icon={
+              mobileNavValue === "/dashboard" ? (
+                <HomeRoundedIcon />
+              ) : (
+                <HomeOutlinedIcon />
+              )
+            }
           />
           <BottomNavigationAction
             label={t("Bookings", "Uhifadhi")}
             value="/bookings"
-            icon={mobileNavValue === "/bookings" ? <CalendarMonthRoundedIcon /> : <CalendarMonthOutlinedIcon />}
+            icon={
+              mobileNavValue === "/bookings" ? (
+                <CalendarMonthRoundedIcon />
+              ) : (
+                <CalendarMonthOutlinedIcon />
+              )
+            }
           />
           <BottomNavigationAction
             label={t("Rooms", "Vyumba")}
             value="/rooms"
-            icon={mobileNavValue === "/rooms" ? <BedRoundedIcon /> : <BedOutlinedIcon />}
+            icon={
+              mobileNavValue === "/rooms" ? (
+                <BedRoundedIcon />
+              ) : (
+                <BedOutlinedIcon />
+              )
+            }
           />
           <BottomNavigationAction
             label={t("Menu", "Menyu")}
             value="menu"
-            icon={mobileNavValue === "menu" ? <MenuRoundedIcon /> : <MenuOutlinedIcon />}
+            icon={
+              mobileNavValue === "menu" ? (
+                <MenuRoundedIcon />
+              ) : (
+                <MenuOutlinedIcon />
+              )
+            }
           />
         </BottomNavigation>
       </Paper>
@@ -379,7 +435,14 @@ function SidebarContent({
     <Box sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
       <Stack
         direction="row"
-        sx={{ alignItems: "center", height: 52, justifyContent: "space-between", px: 1.25 }}
+        sx={{
+          alignItems: "center",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          height: 64,
+          justifyContent: "space-between",
+          px: 1.5,
+        }}
       >
         <Box
           component={Link}
@@ -394,13 +457,15 @@ function SidebarContent({
           aria-label={t("Close navigation", "Funga menyu")}
           onClick={onClose}
           size="small"
-          sx={{ display: { xs: "inline-flex", lg: "none" } }}
+          sx={{ display: { xs: "inline-flex", md: "none" } }}
         >
           <CloseRoundedIcon fontSize="small" />
         </IconButton>
       </Stack>
 
       <Box
+        aria-label={t("Primary navigation", "Menyu kuu")}
+        component="nav"
         sx={{
           display: "flex",
           flex: 1,
@@ -408,14 +473,19 @@ function SidebarContent({
           minHeight: 0,
           overflowY: "auto",
           px: 1.25,
-          py: { xs: 1, lg: 1.5 },
+          py: 1.5,
         }}
       >
         <NavigationList items={workspaceDestinations} onNavigate={onClose} pathname={pathname} />
 
         {canManage ? (
           <Box sx={{ mt: 2 }}>
-            <Typography color="text.secondary" component="p" variant="caption" sx={{ px: 1.25, pb: 0.75 }}>
+            <Typography
+              color="text.secondary"
+              component="p"
+              variant="overline"
+              sx={{ px: 1.25, pb: 0.75 }}
+            >
               {t("Manage", "Usimamizi")}
             </Typography>
             <NavigationList items={managementDestinations} onNavigate={onClose} pathname={pathname} />
@@ -426,7 +496,7 @@ function SidebarContent({
           <ListItemButton
             aria-expanded={preferencesOpen}
             onClick={() => setPreferencesOpen((open) => !open)}
-            sx={{ borderRadius: 1, minHeight: 36, px: 1.25 }}
+            sx={{ borderRadius: 1, minHeight: 40, px: 1.25 }}
           >
             <ListItemIcon sx={{ minWidth: 26 }}>
               <TuneRoundedIcon sx={{ color: "text.secondary", fontSize: 17 }} />
@@ -458,7 +528,11 @@ function SidebarContent({
               }}
             >
               <Box>
-                <Typography color="text.secondary" display="block" variant="caption" sx={{ fontWeight: 600, mb: 0.6 }}>
+                <Typography
+                  color="text.secondary"
+                  variant="caption"
+                  sx={{ display: "block", fontWeight: 500, mb: 0.6 }}
+                >
                   {t("Appearance", "Mwonekano")}
                 </Typography>
                 <ThemeModeSelect fullWidth />
@@ -471,41 +545,59 @@ function SidebarContent({
         <Divider sx={{ mb: 1 }} />
 
         <Stack
-          component={Link}
-          href={accountDestination.path}
-          onClick={onClose}
           direction="row"
           spacing={1.1}
           sx={{
             alignItems: "center",
             borderRadius: 1,
-            color: "inherit",
             minHeight: 48,
             px: 1,
             py: 0.75,
-            textDecoration: "none",
             "&:hover": { bgcolor: "action.hover" },
           }}
         >
-          <Avatar src={avatar} sx={{ bgcolor: "text.primary", height: 30, width: 30 }}>
-            {name[0]?.toUpperCase()}
-          </Avatar>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography noWrap variant="body2" sx={{ fontWeight: 500 }}>
-              {name}
-            </Typography>
-            <Typography noWrap color="text.secondary" variant="caption" sx={{ textTransform: "capitalize" }}>
-              {role}
-            </Typography>
-          </Box>
+          <Stack
+            aria-current={
+              pathname === accountDestination.path ? "page" : undefined
+            }
+            component={Link}
+            direction="row"
+            href={accountDestination.path}
+            onClick={onClose}
+            spacing={1.1}
+            sx={{
+              alignItems: "center",
+              color: "inherit",
+              flex: 1,
+              minWidth: 0,
+              textDecoration: "none",
+            }}
+          >
+            <Avatar
+              src={avatar}
+              sx={{ bgcolor: "text.primary", height: 32, width: 32 }}
+            >
+              {name[0]?.toUpperCase()}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography noWrap variant="body2" sx={{ fontWeight: 500 }}>
+                {name}
+              </Typography>
+              <Typography
+                noWrap
+                color="text.secondary"
+                variant="caption"
+                sx={{ textTransform: "capitalize" }}
+              >
+                {role}
+              </Typography>
+            </Box>
+          </Stack>
           <Tooltip title={t("Sign out", "Ondoka")}>
             <IconButton
               aria-label={t("Sign out", "Ondoka")}
               color="inherit"
-              onClick={(event) => {
-                event.preventDefault();
-                void onSignOut();
-              }}
+              onClick={() => void onSignOut()}
               size="small"
             >
               <LogoutRoundedIcon fontSize="small" />
@@ -541,6 +633,7 @@ function NavigationList({
         const selected = item.match(pathname);
         return (
           <ListItemButton
+            aria-current={selected ? "page" : undefined}
             component={Link}
             href={item.path}
             key={item.path}
@@ -551,7 +644,7 @@ function NavigationList({
               borderRadius: 1,
               columnGap: 1.25,
               mb: 0.25,
-              minHeight: 38,
+              minHeight: 40,
               px: 1.25,
               "&.Mui-selected": {
                 bgcolor: "action.selected",

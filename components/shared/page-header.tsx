@@ -5,7 +5,7 @@ import { Box, Stack, Typography } from "@mui/material";
 type PageHeaderProps = {
   eyebrow?: string;
   title: string;
-  description: string;
+  description?: string;
   action?: React.ReactNode;
 };
 
@@ -19,9 +19,9 @@ export function PageHeader({
     <Stack
       component="header"
       direction={{ xs: "column", sm: "row" }}
-      spacing={{ xs: 1.5, sm: 3 }}
+      spacing={{ xs: 2, sm: 3 }}
       sx={{
-        alignItems: { sm: "center" },
+        alignItems: { sm: "flex-start" },
         justifyContent: "space-between",
       }}
     >
@@ -31,33 +31,36 @@ export function PageHeader({
             color="primary.main"
             component="p"
             variant="overline"
-            sx={{ display: "block", mb: 0.25 }}
+            sx={{ display: "block", mb: 0.5 }}
           >
             {eyebrow}
           </Typography>
         ) : null}
 
-        <Typography component="h1" variant="h4">
+        <Typography component="h1" variant="h4" sx={{ maxWidth: 760 }}>
           {title}
         </Typography>
 
-        <Typography
-          color="text.secondary"
-          sx={{
-            fontSize: { xs: "0.9rem", sm: "1rem" },
-            lineHeight: 1.55,
-            maxWidth: 680,
-            mt: 0.65,
-          }}
-        >
-          {description}
-        </Typography>
+        {description ? (
+          <Typography
+            color="text.secondary"
+            sx={{
+              fontSize: { xs: ".8125rem", sm: ".875rem" },
+              lineHeight: 1.55,
+              maxWidth: 680,
+              mt: 0.75,
+            }}
+          >
+            {description}
+          </Typography>
+        ) : null}
       </Box>
 
       {action ? (
         <Box
           sx={{
             flexShrink: 0,
+            pt: { sm: 0.25 },
             "& .MuiButton-root": { width: { xs: "100%", sm: "auto" } },
           }}
         >

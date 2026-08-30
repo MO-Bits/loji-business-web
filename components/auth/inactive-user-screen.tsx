@@ -46,16 +46,14 @@ export function InactiveUserScreen() {
       >
         <Container maxWidth="lg">
           <Stack
-            alignItems="center"
             direction="row"
-            justifyContent="space-between"
-            sx={{ minHeight: { xs: 64, sm: 72 } }}
+            sx={{ alignItems: "center", justifyContent: "space-between", minHeight: { xs: 64, sm: 72 } }}
           >
             <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
               <BrandSymbol priority size={36} />
               <BrandWordmark priority sx={{ width: { xs: 148, sm: 172 } }} />
             </Stack>
-            <Stack alignItems="center" direction="row" spacing={0.75}>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
               <LockOutlinedIcon
                 sx={{ color: "text.secondary", fontSize: 17 }}
               />
@@ -98,9 +96,8 @@ export function InactiveUserScreen() {
             }}
           >
             <Stack
-              justifyContent="space-between"
               spacing={{ xs: 5, md: 8 }}
-              sx={{ width: "100%" }}
+              sx={{ justifyContent: "space-between", width: "100%" }}
             >
               <Stack spacing={3}>
                 <Box
@@ -146,7 +143,7 @@ export function InactiveUserScreen() {
                 </Box>
               </Stack>
 
-              <Stack alignItems="center" direction="row" spacing={1.25}>
+              <Stack direction="row" spacing={1.25} sx={{ alignItems: "center" }}>
                 <CheckCircleRoundedIcon
                   sx={{ color: "#79D4AE", fontSize: 21 }}
                 />
@@ -216,7 +213,7 @@ export function InactiveUserScreen() {
                 Check access again
               </Button>
 
-              <Stack alignItems="center" direction="row" spacing={2}>
+              <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
                 <Divider sx={{ flex: 1 }} />
                 <Typography color="text.secondary" variant="caption">
                   or

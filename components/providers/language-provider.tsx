@@ -31,7 +31,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("loji-language");
-    if (saved === "en" || saved === "sw") setLanguage(saved);
+    if (saved !== "en" && saved !== "sw") return;
+    const frame = window.requestAnimationFrame(() => setLanguage(saved));
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {

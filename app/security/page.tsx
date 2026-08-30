@@ -72,10 +72,10 @@ export default function SecurityPage() {
               <Paper variant="outlined" sx={{ p: 3, height: "100%", borderRadius: 2 }}>
                 <Stack spacing={1.5}>
                   <Icon color="primary" sx={{ fontSize: 30 }} />
-                  <Typography variant="h5" fontWeight={760}>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
                     {t(item.title, item.swTitle)}
                   </Typography>
-                  <Typography color="text.secondary" lineHeight={1.75}>
+                  <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
                     {t(item.description, item.swDescription)}
                   </Typography>
                 </Stack>
@@ -86,10 +86,10 @@ export default function SecurityPage() {
       </Grid>
 
       <Paper variant="outlined" sx={{ mt: 3, p: { xs: 2.5, sm: 3.5 }, borderRadius: 2 }}>
-        <Typography fontWeight={760} mb={1}>
+        <Typography sx={{ fontWeight: 700, mb: 1 }}>
           {t("Your responsibilities", "Wajibu wako")}
         </Typography>
-        <Typography color="text.secondary" lineHeight={1.75}>
+        <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
           {t(
             "Property owners and authorised administrators remain responsible for choosing appropriate staff access, removing access when roles change, and handling guest and business information according to applicable requirements.",
             "Wamiliki na wasimamizi walioidhinishwa wanaendelea kuwajibika kutoa ruhusa zinazofaa, kuondoa ruhusa majukumu yanapobadilika, na kushughulikia taarifa za wageni na biashara kwa mujibu wa masharti yanayotumika.",

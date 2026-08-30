@@ -129,7 +129,7 @@ export function InvitationOnboarding() {
     >
       <Container maxWidth="sm">
         <Stack spacing={3}>
-          <Box textAlign="center">
+          <Box sx={{ textAlign: "center" }}>
             <Typography variant="h4">Join their team</Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
               Use the invitation code sent by your property administrator.
@@ -211,7 +211,7 @@ export function InvitationOnboarding() {
               }}
             >
               <BusinessRoundedIcon sx={{ fontSize: 38 }} />
-              <Typography variant="h5" fontWeight={700} sx={{ mt: 1 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, mt: 1 }}>
                 {invitation?.property_name || "Property"}
               </Typography>
               <Typography sx={{ opacity: 0.86, mt: 0.75 }}>
@@ -222,9 +222,9 @@ export function InvitationOnboarding() {
               You have been invited as
             </Typography>
             <Paper variant="outlined" sx={{ p: 2 }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                 <PersonRoundedIcon color="primary" />
-                <Typography fontWeight={700}>
+                <Typography sx={{ fontWeight: 700 }}>
                   {(invitation?.role || "Staff").toUpperCase()}
                 </Typography>
               </Stack>

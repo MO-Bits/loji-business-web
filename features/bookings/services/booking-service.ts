@@ -23,4 +23,10 @@ export async function createWalkInBooking(client: SupabaseClient<Database>, prop
   if (error) throw new Error(error.message); const result = object(data); if (result.success !== true) throw new Error(String(result.message ?? "Booking failed.")); return result;
 }
 export async function checkInBooking(client: SupabaseClient<Database>, id: string) { const { data, error } = await client.rpc("check_in_booking", { p_booking_id: id }); if (error) throw new Error(error.message); const result = object(data); if (result.success !== true) throw new Error(String(result.message ?? "Unable to check in guest.")); return result; }
-export async function checkoutBooking(client: SupabaseClient<Database>, id: string, allowBalance = false) { const { data, error } = await client.rpc("checkout_booking", { p_booking_id: id, p_allow_balance: allowBalance }); if (error) throw new Error(error.message); return object(data); }
+export async function checkoutBooking(client: SupabaseClient<Database>, id: string, allowBalance = false) {
+  const { data, error } = await client.rpc("checkout_booking", { p_booking_id: id, p_allow_balance: allowBalance });
+  if (error) throw new Error(error.message);
+  const result = object(data);
+  if (result.success !== true) throw new Error(String(result.message ?? "Unable to check out guest."));
+  return result;
+}

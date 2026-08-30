@@ -24,8 +24,14 @@ export async function getHomeDashboard(
   if (error) throw new Error(error.message);
   if (!isObject(data)) throw new Error("The dashboard returned an invalid response.");
 
-  const bookings = (Array.isArray(data.bookings) ? data.bookings : []).filter(isObject).map(parseBooking);
-  const rooms = (Array.isArray(data.rooms) ? data.rooms : []).filter(isObject).map(parseRoom);
+  const rawBookings: unknown[] = Array.isArray(data.bookings) ? data.bookings : [];
+  const rawRooms: unknown[] = Array.isArray(data.rooms) ? data.rooms : [];
+  const bookings = rawBookings
+    .filter(isObject)
+    .map((booking) => parseBooking(booking));
+  const rooms = rawRooms
+    .filter(isObject)
+    .map((room) => parseRoom(room));
   const today = dateOnly(new Date());
   const arrivals = bookings.filter((booking) => sameDay(booking.checkIn, today) && ["confirmed", "reserved", "checked_in"].includes(booking.status));
   const departures = bookings.filter((booking) => sameDay(booking.checkOut, today) && ["checked_in", "checked_out"].includes(booking.status));
@@ -39,8 +45,13 @@ export async function getHomeDashboard(
       return today >= checkIn && today < checkOut;
     }).map((booking) => booking.roomId),
   );
-  const availableRooms = activeRooms.filter((room) => !unavailableRoomIds.has(room.id));
+  const availableRooms = activeRooms.filter((room) =>
+    !unavailableRoomIds.has(room.id) && room.housekeepingStatus === "ready"
+  );
   const occupiedRooms = activeRooms.filter((room) => unavailableRoomIds.has(room.id));
+  const unavailableRooms = activeRooms.filter((room) =>
+    !unavailableRoomIds.has(room.id) && room.housekeepingStatus !== "ready"
+  );
   const sum = (list: DashboardBooking[], key: "amountPaid" | "balanceDue") => list.reduce((total, booking) => total + booking[key], 0);
   const outstanding = sum(currentGuests, "balanceDue");
 
@@ -55,7 +66,8 @@ export async function getHomeDashboard(
     currentGuests,
     availableRoomsList: availableRooms,
     occupiedRoomsList: occupiedRooms,
-    todayRevenue: sum(arrivals, "amountPaid"),
+    unavailableRoomsList: unavailableRooms,
+    todayRevenue: Number(data.today_revenue ?? 0),
     pendingPayments: outstanding,
     totalOutstanding: outstanding,
   };

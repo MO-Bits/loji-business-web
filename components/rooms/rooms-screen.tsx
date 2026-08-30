@@ -34,9 +34,10 @@ import {
   getRoomOperationalStatuses,
   getRooms,
   setRoomActive,
+  setRoomHousekeepingStatus,
   type RoomOperationalStatus,
 } from "@/features/rooms/services/room-service";
-import type { Room } from "@/features/rooms/models/room";
+import type { HousekeepingStatus, Room } from "@/features/rooms/models/room";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { trackEvent } from "@/lib/analytics";
@@ -82,7 +83,7 @@ export function RoomsScreen() {
   const visibleRooms = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return rooms.filter((room) => {
-      const roomStatus = operationalStatuses[room.id] ?? (room.isActive ? "available" : "inactive");
+      const roomStatus = operationalStatuses[room.id] ?? (room.isActive ? "ready" : "inactive");
       const matchesStatus = status === "all" || roomStatus === status;
       const matchesQuery =
         !normalized ||
@@ -110,6 +111,18 @@ export function RoomsScreen() {
     }
   };
 
+  const updateHousekeeping = async (room: Room, nextStatus: HousekeepingStatus) => {
+    if (!propertyId) return;
+    try {
+      await setRoomHousekeepingStatus(client, propertyId, room.id, nextStatus);
+      trackEvent("room_housekeeping_updated", { room_id: room.id, status: nextStatus });
+      feedback.success(t("Room status updated", "Hali ya chumba imebadilishwa"));
+      await refresh();
+    } catch (cause) {
+      feedback.error(cause instanceof Error ? cause.message : t("Unable to update room.", "Imeshindikana kubadili chumba."));
+    }
+  };
+
   return (
     <>
       <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
@@ -120,6 +133,7 @@ export function RoomsScreen() {
 
           <Stack spacing={1.25}>
             <TextField
+              aria-label={t("Search rooms", "Tafuta vyumba")}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t("Search rooms", "Tafuta vyumba")}
@@ -146,9 +160,12 @@ export function RoomsScreen() {
                 sx={{ minWidth: "max-content" }}
               >
                 <ToggleButton value="all">{t("All", "Vyote")}</ToggleButton>
-                <ToggleButton value="available">{t("Available", "Vinapatikana")}</ToggleButton>
+                <ToggleButton value="ready">{t("Ready", "Tayari")}</ToggleButton>
                 <ToggleButton value="occupied">{t("Occupied", "Vimekaliwa")}</ToggleButton>
                 <ToggleButton value="checking_out_today">{t("Checking out today", "Wanatoka leo")}</ToggleButton>
+                <ToggleButton value="needs_cleaning">{t("Needs cleaning", "Vinahitaji usafi")}</ToggleButton>
+                <ToggleButton value="cleaning">{t("Cleaning", "Vinasafishwa")}</ToggleButton>
+                <ToggleButton value="out_of_service">{t("Out of service", "Havitumiki")}</ToggleButton>
                 <ToggleButton value="inactive">{t("Inactive", "Vimezimwa")}</ToggleButton>
               </ToggleButtonGroup>
             </Box>
@@ -196,9 +213,10 @@ export function RoomsScreen() {
                 <RoomCard
                   key={room.id}
                   room={room}
-                  status={operationalStatuses[room.id] ?? (room.isActive ? "available" : "inactive")}
+                  status={operationalStatuses[room.id] ?? (room.isActive ? "ready" : "inactive")}
                   canManage={canManage}
                   onUpdateActive={updateActive}
+                  onUpdateHousekeeping={updateHousekeeping}
                 />
               ))}
             </Box>
@@ -227,19 +245,24 @@ function RoomCard({
   status,
   canManage,
   onUpdateActive,
+  onUpdateHousekeeping,
 }: {
   room: Room;
   status: RoomOperationalStatus;
   canManage: boolean;
   onUpdateActive: (room: Room, active: boolean) => Promise<void>;
+  onUpdateHousekeeping: (room: Room, status: HousekeepingStatus) => Promise<void>;
 }) {
   const { t } = useLanguage();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  const statusConfig: Record<RoomOperationalStatus, { label: string; color: "success" | "warning" | "error" | "default"; border: string }> = {
-    available: { label: t("Available", "Kinapatikana"), color: "success", border: "success.main" },
+  const statusConfig: Record<RoomOperationalStatus, { label: string; color: "success" | "warning" | "error" | "info" | "default"; border: string }> = {
+    ready: { label: t("Ready", "Tayari"), color: "success", border: "success.main" },
     occupied: { label: t("Occupied", "Kimekaliwa"), color: "error", border: "error.main" },
     checking_out_today: { label: t("Checking out today", "Anatoka leo"), color: "warning", border: "warning.main" },
+    needs_cleaning: { label: t("Needs cleaning", "Kinahitaji usafi"), color: "warning", border: "warning.main" },
+    cleaning: { label: t("Cleaning", "Kinasafishwa"), color: "info", border: "info.main" },
+    out_of_service: { label: t("Out of service", "Hakitumiki"), color: "default", border: "text.disabled" },
     inactive: { label: t("Inactive", "Kimezimwa"), color: "default", border: "divider" },
   };
   const config = statusConfig[status];
@@ -322,6 +345,25 @@ function RoomCard({
             <MoreVertRoundedIcon fontSize="small" />
           </IconButton>
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+            {room.isActive && status !== "occupied" && status !== "checking_out_today" && (
+              [
+                ["ready", t("Mark ready", "Weka tayari")],
+                ["needs_cleaning", t("Needs cleaning", "Kinahitaji usafi")],
+                ["cleaning", t("Cleaning in progress", "Usafi unaendelea")],
+                ["out_of_service", t("Out of service", "Hakitumiki")],
+              ] as const
+            ).map(([value, label]) => (
+              <MenuItem
+                key={value}
+                disabled={room.housekeepingStatus === value}
+                onClick={() => {
+                  setAnchorEl(null);
+                  void onUpdateHousekeeping(room, value);
+                }}
+              >
+                {label}
+              </MenuItem>
+            ))}
             {room.isActive ? (
               <MenuItem
                 onClick={() => {
@@ -338,7 +380,7 @@ function RoomCard({
                   void onUpdateActive(room, true);
                 }}
               >
-                {t("Mark available", "Weka kinapatikana")}
+                {t("Activate room", "Washa chumba")}
               </MenuItem>
             )}
           </Menu>

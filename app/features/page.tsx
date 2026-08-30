@@ -88,10 +88,10 @@ export default function FeaturesPage() {
               <Paper variant="outlined" sx={{ height: "100%", p: { xs: 2.5, sm: 3 }, borderRadius: 2 }}>
                 <Stack spacing={2}>
                   <Icon color="primary" sx={{ fontSize: 32 }} />
-                  <Typography variant="h5" fontWeight={750}>
+                  <Typography variant="h5" sx={{ fontWeight: 700 }}>
                     {t(item.title, item.swTitle)}
                   </Typography>
-                  <Typography color="text.secondary" lineHeight={1.75}>
+                  <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>
                     {t(item.description, item.swDescription)}
                   </Typography>
                 </Stack>

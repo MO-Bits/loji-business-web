@@ -16,7 +16,7 @@ export type Database = {
         Relationships: [];
       };
       rooms: {
-        Row: { id: string; property_id: string; name: string; room_type: string; capacity: number; bed_count: number; price_per_night: number; amenities: Json; images: Json; room_images?: Json; description?: string | null; is_active: boolean; created_at?: string | null; [key: string]: Json | undefined };
+        Row: { id: string; property_id: string; name: string; room_type: string; capacity: number; bed_count: number; price_per_night: number; amenities: Json; images: Json; room_images?: Json; description?: string | null; is_active: boolean; housekeeping_status?: string; housekeeping_notes?: string | null; housekeeping_updated_at?: string | null; created_at?: string | null; [key: string]: Json | undefined };
         Insert: { id?: string; property_id: string; name: string; room_type: string; capacity: number; bed_count: number; price_per_night: number; amenities?: Json; images?: Json; is_active?: boolean };
         Update: { name?: string; room_type?: string; capacity?: number; bed_count?: number; price_per_night?: number; amenities?: Json; images?: Json; is_active?: boolean };
         Relationships: [];
@@ -131,6 +131,9 @@ export type Database = {
       create_walkin_booking: { Args: { p_property_id: string; p_room_id: string; p_first_name: string; p_last_name: string; p_gender: string; p_nationality: string; p_occupation: string; p_email: string; p_phone: string; p_where_from: string | null; p_where_to: string | null; p_id_type: string | null; p_id_number: string | null; p_emergency_contact_name: string | null; p_emergency_contact_phone: string | null; p_check_in: string; p_check_out: string; p_adults: number; p_children: number; p_total_price: number; p_special_requests: string | null; p_payment_method: string; p_transaction_ref: string | null }; Returns: Json };
       check_in_booking: { Args: { p_booking_id: string }; Returns: Json };
       checkout_booking: { Args: { p_booking_id: string; p_allow_balance: boolean }; Returns: Json };
+      update_room_housekeeping_status: { Args: { p_property_id: string; p_room_id: string; p_status: string; p_notes?: string | null }; Returns: Json };
+      update_room: { Args: { p_room_id: string; p_property_id: string; p_room_name: string; p_room_type: string; p_is_active: boolean; p_price_per_night: number; p_capacity: number; p_bed_count: number; p_amenities: string[]; p_images: string[] }; Returns: Json };
+      record_booking_payment: { Args: { p_property_id: string; p_booking_id: string; p_amount: number; p_method: string; p_reference?: string | null; p_notes?: string | null }; Returns: Json };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
