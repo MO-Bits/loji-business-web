@@ -10,6 +10,10 @@ body {
 }
 
 html {
+  scrollbar-gutter: stable;
+}
+
+html {
   background: var(--mui-palette-background-default, #f4f6f9);
   text-rendering: optimizeLegibility;
 }
@@ -130,6 +134,19 @@ div {
   );
   box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
   transform: translateY(-1px);
+}
+
+@media (hover: none) {
+  .surface-hover:hover {
+    box-shadow: none;
+    transform: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .MuiDialogActions-root > .MuiButton-root {
+    flex: 1 1 140px;
+  }
 }
 
 [data-mui-color-scheme="dark"] .surface-hover:hover {

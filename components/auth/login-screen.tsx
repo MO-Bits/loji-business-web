@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useAuthController } from "@/features/auth/hooks/use-auth-controller";
+import { BrandLockup } from "@/components/shared/brand-lockup";
 
 import { GoogleMark } from "./google-mark";
 
@@ -40,21 +41,56 @@ export function LoginScreen() {
           py: { xs: 1.5, sm: 2 },
         }}
       >
-        <Box
-          id="login"
-          sx={{
-            alignItems: "center",
-            display: "flex",
-            justifyContent: "center",
-            py: { xs: 4, sm: 6 },
-          }}
-        >
+        <Box id="login" sx={{ display: "grid", placeItems: "center", py: { xs: 3, sm: 5 } }}>
+          <Box
+            sx={{
+              display: "grid",
+              gap: { xs: 0, md: 5 },
+              gridTemplateColumns: { xs: "1fr", md: "minmax(0, .95fr) minmax(360px, .75fr)" },
+              maxWidth: 1060,
+              overflow: "hidden",
+              width: "100%",
+            }}
+          >
+            <Stack
+              spacing={3}
+              sx={{
+                background:
+                  "radial-gradient(circle at 82% 20%, rgba(82,139,255,.42), transparent 34%), #101828",
+                borderRadius: { xs: "10px 10px 0 0", md: 2 },
+                color: "#F8FAFC",
+                display: { xs: "none", md: "flex" },
+                justifyContent: "space-between",
+                minHeight: 500,
+                p: { md: 5, lg: 6 },
+              }}
+            >
+              <BrandLockup color="#F8FAFC" priority symbolSize={34} textSize="1.05rem" />
+              <Box>
+                <Typography sx={{ fontSize: { md: "2.35rem", lg: "2.8rem" }, fontWeight: 750, letterSpacing: "-.05em", lineHeight: 1.04, maxWidth: 430 }}>
+                  {t("Run every stay with confidence.", "Simamia kila ukaaji kwa uhakika.")}
+                </Typography>
+                <Typography sx={{ color: "rgba(226,232,240,.72)", fontSize: ".95rem", lineHeight: 1.65, mt: 2, maxWidth: 410 }}>
+                  {t("Rooms, reservations, guests and staff—one focused workspace for your hospitality business.", "Vyumba, uhifadhi, wageni na wafanyakazi—eneo moja la kazi kwa biashara yako ya ukarimu.")}
+                </Typography>
+              </Box>
+              <Typography sx={{ color: "rgba(226,232,240,.56)", fontSize: ".78rem" }}>
+                {t("Built for lodges, hotels and guesthouses.", "Imeundwa kwa lodge, hoteli na guesthouse.")}
+              </Typography>
+            </Stack>
           <Stack
             component="section"
             spacing={2.75}
             sx={{
-              maxWidth: 400,
-              textAlign: "center",
+              alignSelf: "center",
+              backgroundColor: "background.paper",
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: { xs: 2, md: 2 },
+              boxShadow: { md: "0 22px 60px rgba(16,24,40,.09)" },
+              maxWidth: { xs: 440, md: "none" },
+              p: { xs: 2.5, sm: 3.5, md: 4 },
+              textAlign: "left",
               width: "100%",
             }}
           >
@@ -76,7 +112,6 @@ export function LoginScreen() {
                 sx={{
                   fontSize: ".875rem",
                   lineHeight: 1.6,
-                  mx: "auto",
                   maxWidth: 340,
                 }}
               >
@@ -126,9 +161,9 @@ export function LoginScreen() {
               </Button>
 
               <Stack
-                direction="row"
-                spacing={0.75}
-                sx={{ alignItems: "center", justifyContent: "center" }}
+              direction="row"
+              spacing={0.75}
+                sx={{ alignItems: "center" }}
               >
                 <LockOutlinedIcon sx={{ color: "text.disabled", fontSize: 15 }} />
                 <Typography color="text.secondary" variant="caption">
@@ -143,7 +178,7 @@ export function LoginScreen() {
             <Typography
               color="text.secondary"
               variant="caption"
-              sx={{ lineHeight: 1.7, px: { xs: 0.5, sm: 2 } }}
+              sx={{ lineHeight: 1.7 }}
             >
               {t("By continuing, you agree to the", "Kwa kuendelea, unakubali")}{" "}
               <Link
@@ -166,7 +201,7 @@ export function LoginScreen() {
               .
             </Typography>
 
-            <Stack direction="row" spacing={2} sx={{ justifyContent: "center" }}>
+            <Stack direction="row" spacing={2}>
               <Link
                 component={NextLink}
                 href="/learn-more"
@@ -193,6 +228,7 @@ export function LoginScreen() {
               </Link>
             </Stack>
           </Stack>
+          </Box>
         </Box>
 
         <Typography
