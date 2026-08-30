@@ -71,6 +71,14 @@ export type Database = {
         Args: { p_property_id: string };
         Returns: Json;
       };
+      get_property_dashboard: {
+        Args: { p_property_id: string };
+        Returns: Json;
+      };
+      get_property_operations_report: {
+        Args: { p_property_id: string; p_from: string; p_to: string };
+        Returns: Json;
+      };
       save_property_images: {
         Args: { p_property_id: string; p_images: string[] };
         Returns: Json;
