@@ -31,6 +31,7 @@ import {
 } from "@/features/bookings/models/booking";
 import { formatLocalDate, localDateKey } from "@/lib/date-time";
 import { useLanguage } from "@/components/providers/language-provider";
+import { PageHeader } from "@/components/shared/page-header";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -119,9 +120,13 @@ export function BookingsScreen() {
     <>
       <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Typography component="h1" variant="h4">
-            {t("Bookings", "Uhifadhi")}
-          </Typography>
+          <PageHeader
+            title={t("Bookings", "Uhifadhi")}
+            description={t(
+              "Search, review and manage every guest stay from one reliable list.",
+              "Tafuta, kagua na simamia ukaaji wote wa wageni kutoka orodha moja.",
+            )}
+          />
 
           <Paper
             variant="outlined"

@@ -40,6 +40,7 @@ import {
 import type { HousekeepingStatus, Room } from "@/features/rooms/models/room";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
+import { PageHeader } from "@/components/shared/page-header";
 import { trackEvent } from "@/lib/analytics";
 
 const money = new Intl.NumberFormat("en-TZ", {
@@ -127,9 +128,13 @@ export function RoomsScreen() {
     <>
       <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          <Typography component="h1" variant="h4">
-            {t("Rooms", "Vyumba")}
-          </Typography>
+          <PageHeader
+            title={t("Rooms", "Vyumba")}
+            description={t(
+              "Keep availability, housekeeping and room information accurate in real time.",
+              "Simamia upatikanaji, usafi na taarifa za vyumba kwa usahihi wa muda halisi.",
+            )}
+          />
 
           <Stack spacing={1.25}>
             <TextField
@@ -258,7 +263,7 @@ function RoomCard({
 
   const statusConfig: Record<RoomOperationalStatus, { label: string; color: "success" | "warning" | "error" | "info" | "default"; border: string }> = {
     ready: { label: t("Ready", "Tayari"), color: "success", border: "success.main" },
-    occupied: { label: t("Occupied", "Kimekaliwa"), color: "error", border: "error.main" },
+    occupied: { label: t("Occupied", "Kimekaliwa"), color: "info", border: "info.main" },
     checking_out_today: { label: t("Checking out today", "Anatoka leo"), color: "warning", border: "warning.main" },
     needs_cleaning: { label: t("Needs cleaning", "Kinahitaji usafi"), color: "warning", border: "warning.main" },
     cleaning: { label: t("Cleaning", "Kinasafishwa"), color: "info", border: "info.main" },
