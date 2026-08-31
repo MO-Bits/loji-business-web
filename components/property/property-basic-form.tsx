@@ -22,7 +22,14 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 
 import { OnboardingFrame } from "@/components/auth/onboarding-frame";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
@@ -40,6 +47,15 @@ import {
   PROPERTY_IMAGE_TYPES,
   propertyRegistrationDraftKey,
 } from "@/features/property/services/property-service";
+
+const BASIC_STEP_SLUGS = [
+  "type",
+  "name",
+  "contact",
+  "spaces",
+  "amenities",
+  "photos",
+] as const;
 
 const amenities = [
   { label: ["Wi-Fi", "Wi-Fi"], value: "WiFi" },
@@ -80,7 +96,11 @@ const initialDraft: RegistrationDraft = {
   amenities: [],
 };
 
-export function PropertyBasicForm() {
+export function PropertyBasicForm({
+  initialStep,
+}: {
+  initialStep?: string | null;
+}) {
   const router = useRouter();
   const controller = usePropertyController();
   const feedback = useAppFeedback();
@@ -90,9 +110,14 @@ export function PropertyBasicForm() {
   const registrationDraftKey = ownerId
     ? propertyRegistrationDraftKey(ownerId)
     : "";
-  const [activeStep, setActiveStep] = useState(0);
+  const routeStep = BASIC_STEP_SLUGS.indexOf(
+    initialStep as (typeof BASIC_STEP_SLUGS)[number],
+  );
+  const activeStep = routeStep >= 0 ? routeStep : 0;
+  const stepFocusRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<RegistrationDraft>(initialDraft);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [loadedDraftKey, setLoadedDraftKey] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
   const definition = draft.type
@@ -115,13 +140,17 @@ export function PropertyBasicForm() {
   ];
 
   useEffect(() => {
-    let stored: Partial<RegistrationDraft> | null = null;
+    let stored:
+      | (Partial<RegistrationDraft> & { activeStep?: unknown })
+      | null = null;
     if (registrationDraftKey) {
       try {
         window.localStorage.removeItem("loji-property-registration:v2");
         stored = JSON.parse(
           window.localStorage.getItem(registrationDraftKey) ?? "null",
-        ) as Partial<RegistrationDraft> | null;
+        ) as
+        | (Partial<RegistrationDraft> & { activeStep?: unknown })
+        | null;
       } catch {
         // A malformed draft should not block a fresh registration.
       }
@@ -146,19 +175,64 @@ export function PropertyBasicForm() {
       );
       setFiles([]);
       setLocalError(null);
+      setLoadedDraftKey(registrationDraftKey);
       setDraftLoaded(Boolean(registrationDraftKey));
+
+      const storedStep =
+        typeof stored?.activeStep === "number" &&
+        Number.isInteger(stored.activeStep) &&
+        stored.activeStep >= 0 &&
+        stored.activeStep < BASIC_STEP_SLUGS.length
+          ? stored.activeStep
+          : 0;
+      if (!initialStep && storedStep > 0) {
+        router.replace(
+          `/onboarding/property/basic?step=${BASIC_STEP_SLUGS[storedStep]}`,
+        );
+      }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [registrationDraftKey]);
+  }, [initialStep, registrationDraftKey, router]);
 
   useEffect(() => {
-    if (!draftLoaded || !registrationDraftKey) return;
+    if (draftLoaded && activeStep > 0 && !draft.type) {
+      router.replace("/onboarding/property/basic?step=type");
+    }
+  }, [activeStep, draft.type, draftLoaded, router]);
+
+  useEffect(() => {
+    if (
+      !draftLoaded ||
+      !registrationDraftKey ||
+      loadedDraftKey !== registrationDraftKey
+    ) {
+      return;
+    }
     try {
-      window.localStorage.setItem(registrationDraftKey, JSON.stringify(draft));
+      window.localStorage.setItem(
+        registrationDraftKey,
+        JSON.stringify({ ...draft, activeStep }),
+      );
     } catch {
       // Browser storage is a convenience; the form remains usable without it.
     }
-  }, [draft, draftLoaded, registrationDraftKey]);
+  }, [
+    activeStep,
+    draft,
+    draftLoaded,
+    loadedDraftKey,
+    registrationDraftKey,
+  ]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const firstControl = stepFocusRef.current?.querySelector<HTMLElement>(
+        "input:not([type='hidden']), [role='radio'], [role='button'], button",
+      );
+      (firstControl ?? stepFocusRef.current)?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeStep]);
 
   const previews = useMemo(
     () => files.map((file) => ({ file, url: URL.createObjectURL(file) })),
@@ -336,8 +410,10 @@ export function PropertyBasicForm() {
       setLocalError(message);
       return;
     }
-    if (activeStep < 5) {
-      setActiveStep((step) => step + 1);
+    if (activeStep < BASIC_STEP_SLUGS.length - 1) {
+      router.push(
+        `/onboarding/property/basic?step=${BASIC_STEP_SLUGS[activeStep + 1]}`,
+      );
       setLocalError(null);
       return;
     }
@@ -347,8 +423,13 @@ export function PropertyBasicForm() {
   const goBack = () => {
     setLocalError(null);
     controller.clearError();
-    if (activeStep > 0) setActiveStep((step) => step - 1);
-    else router.back();
+    if (activeStep > 0) {
+      router.push(
+        `/onboarding/property/basic?step=${BASIC_STEP_SLUGS[activeStep - 1]}`,
+      );
+    } else {
+      router.back();
+    }
   };
 
   const screen = screenContent(
@@ -399,7 +480,28 @@ export function PropertyBasicForm() {
       title={screen.title}
       wide
     >
-      <Stack spacing={{ xs: 2.25, sm: 3 }}>
+      <Stack
+        aria-label={screen.question}
+        ref={stepFocusRef}
+        spacing={{ xs: 2.25, sm: 3 }}
+        sx={{ outline: "none" }}
+        tabIndex={-1}
+      >
+        <Box
+          aria-atomic="true"
+          aria-live="polite"
+          sx={{
+            clip: "rect(0 0 0 0)",
+            clipPath: "inset(50%)",
+            height: 1,
+            overflow: "hidden",
+            position: "absolute",
+            whiteSpace: "nowrap",
+            width: 1,
+          }}
+        >
+          {screen.question}
+        </Box>
         {activeStep === 0 ? (
           <PropertyTypeChoices selected={draft.type} onChange={chooseType} />
         ) : null}

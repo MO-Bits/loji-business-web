@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
@@ -456,10 +462,14 @@ export function PropertyAddressMap() {
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reverseRequest = useRef<AbortController | null>(null);
   const reverseGeneration = useRef(0);
+  const placeRequest = useRef<AbortController | null>(null);
+  const placeGeneration = useRef(0);
   const skipNextIdle = useRef(true);
+  const stageFocusRef = useRef<HTMLDivElement>(null);
   const [stage, setStage] = useState<AddressStage>("map");
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [activePredictionIndex, setActivePredictionIndex] = useState(-1);
   const [selected, setSelected] = useState<PlaceDetails | null>(null);
   const [position, setPosition] = useState(DEFAULT_POSITION);
   const [searching, setSearching] = useState(false);
@@ -468,6 +478,15 @@ export function PropertyAddressMap() {
   const [satellite, setSatellite] = useState(false);
   const [sessionToken, setSessionToken] = useState(createSessionToken);
   const controller = usePropertyController();
+
+  const invalidateLocationLookup = () => {
+    if (idleTimer.current) clearTimeout(idleTimer.current);
+    reverseGeneration.current += 1;
+    reverseRequest.current?.abort();
+    placeGeneration.current += 1;
+    placeRequest.current?.abort();
+    setLoadingAddress(false);
+  };
 
   const reverseGeocode = useCallback(async (next: LatLng) => {
     const generation = reverseGeneration.current + 1;
@@ -554,6 +573,8 @@ export function PropertyAddressMap() {
           return;
         }
         if (idleTimer.current) clearTimeout(idleTimer.current);
+        placeGeneration.current += 1;
+        placeRequest.current?.abort();
         idleTimer.current = setTimeout(() => void reverseGeocode(next), 700);
       });
     };
@@ -610,13 +631,18 @@ export function PropertyAddressMap() {
       loadingScript?.removeEventListener("load", start);
       if (idleTimer.current) clearTimeout(idleTimer.current);
       reverseRequest.current?.abort();
+      placeRequest.current?.abort();
       map.current = null;
     };
   }, [reverseGeocode]);
 
   useEffect(() => {
-    if (stage !== "map" || query.trim().length < 2) return;
-    const timer = setTimeout(async () => {
+    if (stage !== "map" || query.trim().length < 2) {
+      return;
+    }
+
+    const request = new AbortController();
+    const timer = window.setTimeout(async () => {
       setSearching(true);
       try {
         const response = await fetch("/api/google/places/autocomplete", {
@@ -628,6 +654,7 @@ export function PropertyAddressMap() {
             longitude: position.lng,
             sessionToken,
           }),
+          signal: request.signal,
         });
         const data = (await response.json()) as {
           suggestions?: Array<{
@@ -642,44 +669,78 @@ export function PropertyAddressMap() {
           }>;
           error?: string;
         };
-        if (!response.ok)
+        if (!response.ok) {
           throw new Error(data.error ?? "Search is unavailable.");
-        setPredictions(
-          (data.suggestions ?? [])
-            .map(({ placePrediction: item }) => ({
-              placeId: item?.placeId ?? "",
-              text: item?.text?.text ?? "",
-              primaryText:
-                item?.structuredFormat?.mainText?.text ??
-                item?.text?.text ??
-                "",
-              secondaryText: item?.structuredFormat?.secondaryText?.text ?? "",
-            }))
-            .filter(
-              (item) => item.placeId && !isPlusCode(item.primaryText),
-            ),
-        );
+        }
+        const nextPredictions = (data.suggestions ?? [])
+          .map(({ placePrediction: item }) => ({
+            placeId: item?.placeId ?? "",
+            text: item?.text?.text ?? "",
+            primaryText:
+              item?.structuredFormat?.mainText?.text ??
+              item?.text?.text ??
+              "",
+            secondaryText: item?.structuredFormat?.secondaryText?.text ?? "",
+          }))
+          .filter((item) => item.placeId && !isPlusCode(item.primaryText));
+        setPredictions(nextPredictions);
+        setActivePredictionIndex(nextPredictions.length ? 0 : -1);
       } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
         setMapError(
-          cause instanceof Error ? cause.message : t("Search is unavailable.", "Utafutaji haupatikani."),
+          cause instanceof Error
+            ? cause.message
+            : t("Search is unavailable.", "Utafutaji haupatikani."),
         );
       } finally {
-        setSearching(false);
+        if (!request.signal.aborted) setSearching(false);
       }
     }, 400);
-    return () => clearTimeout(timer);
+
+    return () => {
+      window.clearTimeout(timer);
+      request.abort();
+    };
   }, [position.lat, position.lng, query, sessionToken, stage, t]);
 
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Escape") {
+      setPredictions([]);
+      setActivePredictionIndex(-1);
+      return;
+    }
+    if (!predictions.length) return;
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      setActivePredictionIndex((current) => {
+        const start = current < 0 ? 0 : current;
+        return (start + direction + predictions.length) % predictions.length;
+      });
+      return;
+    }
+    if (event.key === "Enter" && activePredictionIndex >= 0) {
+      event.preventDefault();
+      void choosePrediction(predictions[activePredictionIndex]);
+    }
+  };
+
   const choosePrediction = async (prediction: PlacePrediction) => {
+    invalidateLocationLookup();
+    const generation = placeGeneration.current + 1;
+    placeGeneration.current = generation;
+    const request = new AbortController();
+    placeRequest.current = request;
     setQuery(prediction.text);
     setPredictions([]);
+    setActivePredictionIndex(-1);
     setLoadingAddress(true);
     setMapError(null);
-    reverseGeneration.current += 1;
-    reverseRequest.current?.abort();
     try {
       const response = await fetch(
         `/api/google/places/details?placeId=${encodeURIComponent(prediction.placeId)}&sessionToken=${encodeURIComponent(sessionToken)}`,
+        { signal: request.signal },
       );
       const data = (await response.json()) as Record<string, unknown>;
       if (!response.ok) {
@@ -702,6 +763,8 @@ export function PropertyAddressMap() {
           ),
         );
       }
+      if (generation !== placeGeneration.current) return;
+
       const normalized = rebuildAddress(details);
       setSelected(normalized);
       setPosition({ lat: normalized.latitude, lng: normalized.longitude });
@@ -713,16 +776,19 @@ export function PropertyAddressMap() {
       map.current?.setZoom(17);
       setSessionToken(createSessionToken());
     } catch (cause) {
-      setMapError(
-        cause instanceof Error
-          ? cause.message
-          : t(
-              "Unable to select this place.",
-              "Imeshindikana kuchagua eneo hili.",
-            ),
-      );
+      if (cause instanceof DOMException && cause.name === "AbortError") return;
+      if (generation === placeGeneration.current) {
+        setMapError(
+          cause instanceof Error
+            ? cause.message
+            : t(
+                "Unable to select this place.",
+                "Imeshindikana kuchagua eneo hili.",
+              ),
+        );
+      }
     } finally {
-      setLoadingAddress(false);
+      if (generation === placeGeneration.current) setLoadingAddress(false);
     }
   };
 
@@ -736,6 +802,7 @@ export function PropertyAddressMap() {
       );
       return;
     }
+    invalidateLocationLookup();
     setLoadingAddress(true);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
@@ -765,6 +832,7 @@ export function PropertyAddressMap() {
     field: "region" | "district" | "ward" | "street",
     value: string,
   ) => {
+    invalidateLocationLookup();
     setSelected((current) =>
       current
         ? rebuildAddress({ ...current, [field]: value.slice(0, 200) })
@@ -776,6 +844,20 @@ export function PropertyAddressMap() {
   const stageIndex = ADDRESS_STAGES.indexOf(stage);
   const normalizedAddress = selected ? rebuildAddress(selected) : null;
 
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (stage === "map") {
+        document.getElementById("property-location-search")?.focus();
+        return;
+      }
+      const firstControl = stageFocusRef.current?.querySelector<HTMLElement>(
+        "input, button:not([disabled])",
+      );
+      (firstControl ?? stageFocusRef.current)?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [stage]);
+
   const goBack = () => {
     setMapError(null);
     controller.clearError();
@@ -783,7 +865,7 @@ export function PropertyAddressMap() {
       setStage(ADDRESS_STAGES[stageIndex - 1]);
       return;
     }
-    router.push("/onboarding/property/basic");
+    router.push("/onboarding/property/basic?step=photos");
   };
 
   const continueLocation = () => {
@@ -837,6 +919,7 @@ export function PropertyAddressMap() {
       return;
     }
     if (stageIndex < ADDRESS_STAGES.length - 1) {
+      invalidateLocationLookup();
       setStage(ADDRESS_STAGES[stageIndex + 1]);
     }
   };
@@ -960,17 +1043,34 @@ export function PropertyAddressMap() {
               <Paper elevation={4}>
                 <TextField
                   aria-label={t("Search property location", "Tafuta eneo la biashara")}
+                  id="property-location-search"
                   fullWidth
                   onChange={(event) => {
                     setQuery(event.target.value);
-                    if (event.target.value.trim().length < 2) setPredictions([]);
+                    setActivePredictionIndex(-1);
+                    if (event.target.value.trim().length < 2) {
+                      setPredictions([]);
+                    }
                   }}
+                  onKeyDown={handleSearchKeyDown}
                   placeholder={t(
                     "Search a property, street or nearby landmark",
                     "Tafuta biashara, mtaa au alama ya karibu",
                   )}
                   size="small"
                   slotProps={{
+                    htmlInput: {
+                      "aria-activedescendant":
+                        activePredictionIndex >= 0
+                          ? `location-option-${activePredictionIndex}`
+                          : undefined,
+                      "aria-autocomplete": "list",
+                      "aria-controls": predictions.length
+                        ? "property-location-results"
+                        : undefined,
+                      "aria-expanded": Boolean(predictions.length),
+                      role: "combobox",
+                    },
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
@@ -982,14 +1082,44 @@ export function PropertyAddressMap() {
                   }}
                   value={query}
                 />
+                <Box
+                  aria-atomic="true"
+                  aria-live="polite"
+                  sx={{
+                    clip: "rect(0 0 0 0)",
+                    clipPath: "inset(50%)",
+                    height: 1,
+                    overflow: "hidden",
+                    position: "absolute",
+                    whiteSpace: "nowrap",
+                    width: 1,
+                  }}
+                >
+                  {predictions.length
+                    ? t(
+                        `${predictions.length} location suggestions available.`,
+                        `Mapendekezo ${predictions.length} ya maeneo yanapatikana.`,
+                      )
+                    : ""}
+                </Box>
               </Paper>
               {predictions.length ? (
                 <Paper elevation={8} sx={{ maxHeight: 280, overflowY: "auto" }}>
-                  <List aria-label={t("Location suggestions", "Mapendekezo ya maeneo")} disablePadding>
-                    {predictions.map((item) => (
+                  <List
+                    aria-label={t("Location suggestions", "Mapendekezo ya maeneo")}
+                    disablePadding
+                    id="property-location-results"
+                    role="listbox"
+                  >
+                    {predictions.map((item, index) => (
                       <ListItemButton
+                        aria-selected={activePredictionIndex === index}
+                        id={`location-option-${index}`}
                         key={item.placeId}
                         onClick={() => void choosePrediction(item)}
+                        onMouseEnter={() => setActivePredictionIndex(index)}
+                        role="option"
+                        selected={activePredictionIndex === index}
                         sx={{ px: 2, py: 1.25 }}
                       >
                         <ListItemText primary={item.primaryText} secondary={item.secondaryText} />
@@ -1018,7 +1148,14 @@ export function PropertyAddressMap() {
           width: { xs: "100%", md: 440 },
         }}
       >
-        <Stack aria-live="polite" spacing={2.25}>
+        <Stack
+          aria-label={t("Location registration step", "Hatua ya usajili wa eneo")}
+          aria-live="polite"
+          ref={stageFocusRef}
+          spacing={2.25}
+          sx={{ outline: "none" }}
+          tabIndex={-1}
+        >
           <Stack spacing={0.75}>
             <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
               <Typography color="primary.main" sx={{ fontWeight: 700 }} variant="caption">
