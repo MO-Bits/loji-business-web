@@ -264,7 +264,7 @@ export function RoomsScreen() {
     <WorkspacePage>
       <Stack spacing={{ xs: 2.25, sm: 3 }}>
         <PageHeader
-          eyebrow={t("Property operations", "Uendeshaji wa jengo")}
+          eyebrow={t("Property operations", "Uendeshaji wa biashara")}
           title={t("Room board", "Ubao wa vyumba")}
           description={businessDate
             ? t(
@@ -304,7 +304,7 @@ export function RoomsScreen() {
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "flex-end", width: { xs: "100%", lg: "auto" } }}>
               {businessDate ? (
                 <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" }, whiteSpace: "nowrap" }} variant="caption">
-                  {t("Property date", "Tarehe ya jengo")}: {formatLocalDate(businessDate)}
+                  {t("Property date", "Tarehe ya biashara")}: {formatLocalDate(businessDate)}
                 </Typography>
               ) : null}
               <Tooltip title={t("Refresh room board", "Pakua upya ubao wa vyumba")}>
@@ -349,7 +349,7 @@ export function RoomsScreen() {
             <EmptyState
               actionHref={canManage ? "/rooms/new" : undefined}
               actionLabel={canManage ? t("Add your first room", "Ongeza chumba cha kwanza") : undefined}
-              description={t("Create rooms with rates, capacity, photos and amenities to start taking bookings.", "Unda vyumba vyenye bei, uwezo, picha na huduma ili kuanza kupokea nafasi.")}
+              description={t("Create rooms with rates, capacity, photos and amenities to start taking bookings.", "Unda vyumba vyenye bei, uwezo, picha na huduma ili kuanza kupokea uhifadhi.")}
               icon={<BedRoundedIcon />}
               title={t("Your room inventory is empty", "Orodha ya vyumba haina kitu")}
             />
@@ -472,7 +472,7 @@ function RoomTable({
                 </Stack>
               </TableCell>
               <TableCell><StayCell stay={room.currentStay} empty={t("No guest in house", "Hakuna mgeni")} /></TableCell>
-              <TableCell><StayCell stay={room.nextStay} empty={t("No upcoming stay", "Hakuna nafasi ijayo")} /></TableCell>
+              <TableCell><StayCell stay={room.nextStay} empty={t("No upcoming stay", "Hakuna ukaaji ujao")} /></TableCell>
               <TableCell><RoomStatusPill status={room.operationalStatus} t={t} /></TableCell>
               <TableCell align="right">
                 <Typography noWrap variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money.format(room.pricePerNight)}</Typography>
@@ -596,7 +596,7 @@ function RoomActions({
       </Tooltip>
       <Menu anchorEl={anchor} onClose={() => setAnchor(null)} open={Boolean(anchor)}>
         <MenuItem component={Link} href={`/rooms/${room.id}`} onClick={() => setAnchor(null)}>{t("Open room workspace", "Fungua eneo la chumba")}</MenuItem>
-        {canCreateBooking && room.isActive && !hideCreateBooking ? <MenuItem component={Link} href={`/bookings/new?room=${room.id}`} onClick={() => setAnchor(null)}>{t("Create booking", "Unda nafasi")}</MenuItem> : null}
+        {canCreateBooking && room.isActive && !hideCreateBooking ? <MenuItem component={Link} href={`/bookings/new?room=${room.id}`} onClick={() => setAnchor(null)}>{t("Create booking", "Tengeneza uhifadhi")}</MenuItem> : null}
         {canManage ? <MenuItem component={Link} href={`/rooms/${room.id}/edit`} onClick={() => setAnchor(null)}>{t("Edit room", "Hariri chumba")}</MenuItem> : null}
         {canManage && room.isActive && !["occupied", "checking_out_today"].includes(room.operationalStatus)
           ? housekeepingOptions.map((option) => (

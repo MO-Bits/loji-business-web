@@ -87,7 +87,7 @@ export default function FaqPage() {
               >
                 {t(
                   "Everything you need to know about getting started, managing bookings, staff access, multiple properties and everyday operations with Loji Business.",
-                  "Kila unachohitaji kujua kuhusu kuanza, kusimamia uhifadhi, ruhusa za wafanyakazi, majengo mengi na shughuli za kila siku kupitia Loji Business.",
+                  "Kila unachohitaji kujua kuhusu kuanza, kusimamia uhifadhi, ruhusa za wafanyakazi, biashara nyingi na shughuli za kila siku kupitia Loji Business.",
                 )}
               </Typography>
 

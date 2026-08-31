@@ -43,7 +43,7 @@ const amenities = [
   { label: ["24/7 reception", "Mapokezi saa 24"], value: "24/7 Reception" },
   { label: ["Laundry", "Kufua"], value: "Laundry" },
   { label: ["Security", "Usalama"], value: "Security" },
-  { label: ["Gym", "Gym"], value: "Gym" },
+  { label: ["Gym", "Ukumbi wa mazoezi"], value: "Gym" },
   { label: ["Conference room", "Ukumbi wa mikutano"], value: "Conference Room" },
 ] as const;
 
@@ -52,8 +52,8 @@ const propertyTypes: {
   value: PropertyType;
 }[] = [
   { label: ["Hotel", "Hoteli"], value: "hotel" },
-  { label: ["Lodge", "Lodge"], value: "lodge" },
-  { label: ["Apartment", "Apartment"], value: "apartment" },
+  { label: ["Lodge", "Loji"], value: "lodge" },
+  { label: ["Apartment", "Fleti"], value: "apartment" },
   { label: ["Guesthouse", "Nyumba ya wageni"], value: "guesthouse" },
 ];
 

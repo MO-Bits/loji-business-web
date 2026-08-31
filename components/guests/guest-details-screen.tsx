@@ -99,7 +99,7 @@ export function GuestDetailsScreen({ guestId }: { guestId: string }) {
           sessionError?.message ??
           t(
             "Select an active property to open this guest.",
-            "Chagua mali inayotumika ili kufungua mgeni huyu.",
+            "Chagua biashara inayotumika ili kufungua mgeni huyu.",
           )
         }
         onBack={() => router.push("/guests")}
@@ -382,7 +382,7 @@ function GuestMetrics({ workspace }: { workspace: GuestWorkspace }) {
       }}
     >
       <MetricCell
-        caption={t("Across this property", "Katika mali hii")}
+        caption={t("Across this property", "Katika biashara hii")}
         icon={<HotelRoundedIcon />}
         label={t("Total stays", "Jumla ya ukaaji")}
         tone="info"

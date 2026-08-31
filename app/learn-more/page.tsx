@@ -46,7 +46,7 @@ const reasons = [
     description:
       "Give every team member the access they need while protecting sensitive property and financial information.",
     swDescription:
-      "Mpe kila mfanyakazi ufikiaji anaohitaji huku ukilinda taarifa nyeti za jengo na fedha.",
+      "Mpe kila mfanyakazi ufikiaji anaohitaji huku ukilinda taarifa nyeti za biashara na fedha.",
   },
   {
     icon: VerifiedUserRoundedIcon,
@@ -55,7 +55,7 @@ const reasons = [
     description:
       "A practical workflow for independent hotels, lodges, guesthouses and growing accommodation businesses.",
     swDescription:
-      "Mtiririko wa kazi unaofaa hoteli, lodge, nyumba za wageni na biashara za malazi zinazokua.",
+      "Mtiririko wa kazi unaofaa hoteli, loji, nyumba za wageni na biashara za malazi zinazokua.",
   },
 ];
 
@@ -100,7 +100,7 @@ const features = [
     title: "Cloud access",
     swTitle: "Ufikiaji wa wingu",
     description: "Work securely from the front desk, office or away from the property.",
-    swDescription: "Fanya kazi kwa usalama ukiwa mapokezi, ofisini au mbali na jengo.",
+    swDescription: "Fanya kazi kwa usalama ukiwa mapokezi, ofisini au mbali na biashara.",
   },
 ];
 
@@ -145,7 +145,7 @@ export default function LearnMorePage() {
               >
                 {t(
                   "A calmer way to run your property.",
-                  "Njia rahisi zaidi ya kusimamia jengo lako.",
+                  "Njia rahisi zaidi ya kusimamia biashara yako.",
                 )}
               </Typography>
               <Typography
@@ -319,7 +319,7 @@ export default function LearnMorePage() {
                 <Typography component="h2" variant="h3">
                   {t(
                     "Your property. Your team. One clear view.",
-                    "Jengo lako. Timu yako. Mwonekano mmoja wazi.",
+                    "Biashara yako. Timu yako. Mwonekano mmoja wazi.",
                   )}
                 </Typography>
                 <Typography color="text.secondary" sx={{ lineHeight: 1.75 }}>

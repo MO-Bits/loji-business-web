@@ -14,6 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export type StatusTone = "danger" | "info" | "neutral" | "success" | "warning";
 
@@ -106,6 +107,11 @@ export function SectionHeading({
   eyebrow?: ReactNode;
   title: ReactNode;
 }) {
+  const { t } = useLanguage();
+  const localizedDescription = typeof description === "string" ? t(description) : description;
+  const localizedEyebrow = typeof eyebrow === "string" ? t(eyebrow) : eyebrow;
+  const localizedTitle = typeof title === "string" ? t(title) : title;
+
   return (
     <Stack
       direction={{ xs: "column", sm: "row" }}
@@ -113,17 +119,17 @@ export function SectionHeading({
       sx={{ alignItems: { sm: "flex-end" }, justifyContent: "space-between" }}
     >
       <Box sx={{ minWidth: 0 }}>
-        {eyebrow ? (
+        {localizedEyebrow ? (
           <Typography color="primary.main" variant="overline">
-            {eyebrow}
+            {localizedEyebrow}
           </Typography>
         ) : null}
         <Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
-          {title}
+          {localizedTitle}
         </Typography>
-        {description ? (
+        {localizedDescription ? (
           <Typography color="text.secondary" sx={{ mt: 0.35 }} variant="body2">
-            {description}
+            {localizedDescription}
           </Typography>
         ) : null}
       </Box>
@@ -147,6 +153,9 @@ export function MetricCell({
   tone?: StatusTone;
   value: ReactNode;
 }) {
+  const { t } = useLanguage();
+  const localizedCaption = typeof caption === "string" ? t(caption) : caption;
+  const localizedLabel = typeof label === "string" ? t(label) : label;
   const content = (
     <Stack spacing={1.25} sx={{ height: "100%" }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -167,7 +176,7 @@ export function MetricCell({
           </Box>
         ) : null}
         <Typography color="text.secondary" variant="body2" sx={{ fontWeight: 500 }}>
-          {label}
+          {localizedLabel}
         </Typography>
       </Stack>
       <Typography
@@ -181,9 +190,9 @@ export function MetricCell({
       >
         {value}
       </Typography>
-      {caption ? (
+      {localizedCaption ? (
         <Typography color="text.secondary" variant="caption">
-          {caption}
+          {localizedCaption}
         </Typography>
       ) : null}
     </Stack>
@@ -219,9 +228,10 @@ export function MetricCell({
 }
 
 export function StatusPill({ label, tone = "neutral" }: { label: string; tone?: StatusTone }) {
+  const { t } = useLanguage();
   return (
     <Chip
-      label={label}
+      label={t(label)}
       size="small"
       sx={{
         border: 0,
@@ -248,6 +258,11 @@ export function EmptyState({
   onAction?: () => void;
   title: ReactNode;
 }) {
+  const { t } = useLanguage();
+  const localizedActionLabel = actionLabel ? t(actionLabel) : undefined;
+  const localizedDescription = typeof description === "string" ? t(description) : description;
+  const localizedTitle = typeof title === "string" ? t(title) : title;
+
   return (
     <Stack
       spacing={1.5}
@@ -270,13 +285,13 @@ export function EmptyState({
       ) : null}
       <Box>
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          {title}
+          {localizedTitle}
         </Typography>
         <Typography color="text.secondary" sx={{ maxWidth: 440, mt: 0.5 }} variant="body2">
-          {description}
+          {localizedDescription}
         </Typography>
       </Box>
-      {actionLabel ? (
+      {localizedActionLabel ? (
         <Button
           component={actionHref ? Link : "button"}
           href={actionHref}
@@ -284,7 +299,7 @@ export function EmptyState({
           endIcon={actionHref ? <ArrowForwardRoundedIcon /> : undefined}
           variant="contained"
         >
-          {actionLabel}
+          {localizedActionLabel}
         </Button>
       ) : null}
     </Stack>
@@ -314,10 +329,11 @@ export function LoadingRows({ rows = 5 }: { rows?: number }) {
 }
 
 export function InlineLoading({ label = "Loading" }: { label?: string }) {
+  const { t } = useLanguage();
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center", color: "text.secondary" }}>
       <CircularProgress size={16} />
-      <Typography variant="body2">{label}</Typography>
+      <Typography variant="body2">{t(label)}</Typography>
     </Stack>
   );
 }

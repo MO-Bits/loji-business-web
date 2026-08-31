@@ -4,7 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Loji Business",
     short_name: "Loji",
-    description: "Manage properties, rooms, bookings, guests and staff from one workspace.",
+    description: "Simamia vyumba, uhifadhi, wageni na wafanyakazi kutoka eneo moja la kazi.",
+    lang: "sw-TZ",
     start_url: "/",
     scope: "/",
     display: "standalone",

@@ -110,7 +110,7 @@ export function GuestsScreen() {
           sessionError?.message ??
           t(
             "Select an active property to view guests.",
-            "Chagua mali inayotumika ili kuona wageni.",
+            "Chagua biashara inayotumika ili kuona wageni.",
           )
         }
         onRetry={() => void refreshSession()}

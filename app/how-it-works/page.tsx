@@ -13,7 +13,7 @@ const steps = [
   {
     description: [
       "Add the identity, contact details, facilities, photos and exact location for your lodge, hotel or guesthouse.",
-      "Ongeza utambulisho, mawasiliano, huduma, picha na eneo sahihi la lodge, hoteli au nyumba yako ya wageni.",
+      "Ongeza utambulisho, mawasiliano, huduma, picha na eneo sahihi la loji, hoteli au nyumba yako ya wageni.",
     ],
     number: "01",
     title: ["Create the property", "Tengeneza biashara"],

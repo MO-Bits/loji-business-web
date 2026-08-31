@@ -182,7 +182,7 @@ export function OperationsScreen() {
     return (
       <WorkspacePage maxWidth={760}>
         <Surface padding={false}>
-          <EmptyState description={t("Ask a property owner to assign you an operations role.", "Mwombe mmiliki wa jengo akupe jukumu la uendeshaji.")} icon={<HotelRoundedIcon />} title={t("Operations access is restricted", "Ufikiaji wa uendeshaji umezuiwa")} />
+          <EmptyState description={t("Ask a property owner to assign you an operations role.", "Mwombe mmiliki wa biashara akupe jukumu la uendeshaji.")} icon={<HotelRoundedIcon />} title={t("Operations access is restricted", "Ufikiaji wa uendeshaji umezuiwa")} />
         </Surface>
       </WorkspacePage>
     );
@@ -205,7 +205,7 @@ export function OperationsScreen() {
           description={board?.property.businessDate
             ? t(`Arrivals, departures, and room readiness for ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`, `Wanaowasili, wanaotoka na utayari wa vyumba kwa ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`)
             : t("Run the front desk and housekeeping handoff from one live board.", "Endesha mapokezi na usafi kutoka kwenye ubao mmoja.")}
-          action={canCreateBooking ? <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained">{t("New booking", "Nafasi mpya")}</Button> : undefined}
+          action={canCreateBooking ? <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained">{t("New booking", "Uhifadhi mpya")}</Button> : undefined}
         />
 
         <Box sx={{ display: "grid", gap: { xs: 1.25, sm: 1.5 }, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", lg: "repeat(4,minmax(0,1fr))" } }}>
@@ -270,7 +270,7 @@ export function OperationsScreen() {
       <Dialog fullWidth maxWidth="xs" onClose={() => setCheckInTarget(null)} open={Boolean(checkInTarget && board)}>
         <DialogTitle>{t("Confirm guest check-in", "Thibitisha kuingia kwa mgeni")}</DialogTitle>
         <DialogContent>
-          <Typography color="text.secondary" variant="body2">{t(`Check in ${checkInTarget?.guestName ?? "this guest"} to ${checkInTarget?.roomName ?? "the assigned room"}? This will move the booking into the in-house list.`, `Mwingize ${checkInTarget?.guestName ?? "mgeni huyu"} kwenye ${checkInTarget?.roomName ?? "chumba alichopangiwa"}? Nafasi itahamia kwenye orodha ya waliopo.`)}</Typography>
+          <Typography color="text.secondary" variant="body2">{t(`Check in ${checkInTarget?.guestName ?? "this guest"} to ${checkInTarget?.roomName ?? "the assigned room"}? This will move the booking into the in-house list.`, `Mwingize ${checkInTarget?.guestName ?? "mgeni huyu"} kwenye ${checkInTarget?.roomName ?? "chumba alichopangiwa"}? Uhifadhi utahamia kwenye orodha ya waliopo.`)}</Typography>
         </DialogContent>
         <DialogActions><Button onClick={() => setCheckInTarget(null)}>{t("Cancel", "Ghairi")}</Button><Button onClick={() => void confirmCheckIn()} variant="contained">{t("Confirm check-in", "Thibitisha kuingia")}</Button></DialogActions>
       </Dialog>
@@ -295,7 +295,7 @@ function BookingLane({ action, bookings, emptyDescription, emptyTitle, icon, tit
             </Box>
           </Stack>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", mt: 1.5 }}>
-            <Button component={Link} href={`/bookings/${booking.id}`} size="small" variant="text">{booking.bookingNumber || t("Booking details", "Maelezo ya nafasi")}</Button>
+            <Button component={Link} href={`/bookings/${booking.id}`} size="small" variant="text">{booking.bookingNumber || t("Booking details", "Maelezo ya uhifadhi")}</Button>
             {action(booking)}
           </Stack>
         </Box>

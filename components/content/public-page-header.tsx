@@ -84,8 +84,8 @@ export function PublicPageHeader() {
                 "& .MuiSelect-select": { py: .65 },
               }}
             >
-              <MenuItem value="en">EN</MenuItem>
               <MenuItem value="sw">SW</MenuItem>
+              <MenuItem value="en">EN</MenuItem>
             </Select>
           </Stack>
         </Stack>

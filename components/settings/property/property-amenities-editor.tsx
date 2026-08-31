@@ -54,8 +54,10 @@ function AmenitiesForm({ client, propertyId, workspace }: { client: ReturnType<t
   const dirty = JSON.stringify(selected) !== JSON.stringify(initial);
   const visible = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
-    return propertyAmenities.filter((amenity) => !term || amenity.toLocaleLowerCase().includes(term));
-  }, [query]);
+    return propertyAmenities.filter((amenity) =>
+      !term || `${amenity} ${t(amenity)}`.toLocaleLowerCase().includes(term),
+    );
+  }, [query, t]);
 
   const toggle = (amenity: string) => {
     setSelected((current) => current.some((value) => value.toLocaleLowerCase() === amenity.toLocaleLowerCase())
@@ -99,7 +101,7 @@ function AmenitiesForm({ client, propertyId, workspace }: { client: ReturnType<t
       {error ? <Alert onClose={() => setError(null)} severity="error">{error}</Alert> : null}
       <Surface>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}><Box><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("Selected amenities", "Huduma zilizochaguliwa")}</Typography><Typography color="text.secondary" variant="body2">{t(`${selected.length} of 50 available slots`, `Sehemu ${selected.length} kati ya 50 zimetumika`)}</Typography></Box>{selected.length ? <Button color="inherit" onClick={() => setSelected([])} size="small">{t("Clear all", "Ondoa zote")}</Button> : null}</Stack>
-        {selected.length ? <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: 2 }}>{selected.map((amenity) => <Chip key={amenity.toLocaleLowerCase()} label={amenity} onDelete={() => toggle(amenity)} variant="outlined" />)}</Box> : <Typography color="text.secondary" sx={{ mt: 2 }} variant="body2">{t("No amenities selected. You can save an empty list.", "Hakuna huduma zilizochaguliwa. Unaweza kuhifadhi orodha tupu.")}</Typography>}
+        {selected.length ? <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75, mt: 2 }}>{selected.map((amenity) => <Chip key={amenity.toLocaleLowerCase()} label={t(amenity)} onDelete={() => toggle(amenity)} variant="outlined" />)}</Box> : <Typography color="text.secondary" sx={{ mt: 2 }} variant="body2">{t("No amenities selected. You can save an empty list.", "Hakuna huduma zilizochaguliwa. Unaweza kuhifadhi orodha tupu.")}</Typography>}
       </Surface>
       <SettingsSection description={t("Tap a facility to add or remove it from the property profile.", "Bonyeza huduma ili kuiongeza au kuiondoa kwenye wasifu wa biashara.")} title={t("Common facilities", "Huduma za kawaida")}>
         <Stack spacing={2} sx={{ p: { xs: 2, sm: 2.5 } }}>
@@ -107,7 +109,7 @@ function AmenitiesForm({ client, propertyId, workspace }: { client: ReturnType<t
           <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
             {visible.map((amenity) => {
               const active = selected.some((value) => value.toLocaleLowerCase() === amenity.toLocaleLowerCase());
-              return <Button aria-pressed={active} color={active ? "primary" : "inherit"} key={amenity} onClick={() => toggle(amenity)} startIcon={active ? <CheckRoundedIcon /> : <AddRoundedIcon />} sx={{ justifyContent: "flex-start" }} variant={active ? "contained" : "outlined"}>{amenity}</Button>;
+              return <Button aria-pressed={active} color={active ? "primary" : "inherit"} key={amenity} onClick={() => toggle(amenity)} startIcon={active ? <CheckRoundedIcon /> : <AddRoundedIcon />} sx={{ justifyContent: "flex-start" }} variant={active ? "contained" : "outlined"}>{t(amenity)}</Button>;
             })}
           </Box>
         </Stack>

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { LoginScreen } from "@/components/auth/login-screen";
 
 export const metadata: Metadata = {
-  title: "Sign in",
+  title: "Ingia",
 };
 
 export default async function LoginPage({
@@ -20,7 +20,7 @@ export default async function LoginPage({
     <LoginScreen
       initialError={
         hasCallbackError
-          ? "We could not finish signing you in. Please try again."
+          ? "Hatukuweza kukamilisha kukuingiza. Tafadhali jaribu tena."
           : null
       }
     />

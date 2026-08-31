@@ -272,8 +272,8 @@ export function PublicNavigation() {
             }}
             value={language}
           >
-            <MenuItem value="en">EN</MenuItem>
             <MenuItem value="sw">SW</MenuItem>
+            <MenuItem value="en">EN</MenuItem>
           </Select>
           <Button
             component={NextLink}
@@ -407,8 +407,8 @@ export function PublicNavigation() {
             size="small"
             value={language}
           >
-            <MenuItem value="en">English</MenuItem>
             <MenuItem value="sw">Kiswahili</MenuItem>
+            <MenuItem value="en">{t("English", "Kiingereza")}</MenuItem>
           </Select>
         </Stack>
       </Drawer>

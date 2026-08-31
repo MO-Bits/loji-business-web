@@ -45,6 +45,7 @@ import {
 } from "@/features/rooms/services/room-service";
 import { roomAmenities, type Room } from "@/features/rooms/models/room";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
+import { useLanguage } from "@/components/providers/language-provider";
 import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import { PageHeader } from "@/components/shared/page-header";
 import { WorkspacePage } from "@/components/shared/workspace-ui";
@@ -56,6 +57,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
   const { session, loading: sessionLoading } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const feedback = useAppFeedback();
+  const { t } = useLanguage();
   const [room, setRoom] = useState<Room | null>(null);
   const [name, setName] = useState("");
   const [roomType, setRoomType] = useState("master");
@@ -80,13 +82,13 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     if (!canManage) return;
     const timer = window.setTimeout(() => {
       if (!session?.activePropertyId) {
-        setError("No active property selected.");
+        setError(t("No active property selected.", "Hakuna biashara inayotumika iliyochaguliwa."));
         setInitialLoading(false);
         return;
       }
       getRoomWorkspace(client, session.activePropertyId, roomId)
         .then((workspace) => {
-          if (!workspace.capabilities.manageRooms) throw new Error("You do not have permission to manage rooms.");
+          if (!workspace.capabilities.manageRooms) throw new Error(t("You do not have permission to manage rooms.", "Huna ruhusa ya kusimamia vyumba."));
           const value = workspace.room;
           setRoom(value);
           setName(value.name);
@@ -102,13 +104,13 @@ export function RoomForm({ roomId }: { roomId?: string }) {
         })
         .catch((cause) =>
           setError(
-            cause instanceof Error ? cause.message : "Unable to load room.",
+            cause instanceof Error ? cause.message : t("Unable to load room.", "Imeshindikana kupakia chumba."),
           ),
         )
         .finally(() => setInitialLoading(false));
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [canManage, client, roomId, session?.activePropertyId, sessionLoading]);
+  }, [canManage, client, roomId, session?.activePropertyId, sessionLoading, t]);
 
   const previews = useMemo(() => files.map(URL.createObjectURL), [files]);
   useEffect(() => () => previews.forEach(URL.revokeObjectURL), [previews]);
@@ -125,15 +127,15 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     const picked = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (existingImages.length + files.length + picked.length > 5) {
-      setError("Maximum 5 images allowed.");
+      setError(t("Maximum 5 images allowed.", "Picha zisizozidi 5 zinaruhusiwa."));
       return;
     }
     if (picked.some((file) => !file.type.startsWith("image/") || file.type === "image/svg+xml")) {
-      setError("Choose JPG, PNG, HEIC or WebP image files.");
+      setError(t("Choose JPG, PNG, HEIC or WebP image files.", "Chagua picha za JPG, PNG, HEIC au WebP."));
       return;
     }
     if (picked.some((file) => file.size > 6 * 1024 * 1024)) {
-      setError("Each image must be under 6 MB.");
+      setError(t("Each image must be under 6 MB.", "Kila picha lazima iwe chini ya MB 6."));
       return;
     }
     setFiles((current) => [...current, ...picked]);
@@ -153,15 +155,15 @@ export function RoomForm({ roomId }: { roomId?: string }) {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const propertyId = session?.activePropertyId;
-    if (!propertyId) return setError("No active property selected.");
-    if (name.trim().length < 2) return setError("Enter a valid room name.");
+    if (!propertyId) return setError(t("No active property selected.", "Hakuna biashara inayotumika iliyochaguliwa."));
+    if (name.trim().length < 2) return setError(t("Enter a valid room name.", "Weka jina sahihi la chumba."));
     const amount = Number(price);
-    if (!amount || amount <= 0 || amount > 100_000_000) return setError("Enter a valid room price up to TZS 100,000,000.");
-    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 100) return setError("Guest capacity must be between 1 and 100.");
-    if (!Number.isInteger(bedCount) || bedCount < 1 || bedCount > capacity) return setError("Bed count must be at least 1 and no greater than guest capacity.");
-    if (!amenities.length) return setError("Select at least one amenity.");
+    if (!amount || amount <= 0 || amount > 100_000_000) return setError(t("Enter a valid room price up to TZS 100,000,000.", "Weka bei sahihi ya chumba isiyozidi TZS 100,000,000."));
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 100) return setError(t("Guest capacity must be between 1 and 100.", "Idadi ya juu ya wageni lazima iwe kati ya 1 na 100."));
+    if (!Number.isInteger(bedCount) || bedCount < 1 || bedCount > capacity) return setError(t("Bed count must be at least 1 and no greater than guest capacity.", "Vitanda lazima viwe angalau 1 na visizidi idadi ya juu ya wageni."));
+    if (!amenities.length) return setError(t("Select at least one amenity.", "Chagua angalau huduma moja."));
     if (!existingImages.length && !files.length)
-      return setError("Add at least one room image.");
+      return setError(t("Add at least one room image.", "Ongeza angalau picha moja ya chumba."));
 
     setLoading(true);
     setError(null);
@@ -194,14 +196,14 @@ export function RoomForm({ roomId }: { roomId?: string }) {
       }
       feedback.success(
         roomId
-          ? "Room changes saved successfully."
-          : "Room created successfully.",
+          ? t("Room changes saved successfully.", "Mabadiliko ya chumba yamehifadhiwa kikamilifu.")
+          : t("Room created successfully.", "Chumba kimetengenezwa kikamilifu."),
       );
       router.replace(roomId ? `/rooms/${roomId}` : "/rooms");
       router.refresh();
     } catch (cause) {
       if (uploaded.length) await removeRoomImages(client, uploaded).catch(() => undefined);
-      setError(cause instanceof Error ? cause.message : "Unable to save room.");
+      setError(cause instanceof Error ? cause.message : t("Unable to save room.", "Imeshindikana kuhifadhi chumba."));
     } finally {
       setLoading(false);
     }
@@ -211,7 +213,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     return (
       <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
         <Paper variant="outlined" sx={{ p: 3.5 }}>
-          <Typography color="text.secondary">Loading room workspace…</Typography>
+          <Typography color="text.secondary">{t("Loading room workspace…")}</Typography>
         </Paper>
       </Container>
     );
@@ -221,8 +223,8 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     return (
       <Container maxWidth="sm" sx={{ py: { xs: 4, md: 7 } }}>
         <Stack spacing={2}>
-          <Alert severity="warning">Only property owners and managers can create or edit rooms.</Alert>
-          <Button onClick={() => router.replace("/rooms")} startIcon={<ArrowBackRoundedIcon />} variant="outlined">Back to rooms</Button>
+          <Alert severity="warning">{t("Only property owners and managers can create or edit rooms.", "Wamiliki na mameneja pekee wanaweza kutengeneza au kuhariri vyumba.")}</Alert>
+          <Button onClick={() => router.replace("/rooms")} startIcon={<ArrowBackRoundedIcon />} variant="outlined">{t("Back to rooms")}</Button>
         </Stack>
       </Container>
     );
@@ -232,7 +234,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     return (
       <Container maxWidth="xl" sx={{ py: { xs: 3, md: 5 } }}>
         <Paper variant="outlined" sx={{ p: 3.5 }}>
-          <Typography color="text.secondary">Loading room workspace…</Typography>
+          <Typography color="text.secondary">{t("Loading room workspace…")}</Typography>
         </Paper>
       </Container>
     );
@@ -242,14 +244,14 @@ export function RoomForm({ roomId }: { roomId?: string }) {
     return (
       <Container maxWidth="sm" sx={{ py: { xs: 4, md: 7 } }}>
         <Stack spacing={2}>
-          <Alert severity="error">{error ?? "This room is unavailable or you no longer have permission to edit it."}</Alert>
-          <Button onClick={() => router.replace("/rooms")} startIcon={<ArrowBackRoundedIcon />} variant="outlined">Back to rooms</Button>
+          <Alert severity="error">{error ?? t("This room is unavailable or you no longer have permission to edit it.", "Chumba hiki hakipatikani au huna tena ruhusa ya kukihariri.")}</Alert>
+          <Button onClick={() => router.replace("/rooms")} startIcon={<ArrowBackRoundedIcon />} variant="outlined">{t("Back to rooms")}</Button>
         </Stack>
       </Container>
     );
   }
 
-  const actionLabel = roomId ? "Save changes" : "Create room";
+  const actionLabel = roomId ? t("Save changes") : t("Create room", "Tengeneza chumba");
 
   return (
     <Box aria-busy={loading} component="form" onSubmit={submit}>
@@ -257,7 +259,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
         <Stack spacing={{ xs: 2.25, sm: 3 }}>
           <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
             <IconButton
-              aria-label="Go back to rooms"
+              aria-label={t("Go back to rooms")}
               onClick={() => router.back()}
               sx={{ border: "1px solid", borderColor: "divider", mt: 0.15 }}
             >
@@ -265,13 +267,13 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </IconButton>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <PageHeader
-                eyebrow="Room inventory"
-                title={roomId ? `Edit ${room?.name ?? "room"}` : "Add a room"}
-                description="Define the room’s commercial profile, service setup, and media once."
+                eyebrow={t("Room inventory")}
+                title={roomId ? t(`Edit ${room?.name ?? "room"}`, `Hariri ${room?.name ?? "chumba"}`) : t("Add a room", "Ongeza chumba")}
+                description={t("Define the room’s commercial profile, service setup, and media once.", "Weka taarifa za biashara, huduma na picha za chumba kwa mpangilio mmoja.")}
                 action={(
                   <Chip
                     color={roomId ? (isActive ? "success" : "default") : "primary"}
-                    label={roomId ? (isActive ? "Active inventory" : "Inactive inventory") : "Draft room"}
+                    label={roomId ? (isActive ? t("Active inventory", "Kinatumika") : t("Inactive inventory", "Hakitatumika") ) : t("Draft room", "Rasimu ya chumba")}
                     size="small"
                   />
                 )}
@@ -295,10 +297,10 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             ) : null}
 
             <SectionCard
-              description="Use a recognizable name and a clear nightly rate so the front desk can book confidently."
+              description={t("Use a recognizable name and a clear nightly rate so the front desk can book confidently.", "Tumia jina linalotambulika na bei wazi ya usiku ili mapokezi yaweze kuhifadhi kwa uhakika.")}
               icon={<SellRoundedIcon fontSize="small" />}
-              kicker="Commercial profile"
-              title="How this room appears in your inventory"
+              kicker={t("Commercial profile", "Taarifa za biashara")}
+              title={t("How this room appears in your inventory", "Jinsi chumba kinavyoonekana kwenye orodha")}
             >
               <Box
                 sx={{
@@ -310,29 +312,29 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                 <TextField
                   required
                   autoComplete="off"
-                  helperText="This is shown on bookings and the room board."
-                  label="Room name or number"
+                  helperText={t("This is shown on bookings and the room board.")}
+                  label={t("Room name or number")}
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="e.g. Suite 204"
+                  placeholder={t("e.g. Suite 204", "mf. Suite 204")}
                   slotProps={{ htmlInput: { maxLength: 100 } }}
                   value={name}
                 />
                 <TextField
                   select
-                  label="Room type"
+                  label={t("Room type")}
                   onChange={(event) => setRoomType(event.target.value)}
                   value={roomType}
                 >
                   {roomTypes.map((type) => (
                     <MenuItem key={type} sx={{ textTransform: "capitalize" }} value={type}>
-                      {type}
+                      {t(type, type)}
                     </MenuItem>
                   ))}
                 </TextField>
                 <TextField
                   required
-                  helperText="The base rate before any booking adjustments."
-                  label="Nightly rate"
+                  helperText={t("The base rate before any booking adjustments.", "Bei ya msingi kabla ya mabadiliko yoyote ya uhifadhi.")}
+                  label={t("Nightly rate")}
                   onChange={(event) => setPrice(event.target.value)}
                   placeholder="0"
                   slotProps={{
@@ -344,12 +346,12 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                   value={price}
                 />
                 <TextField
-                  helperText="A concise guest-facing overview of the room."
-                  label="Room description"
+                  helperText={t("A concise guest-facing overview of the room.", "Maelezo mafupi ya chumba yatakayoonekana kwa mgeni.")}
+                  label={t("Room description")}
                   minRows={3}
                   multiline
                   onChange={(event) => setDescription(event.target.value)}
-                  placeholder="Describe the layout, outlook, and what makes this room special."
+                  placeholder={t("Describe the layout, outlook, and what makes this room special.", "Eleza mpangilio, mandhari na kinachokifanya chumba hiki kuwa maalumu.")}
                   slotProps={{ htmlInput: { maxLength: 1000 } }}
                   sx={{ gridColumn: { sm: "1 / -1" } }}
                   value={description}
@@ -358,10 +360,10 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </SectionCard>
 
             <SectionCard
-              description="These limits help your team assign rooms accurately and prevent overbooking."
+              description={t("These limits help your team assign rooms accurately and prevent overbooking.", "Viwango hivi husaidia timu kugawa vyumba kwa usahihi na kuzuia uhifadhi unaozidi uwezo.")}
               icon={<BedRoundedIcon fontSize="small" />}
-              kicker="Stay capacity"
-              title="Set the sleeping configuration"
+              kicker={t("Stay capacity", "Uwezo wa ukaaji")}
+              title={t("Set the sleeping configuration", "Weka mpangilio wa kulala")}
             >
               <Box
                 sx={{
@@ -371,8 +373,8 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                 }}
               >
                 <TextField
-                  helperText="Maximum guests in this room."
-                  label="Guest capacity"
+                  helperText={t("Maximum guests in this room.", "Idadi ya juu ya wageni katika chumba hiki.")}
+                  label={t("Guest capacity")}
                   onBlur={() => setCapacity((value) => Math.min(100, Math.max(1, value)))}
                   onChange={(event) => {
                     const value = Number(event.target.value);
@@ -383,8 +385,8 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                   value={capacity}
                 />
                 <TextField
-                  helperText="Physical beds currently available."
-                  label="Bed count"
+                  helperText={t("Physical beds currently available.", "Idadi ya vitanda vilivyopo sasa.")}
+                  label={t("Bed count")}
                   onBlur={() => setBedCount((value) => Math.min(100, Math.max(1, value)))}
                   onChange={(event) => {
                     const value = Number(event.target.value);
@@ -398,10 +400,10 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </SectionCard>
 
             <SectionCard
-              description="Select every amenity a guest can expect. At least one is required."
+              description={t("Select every amenity a guest can expect. At least one is required.", "Chagua huduma zote atakazopata mgeni. Angalau huduma moja inahitajika.")}
               icon={<CheckRoundedIcon fontSize="small" />}
-              kicker="Guest experience"
-              title="Choose the amenities you provide"
+              kicker={t("Guest experience", "Uzoefu wa mgeni")}
+              title={t("Choose the amenities you provide", "Chagua huduma unazotoa")}
             >
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                 {roomAmenities.map((item) => {
@@ -412,7 +414,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                       aria-pressed={selected}
                       clickable
                       color={selected ? "primary" : "default"}
-                      label={item}
+                      label={t(item)}
                       onClick={() =>
                         setAmenities((current) =>
                           current.includes(item)
@@ -428,10 +430,10 @@ export function RoomForm({ roomId }: { roomId?: string }) {
             </SectionCard>
 
             <SectionCard
-              description="Upload up to five images and choose the strongest one as the cover."
+              description={t("Upload up to five images and choose the strongest one as the cover.", "Pakia hadi picha tano na uchague picha bora kuwa jalada.")}
               icon={<ImageRoundedIcon fontSize="small" />}
-              kicker="Photo library"
-              title="Add room visuals"
+              kicker={t("Photo library", "Mkusanyiko wa picha")}
+              title={t("Add room visuals", "Ongeza picha za chumba")}
             >
               <Box
                 sx={{
@@ -456,7 +458,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                     }}
                   >
                     <Box
-                      alt={`Room image ${index + 1}`}
+                      alt={t(`Room image ${index + 1}`, `Picha ya chumba ${index + 1}`)}
                       component="img"
                       src={image}
                       sx={{ height: "100%", objectFit: "cover", width: "100%" }}
@@ -464,7 +466,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                     {index === coverIndex ? (
                       <Chip
                         color="primary"
-                        label="Cover"
+                        label={t("Cover")}
                         size="small"
                         sx={{ left: 8, position: "absolute", top: 8 }}
                       />
@@ -475,12 +477,12 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                         size="small"
                         sx={{ bgcolor: "rgba(15,23,42,.72)", bottom: 8, color: "white", fontSize: ".75rem", left: 8, minWidth: 0, px: 1, position: "absolute", "&:hover": { bgcolor: "rgba(15,23,42,.88)" } }}
                       >
-                        Use as cover
+                        {t("Use as cover", "Tumia kama jalada")}
                       </Button>
                     ) : null}
-                    <Tooltip title="Remove image">
+                    <Tooltip title={t("Remove image")}>
                       <IconButton
-                        aria-label={`Remove room image ${index + 1}`}
+                        aria-label={t(`Remove room image ${index + 1}`, `Ondoa picha ya chumba ${index + 1}`)}
                         onClick={() => removeImage(index)}
                         size="small"
                         sx={{
@@ -513,7 +515,7 @@ export function RoomForm({ roomId }: { roomId?: string }) {
                     }}
                     variant="outlined"
                   >
-                    Add image
+                    {t("Add image", "Ongeza picha")}
                     <Typography color="inherit" variant="caption">
                       JPG, PNG or WebP
                     </Typography>
@@ -525,14 +527,14 @@ export function RoomForm({ roomId }: { roomId?: string }) {
 
             {roomId ? (
               <SectionCard
-                description="Inactive rooms remain in your records but are not available for new bookings."
+                description={t("Inactive rooms remain in your records but are not available for new bookings.", "Vyumba visivyotumika hubaki kwenye kumbukumbu lakini havipatikani kwa uhifadhi mpya.")}
                 icon={<CheckRoundedIcon fontSize="small" />}
-                kicker="Inventory status"
-                title="Control whether this room can be used"
+                kicker={t("Inventory status", "Hali ya chumba")}
+                title={t("Control whether this room can be used", "Dhibiti iwapo chumba hiki kinaweza kutumika")}
               >
                 <FormControlLabel
                   control={<Switch checked={isActive} onChange={(event) => setIsActive(event.target.checked)} />}
-                  label={isActive ? "Room is active and bookable" : "Room is inactive"}
+                  label={isActive ? t("Room is active and bookable", "Chumba kinatumika na kinaweza kuhifadhiwa") : t("Room is inactive", "Chumba hakitumiki")}
                   sx={{ m: 0 }}
                 />
               </SectionCard>
@@ -643,6 +645,7 @@ function ActionPanel({
   price?: string;
   progress?: number;
 }) {
+  const { locale, t } = useLanguage();
   const hasSummary = typeof progress === "number";
 
   return (
@@ -652,24 +655,24 @@ function ActionPanel({
           <>
             <Box>
               <Typography color="text.secondary" component="p" sx={{ fontSize: ".6875rem", fontWeight: 700, letterSpacing: ".065em", textTransform: "uppercase" }}>
-                Setup check
+                {t("Setup check", "Ukaguzi wa usanidi")}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.25 }}>
-                {name?.trim() || "New room"}
+                {name?.trim() || t("New room")}
               </Typography>
               <Typography color="text.secondary" sx={{ fontSize: ".8125rem", mt: 0.25 }}>
-                {progress} of 4 required areas are ready.
+                {t(`${progress} of 4 required areas are ready.`, `Sehemu ${progress} kati ya 4 zinazohitajika ziko tayari.`)}
               </Typography>
             </Box>
             <Box sx={{ bgcolor: "action.hover", borderRadius: 999, height: 6, overflow: "hidden" }}>
               <Box sx={{ bgcolor: "primary.main", height: "100%", transition: "width 180ms ease", width: `${(progress / 4) * 100}%` }} />
             </Box>
             <Stack spacing={1.15}>
-              <SummaryLine label="Nightly rate" value={price ? `TZS ${Number(price).toLocaleString("en-TZ")}` : "Not set"} />
-              <SummaryLine label="Guest capacity" value={`${capacity ?? 0} guests`} />
-              <SummaryLine label="Beds" value={`${beds ?? 0}`} />
-              <SummaryLine label="Amenities" value={`${amenities ?? 0} selected`} />
-              <SummaryLine label="Images" value={`${imageCount ?? 0} of 5`} />
+              <SummaryLine label={t("Nightly rate")} value={price ? `TZS ${Number(price).toLocaleString(locale)}` : t("Not set")} />
+              <SummaryLine label={t("Guest capacity")} value={t(`${capacity ?? 0} guests`)} />
+              <SummaryLine label={t("Beds")} value={`${beds ?? 0}`} />
+              <SummaryLine label={t("Amenities")} value={t(`${amenities ?? 0} selected`)} />
+              <SummaryLine label={t("Images")} value={t(`${imageCount ?? 0} of 5`)} />
             </Stack>
             <Divider />
           </>
@@ -683,10 +686,10 @@ function ActionPanel({
           }}
         >
           <Button disabled={loading} onClick={onCancel} variant="text">
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button disabled={loading} type="submit" variant="contained">
-            {loading ? "Saving room…" : actionLabel}
+            {loading ? t("Saving room…", "Inahifadhi chumba…") : actionLabel}
           </Button>
         </Stack>
       </Stack>

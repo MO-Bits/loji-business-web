@@ -169,7 +169,7 @@ export function ReportsScreen() {
       if (requestId.current === currentRequest) {
         setErrorState({
           propertyId: requestPropertyId,
-          message: caught instanceof Error ? caught.message : "Unable to load reports.",
+          message: caught instanceof Error ? caught.message : t("Unable to load reports.", "Imeshindikana kupakia ripoti."),
         });
       }
     } finally {
@@ -177,7 +177,7 @@ export function ReportsScreen() {
         setLoading(false);
       }
     }
-  }, [canView, from, invalidRange, period, propertyId, supabase, to]);
+  }, [canView, from, invalidRange, period, propertyId, supabase, t, to]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -204,21 +204,27 @@ export function ReportsScreen() {
   const exportCsv = () => {
     if (!report) return;
     const rows: (string | number)[][] = [
-      ["Loji property performance report"],
-      ["From", from, "To", to],
+      [t("Loji property performance report", "Ripoti ya utendaji wa biashara ya Loji")],
+      [t("From", "Kuanzia"), from, t("To", "Hadi"), to],
       [],
-      ["Summary"],
-      ["Room revenue", report.summary.roomRevenue],
-      ["Collected", report.summary.collected],
-      ["Occupancy rate", report.summary.occupancyRate],
-      ["Average daily rate", report.summary.averageDailyRate],
-      ["Revenue per available room", report.summary.revenuePerAvailableRoom],
-      ["Room nights", report.summary.roomNights],
-      ["Bookings", report.summary.bookings],
-      ["Cancellations", report.summary.cancellations],
+      [t("Summary", "Muhtasari")],
+      [t("Room revenue", "Mapato ya vyumba"), report.summary.roomRevenue],
+      [t("Collected", "Iliyokusanywa"), report.summary.collected],
+      [t("Occupancy rate", "Kiwango cha matumizi ya vyumba"), report.summary.occupancyRate],
+      [t("Average daily rate", "Wastani wa bei kwa siku"), report.summary.averageDailyRate],
+      [t("Revenue per available room", "Mapato kwa kila chumba kinachopatikana"), report.summary.revenuePerAvailableRoom],
+      [t("Room nights", "Usiku wa vyumba"), report.summary.roomNights],
+      [t("Bookings", "Uhifadhi"), report.summary.bookings],
+      [t("Cancellations", "Uhifadhi ulioghairiwa"), report.summary.cancellations],
       [],
-      ["Daily performance"],
-      ["Date", "Room revenue", "Collected", "Occupancy rate", "Room nights"],
+      [t("Daily performance", "Utendaji wa kila siku")],
+      [
+        t("Date", "Tarehe"),
+        t("Room revenue", "Mapato ya vyumba"),
+        t("Collected", "Iliyokusanywa"),
+        t("Occupancy rate", "Kiwango cha matumizi ya vyumba"),
+        t("Room nights", "Usiku wa vyumba"),
+      ],
       ...report.daily.map((item) => [
         item.date,
         item.roomRevenue,
@@ -227,8 +233,14 @@ export function ReportsScreen() {
         item.roomNights,
       ]),
       [],
-      ["Room performance"],
-      ["Room", "Type", "Room revenue", "Room nights", "Occupancy rate"],
+      [t("Room performance", "Utendaji wa vyumba")],
+      [
+        t("Room", "Chumba"),
+        t("Type", "Aina"),
+        t("Room revenue", "Mapato ya vyumba"),
+        t("Room nights", "Usiku wa vyumba"),
+        t("Occupancy rate", "Kiwango cha matumizi ya vyumba"),
+      ],
       ...report.rooms.map((room) => [
         room.roomName,
         room.roomType,
@@ -237,8 +249,8 @@ export function ReportsScreen() {
         room.occupancyRate,
       ]),
       [],
-      ["Booking sources"],
-      ["Source", "Bookings", "Revenue"],
+      [t("Booking sources", "Vyanzo vya uhifadhi")],
+      [t("Source", "Chanzo"), t("Bookings", "Uhifadhi"), t("Revenue", "Mapato")],
       ...report.sources.map((source) => [source.source, source.bookings, source.revenue]),
     ];
     const csv = rows
@@ -509,7 +521,7 @@ export function ReportsScreen() {
               action={report?.timezone ? <StatusPill label={report.timezone} /> : undefined}
               description={t(
                 "Compare utilization and earned room revenue across your inventory.",
-                "Linganisha matumizi na mapato ya vyumba katika mali yako.",
+                "Linganisha matumizi na mapato ya vyumba katika biashara yako.",
               )}
               title={t("Room performance", "Utendaji wa vyumba")}
             />
@@ -583,13 +595,15 @@ function RoomRow({ room }: { room: RoomPerformance }) {
 }
 
 function RoomCard({ room }: { room: RoomPerformance }) {
+  const { t } = useLanguage();
+
   return (
     <Box sx={{ p: 2 }}>
       <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
         <Box sx={{ minWidth: 0 }}>
           <Typography noWrap sx={{ fontWeight: 700 }}>{room.roomName}</Typography>
           <Typography color="text.secondary" variant="body2">
-            {room.roomNights} room nights · {percent(room.occupancyRate)} occupancy
+            {t(`${room.roomNights} room nights`, `Usiku wa vyumba ${room.roomNights}`)} · {percent(room.occupancyRate)} {t("occupancy", "matumizi")}
           </Typography>
         </Box>
         <Typography sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>

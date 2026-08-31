@@ -16,9 +16,9 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang="sw">
       <head>
-        <title>Loji Business is temporarily unavailable</title>
+        <title>Loji Business haipatikani kwa muda</title>
         <style>{`
           :root { color-scheme: light dark; }
           * { box-sizing: border-box; }
@@ -146,16 +146,16 @@ export default function GlobalError({
               <span>Loji Business</span>
             </div>
             <div aria-hidden="true" className="global-error-icon">!</div>
-            <h1 id="global-error-title">Loji Business is temporarily unavailable</h1>
+            <h1 id="global-error-title">Loji Business haipatikani kwa muda</h1>
             <p>
-              We recorded the problem. Your saved information remains safe; please try again.
+              Tumerekodi tatizo hili. Taarifa zako zilizohifadhiwa ziko salama; tafadhali jaribu tena.
             </p>
             <div className="global-error-actions">
-              <button onClick={reset} type="button">Try again</button>
-              <Link href="/">Return home</Link>
+              <button onClick={reset} type="button">Jaribu tena</button>
+              <Link href="/">Rudi nyumbani</Link>
             </div>
             {error.digest ? (
-              <p className="global-error-reference">Reference: {error.digest}</p>
+              <p className="global-error-reference">Kumbukumbu: {error.digest}</p>
             ) : null}
           </section>
         </main>

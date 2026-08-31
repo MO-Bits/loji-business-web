@@ -6,6 +6,7 @@ import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material/styles";
 
 import { BrandLockup } from "@/components/shared/brand-lockup";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type AppStateTone = "error" | "info" | "offline";
 
@@ -53,6 +54,7 @@ function ActionButton({
   action: AppStateAction;
   primary: boolean;
 }) {
+  const { t } = useLanguage();
   const sharedProps = {
     fullWidth: true,
     startIcon: action.icon,
@@ -67,14 +69,14 @@ function ActionButton({
   if (action.href) {
     return (
       <Button component={Link} href={action.href} {...sharedProps}>
-        {action.label}
+        {t(action.label)}
       </Button>
     );
   }
 
   return (
     <Button onClick={action.onClick} type="button" {...sharedProps}>
-      {action.label}
+      {t(action.label)}
     </Button>
   );
 }
@@ -91,6 +93,7 @@ export function AppStateScreen({
   tone = "error",
   variant = "page",
 }: AppStateScreenProps) {
+  const { t } = useLanguage();
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -98,6 +101,9 @@ export function AppStateScreen({
   }, []);
 
   const isWorkspace = variant === "workspace";
+  const localizedDescription = typeof description === "string" ? t(description) : description;
+  const localizedEyebrow = typeof eyebrow === "string" ? t(eyebrow) : eyebrow;
+  const localizedTitle = typeof title === "string" ? t(title) : title;
 
   return (
     <Box
@@ -158,13 +164,13 @@ export function AppStateScreen({
           </Box>
 
           <Box aria-live={tone === "info" ? "polite" : "assertive"}>
-            {eyebrow ? (
+            {localizedEyebrow ? (
               <Typography
                 color="primary.main"
                 component="p"
                 sx={{ fontSize: ".75rem", fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase" }}
               >
-                {eyebrow}
+                {localizedEyebrow}
               </Typography>
             ) : null}
             <Typography
@@ -176,18 +182,18 @@ export function AppStateScreen({
                 fontWeight: 700,
                 letterSpacing: "-.035em",
                 lineHeight: 1.18,
-                mt: eyebrow ? 0.75 : 0,
+                mt: localizedEyebrow ? 0.75 : 0,
                 outline: "none",
               }}
             >
-              {title}
+              {localizedTitle}
             </Typography>
             <Typography
               color="text.secondary"
               component="div"
               sx={{ fontSize: ".9375rem", lineHeight: 1.65, mx: "auto", mt: 1, maxWidth: 460 }}
             >
-              {description}
+              {localizedDescription}
             </Typography>
           </Box>
 
@@ -208,7 +214,7 @@ export function AppStateScreen({
               component="p"
               sx={{ fontSize: ".75rem", overflowWrap: "anywhere" }}
             >
-              Reference: {reference}
+              {t("Reference", "Kumbukumbu")}: {reference}
             </Typography>
           ) : null}
         </Stack>

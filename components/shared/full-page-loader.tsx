@@ -2,8 +2,10 @@
 
 import { Box, CircularProgress, Stack, Typography } from "@mui/material";
 import { BrandSymbol } from "@/components/shared/brand-symbol";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export function FullPageLoader() {
+  const { t } = useLanguage();
   return (
     <Box
       aria-live="polite"
@@ -33,7 +35,7 @@ export function FullPageLoader() {
         </Box>
         <CircularProgress size={24} thickness={3.4} />
         <Typography color="text.secondary" sx={{ fontSize: ".8125rem", fontWeight: 500 }}>
-          Preparing your workspace…
+          {t("Preparing your workspace…", "Inaandaa eneo lako la kazi…")}
         </Typography>
       </Stack>
     </Box>

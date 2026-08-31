@@ -40,9 +40,9 @@ const items: SecurityItem[] = [
   {
     icon: DomainVerificationRoundedIcon,
     title: "Property-level separation",
-    swTitle: "Kutenganisha taarifa za kila jengo",
+    swTitle: "Kutenganisha taarifa za kila biashara",
     description: "Operational information is scoped to the property workspace a user is authorised to access.",
-    swDescription: "Taarifa za uendeshaji huonekana ndani ya jengo ambalo mtumiaji ameruhusiwa kulifikia.",
+    swDescription: "Taarifa za uendeshaji huonekana ndani ya biashara ambayo mtumiaji ameruhusiwa kuifikia.",
   },
   {
     icon: CloudDoneRoundedIcon,
@@ -65,7 +65,7 @@ export default function SecurityPage() {
       ]}
       description={[
         "Loji Business is designed so property information is accessed through authenticated users, property membership and role permissions.",
-        "Loji Business imeundwa ili taarifa za biashara zifikikiwe kupitia watumiaji waliothibitishwa, uanachama wa jengo na ruhusa za majukumu.",
+        "Loji Business imeundwa ili taarifa za biashara zifikikiwe kupitia watumiaji waliothibitishwa, uanachama wa biashara na ruhusa za majukumu.",
       ]}
     >
       <MarketingGrid columns={{ xs: 1, sm: 2 }}>

@@ -20,12 +20,12 @@ const solutions = [
       "Weka vyumba, uhifadhi, wanaowasili na wafanyakazi katika mpangilio bila kutegemea madaftari yaliyotawanyika.",
     ],
     icon: CottageRoundedIcon,
-    title: ["Lodges", "Lodge"],
+    title: ["Lodges", "Loji"],
   },
   {
     description: [
       "Give an independent guesthouse a reliable daily workspace without adding unnecessary complexity.",
-      "Ipe guesthouse huru sehemu ya kuaminika ya shughuli za kila siku bila kuongeza ugumu usiohitajika.",
+      "Ipe nyumba ya wageni inayojitegemea sehemu ya kuaminika ya shughuli za kila siku bila kuongeza ugumu usiohitajika.",
     ],
     icon: ApartmentRoundedIcon,
     title: ["Guesthouses", "Nyumba za wageni"],
@@ -41,10 +41,10 @@ const solutions = [
   {
     description: [
       "Organise units, stays and guest records as your apartment or short-stay portfolio grows.",
-      "Panga nyumba, ukaaji na taarifa za wageni kadri biashara yako ya apartment au short-stay inavyokua.",
+      "Panga nyumba, ukaaji na taarifa za wageni kadri biashara yako ya fleti au makazi ya muda mfupi inavyokua.",
     ],
     icon: DomainRoundedIcon,
-    title: ["Apartments & short stays", "Apartment na short-stay"],
+    title: ["Apartments & short stays", "Fleti na makazi ya muda mfupi"],
   },
 ] as const;
 
@@ -55,7 +55,7 @@ export default function SolutionsPage() {
     <MarketingPageShell
       description={[
         "Whether you run one lodge or a growing accommodation portfolio, Loji Business gives your team one operational workspace.",
-        "Iwe una lodge moja au biashara ya malazi inayokua, Loji Business inaipa timu yako sehemu moja ya kusimamia shughuli.",
+        "Iwe una loji moja au biashara ya malazi inayokua, Loji Business inaipa timu yako sehemu moja ya kusimamia shughuli.",
       ]}
       eyebrow={["SOLUTIONS", "SULUHISHO"]}
       title={[

@@ -29,6 +29,7 @@ import type { ActivityItem } from "@/features/activity/models/activity";
 import { listPropertyActivity } from "@/features/activity/services/activity-service";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { getWorkspaceCapabilities } from "@/features/session/permissions";
+import { formatLocalDateTime } from "@/lib/date-time";
 import { createClient } from "@/lib/supabase/client";
 
 const PAGE_SIZE = 30;
@@ -78,13 +79,13 @@ export function ActivityScreen() {
       if (requestId.current === currentRequest) {
         setErrorState({
           propertyId: requestPropertyId,
-          message: caught instanceof Error ? caught.message : "Unable to load activity.",
+          message: caught instanceof Error ? caught.message : t("Unable to load activity.", "Imeshindikana kupakia shughuli."),
         });
       }
     } finally {
       if (requestId.current === currentRequest) setLoading(false);
     }
-  }, [canView, eventType, page, propertyId, supabase]);
+  }, [canView, eventType, page, propertyId, supabase, t]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -190,6 +191,7 @@ export function ActivityScreen() {
 }
 
 function ActivityRow({ item }: { item: ActivityItem }) {
+  const { t } = useLanguage();
   const href = entityHref(item);
   const icon = activityIcon(item);
   const title = item.description || formatEvent(item.eventType, item.entityType);
@@ -200,18 +202,18 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       </Avatar>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.35, sm: 1 }} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}>
-          <Typography sx={{ fontWeight: 700 }} variant="body2">{title}</Typography>
+          <Typography sx={{ fontWeight: 700 }} variant="body2">{t(title)}</Typography>
           <Typography color="text.secondary" sx={{ flexShrink: 0 }} variant="caption">
-            {formatDate(item.createdAt)}
+            {formatLocalDateTime(item.createdAt)}
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", mt: 0.6 }}>
-          <Typography color="text.secondary" noWrap variant="caption">{item.actorName}</Typography>
-          <StatusPill label={item.entityType || "system"} tone="neutral" />
+          <Typography color="text.secondary" noWrap variant="caption">{t(item.actorName)}</Typography>
+          <StatusPill label={t(item.entityType || "system")} tone="neutral" />
         </Stack>
       </Box>
       {href ? (
-        <IconButton aria-label="Open record" component={Link} href={href} size="small">
+        <IconButton aria-label={t("Open record", "Fungua kumbukumbu")} component={Link} href={href} size="small">
           <ArrowOutwardRoundedIcon fontSize="small" />
         </IconButton>
       ) : null}
@@ -238,9 +240,4 @@ function activityIcon(item: ActivityItem) {
 function formatEvent(eventType: string, entityType: string) {
   const words = (eventType || `${entityType} updated`).replaceAll("_", " ").trim();
   return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
-function formatDate(value: string) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }

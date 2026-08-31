@@ -4,6 +4,7 @@ import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { BrandLockup } from "@/components/shared/brand-lockup";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export function SessionErrorScreen({
   error,
@@ -12,6 +13,7 @@ export function SessionErrorScreen({
   error: Error;
   onRetry: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <Box
       sx={{
@@ -42,10 +44,10 @@ export function SessionErrorScreen({
           </Box>
           <Box>
             <Typography component="h1" sx={{ fontSize: "1.375rem", fontWeight: 700, letterSpacing: "-.02em" }}>
-              We couldn’t open your workspace
+              {t("We couldn’t open your workspace", "Hatukuweza kufungua eneo lako la kazi")}
             </Typography>
             <Typography color="text.secondary" sx={{ fontSize: ".875rem", lineHeight: 1.65, mt: 0.75 }}>
-              Check your connection and try again. Your saved information is safe.
+              {t("Check your connection and try again. Your saved information is safe.", "Kagua intaneti kisha ujaribu tena. Taarifa zako zilizohifadhiwa ziko salama.")}
             </Typography>
             {process.env.NODE_ENV === "development" ? (
               <Typography color="text.disabled" sx={{ fontSize: ".75rem", mt: 1.25 }}>
@@ -54,7 +56,7 @@ export function SessionErrorScreen({
             ) : null}
           </Box>
           <Button variant="contained" startIcon={<RefreshRoundedIcon />} onClick={onRetry}>
-            Try again
+            {t("Try again")}
           </Button>
         </Stack>
       </Paper>

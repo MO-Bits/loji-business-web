@@ -25,7 +25,7 @@ const faqs = [
     answer:
       "Loji Business is a cloud-based workspace for hotels, lodges and guesthouses. It helps your team manage rooms, bookings, guests, staff access and daily property operations from one place.",
     swAnswer:
-      "Loji Business ni mfumo wa mtandaoni kwa hoteli, lodge na nyumba za wageni. Husaidia timu yako kusimamia vyumba, uhifadhi, wageni, ruhusa za wafanyakazi na shughuli za kila siku katika sehemu moja.",
+      "Loji Business ni mfumo wa mtandaoni kwa hoteli, loji na nyumba za wageni. Husaidia timu yako kusimamia vyumba, uhifadhi, wageni, ruhusa za wafanyakazi na shughuli za kila siku katika sehemu moja.",
   },
   {
     question: "Who is Loji Business designed for?",
@@ -33,11 +33,11 @@ const faqs = [
     answer:
       "It is designed for independent hotels, lodges, guesthouses and other accommodation businesses that want a simpler and more organised way to run day-to-day operations.",
     swAnswer:
-      "Imeundwa kwa hoteli, lodge, nyumba za wageni na biashara nyingine za malazi zinazotaka njia rahisi na yenye mpangilio zaidi ya kuendesha shughuli za kila siku.",
+      "Imeundwa kwa hoteli, loji, nyumba za wageni na biashara nyingine za malazi zinazotaka njia rahisi na yenye mpangilio zaidi ya kuendesha shughuli za kila siku.",
   },
   {
     question: "Can several staff members use the same property?",
-    swQuestion: "Je, wafanyakazi wengi wanaweza kutumia jengo moja?",
+    swQuestion: "Je, wafanyakazi wengi wanaweza kutumia biashara moja?",
     answer:
       "Yes. Owners and managers can invite staff and assign roles so each person sees only the tools and information appropriate to their responsibilities.",
     swAnswer:
@@ -45,11 +45,11 @@ const faqs = [
   },
   {
     question: "Can I manage more than one property?",
-    swQuestion: "Je, ninaweza kusimamia majengo zaidi ya moja?",
+    swQuestion: "Je, ninaweza kusimamia biashara zaidi ya moja?",
     answer:
       "Yes. If your account has access to multiple properties, you can switch between them while keeping each property's bookings, rooms, staff and operational information separate.",
     swAnswer:
-      "Ndiyo. Ikiwa akaunti yako ina ruhusa kwenye majengo mengi, unaweza kubadilisha kati yake huku uhifadhi, vyumba, wafanyakazi na taarifa za kila jengo zikiwa zimetenganishwa.",
+      "Ndiyo. Ikiwa akaunti yako ina ruhusa kwenye biashara nyingi, unaweza kubadilisha kati yake huku uhifadhi, vyumba, wafanyakazi na taarifa za kila biashara zikiwa zimetenganishwa.",
   },
   {
     question: "Do I need to install software on a computer?",
@@ -69,11 +69,11 @@ const faqs = [
   },
   {
     question: "Is my property information protected?",
-    swQuestion: "Je, taarifa za jengo langu zinalindwa?",
+    swQuestion: "Je, taarifa za biashara yangu zinalindwa?",
     answer:
       "Loji Business uses authenticated accounts, property-based access and role permissions to help keep operational information available only to authorised users.",
     swAnswer:
-      "Loji Business hutumia akaunti zilizothibitishwa, ufikiaji unaotegemea jengo na ruhusa za majukumu ili kusaidia taarifa za uendeshaji kupatikana kwa watumiaji walioidhinishwa pekee.",
+      "Loji Business hutumia akaunti zilizothibitishwa, ufikiaji kwa kila biashara na ruhusa za majukumu ili taarifa za uendeshaji zipatikane kwa watumiaji walioidhinishwa pekee.",
   },
   {
     question: "How do I get started?",
@@ -81,7 +81,7 @@ const faqs = [
     answer:
       "Sign in, complete your property setup, add your rooms and invite the staff who need access. After that, your team can start managing daily bookings and operations from the workspace.",
     swAnswer:
-      "Ingia, kamilisha taarifa za jengo lako, ongeza vyumba na waalike wafanyakazi wanaohitaji ufikiaji. Baada ya hapo, timu yako inaweza kuanza kusimamia uhifadhi na shughuli za kila siku.",
+      "Ingia, kamilisha taarifa za biashara yako, ongeza vyumba na waalike wafanyakazi wanaohitaji ufikiaji. Baada ya hapo, timu yako inaweza kuanza kusimamia uhifadhi na shughuli za kila siku.",
   },
 ];
 

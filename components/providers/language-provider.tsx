@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   createContext,
   useContext,
   useEffect,
@@ -8,38 +9,66 @@ import {
   useState,
 } from "react";
 
+import { translateToSwahili } from "@/components/providers/global-translations";
+
 export type AppLanguage = "en" | "sw";
 
 type LanguageContextValue = {
   language: AppLanguage;
+  locale: "en-TZ" | "sw-TZ";
   setLanguage: (language: AppLanguage) => void;
-  t: (english: string, swahili: string) => string;
+  t: (english: string, swahili?: string) => string;
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+const languagePreferenceKey = "loji-language-preference:v2";
+const legacyLanguageKey = "loji-language";
+const defaultLanguage: AppLanguage = "sw";
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<AppLanguage>("en");
+  const [language, setLanguageState] = useState<AppLanguage>(defaultLanguage);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("loji-language");
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem(languagePreferenceKey);
+    } catch {
+      return;
+    }
     if (saved !== "en" && saved !== "sw") return;
-    const frame = window.requestAnimationFrame(() => setLanguage(saved));
+    const frame = window.requestAnimationFrame(() => {
+      document.documentElement.lang = saved;
+      setLanguageState(saved);
+    });
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
     document.documentElement.lang = language;
-    window.localStorage.setItem("loji-language", language);
   }, [language]);
+
+  const setLanguage = useCallback((nextLanguage: AppLanguage) => {
+    document.documentElement.lang = nextLanguage;
+    setLanguageState(nextLanguage);
+    try {
+      window.localStorage.setItem(languagePreferenceKey, nextLanguage);
+      window.localStorage.setItem(legacyLanguageKey, nextLanguage);
+    } catch {
+      // Language selection still applies when browser storage is unavailable.
+    }
+  }, []);
 
   const value = useMemo<LanguageContextValue>(
     () => ({
       language,
+      locale: language === "sw" ? "sw-TZ" : "en-TZ",
       setLanguage,
-      t: (english, swahili) => (language === "sw" ? swahili : english),
+      t: (english, swahili) =>
+        language === "sw"
+          ? swahili ?? translateToSwahili(english)
+          : english,
     }),
-    [language],
+    [language, setLanguage],
   );
 
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;

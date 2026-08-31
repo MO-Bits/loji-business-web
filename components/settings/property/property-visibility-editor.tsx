@@ -72,23 +72,23 @@ function VisibilityForm({ client, propertyId, workspace }: { client: ReturnType<
   return (
     <>
       <Stack component="form" onSubmit={review} spacing={{ xs: 2.5, sm: 3 }}>
-        <PropertyEditorHeader description={t("Control whether this property is active in operational and booking workflows.", "Dhibiti kama biashara hii inatumika kwenye uendeshaji na nafasi.")} icon={<PublicOutlinedIcon />} title={t("Status and visibility", "Hali na mwonekano")} />
+        <PropertyEditorHeader description={t("Control whether this property is active in operational and booking workflows.", "Dhibiti kama biashara hii inatumika kwenye uendeshaji na uhifadhi.")} icon={<PublicOutlinedIcon />} title={t("Status and visibility", "Hali na mwonekano")} />
         {error ? <Alert severity="error">{error}</Alert> : null}
         <Surface>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}><Box><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("Current property status", "Hali ya sasa ya biashara")}</Typography><Typography color="text.secondary" variant="body2">{t("Visibility changes are owner-only and recorded in the activity log.", "Mabadiliko ya mwonekano ni ya mmiliki pekee na hurekodiwa kwenye historia.")}</Typography></Box><StatusPill label={initial ? t("Active", "Inatumika") : t("Hidden", "Imefichwa")} tone={initial ? "success" : "warning"} /></Stack>
         </Surface>
         <SettingsSection description={t("Choose the state that should apply after you save.", "Chagua hali itakayotumika baada ya kuhifadhi.")} title={t("Property state", "Hali ya biashara")}>
           <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" }, p: { xs: 2, sm: 2.5 } }}>
-            <StatusChoice active={isActive} description={t("The property remains available to staff workflows and eligible booking surfaces.", "Biashara itaendelea kupatikana kwenye kazi za timu na sehemu za nafasi.")} icon={<CheckCircleRoundedIcon />} label={t("Active", "Inatumika")} onClick={() => setIsActive(true)} tone="success" />
-            <StatusChoice active={!isActive} description={t("The property is hidden from active booking flows while its records remain intact.", "Biashara itafichwa kwenye nafasi mpya huku taarifa zake zikibaki salama.")} icon={<VisibilityOffOutlinedIcon />} label={t("Hidden", "Imefichwa")} onClick={() => setIsActive(false)} tone="warning" />
+            <StatusChoice active={isActive} description={t("The property remains available to staff workflows and eligible booking surfaces.", "Biashara itaendelea kupatikana kwenye kazi za timu na sehemu za uhifadhi.")} icon={<CheckCircleRoundedIcon />} label={t("Active", "Inatumika")} onClick={() => setIsActive(true)} tone="success" />
+            <StatusChoice active={!isActive} description={t("The property is hidden from active booking flows while its records remain intact.", "Biashara itafichwa kwenye utaratibu wa uhifadhi huku taarifa zake zikibaki salama.")} icon={<VisibilityOffOutlinedIcon />} label={t("Hidden", "Imefichwa")} onClick={() => setIsActive(false)} tone="warning" />
           </Box>
         </SettingsSection>
-        {!isActive ? <Alert icon={<WarningAmberRoundedIcon />} severity="warning">{t("Hiding a property can interrupt new bookings and daily operations. Existing records are preserved.", "Kuficha biashara kunaweza kusitisha nafasi mpya na uendeshaji wa kila siku. Taarifa zilizopo zitahifadhiwa.")}</Alert> : null}
+        {!isActive ? <Alert icon={<WarningAmberRoundedIcon />} severity="warning">{t("Hiding a property can interrupt new bookings and daily operations. Existing records are preserved.", "Kuficha biashara kunaweza kusitisha uhifadhi mpya na uendeshaji wa kila siku. Taarifa zilizopo zitahifadhiwa.")}</Alert> : null}
         <EditorSaveBar dirty={dirty} saving={saving} submitLabel={t("Review status change", "Kagua mabadiliko ya hali")} />
       </Stack>
       <Dialog fullWidth maxWidth="xs" onClose={() => setConfirmOpen(false)} open={confirmOpen}>
         <DialogTitle>{isActive ? t("Activate this property?", "Washa biashara hii?") : t("Hide this property?", "Ficha biashara hii?")}</DialogTitle>
-        <DialogContent><Typography color="text.secondary" variant="body2">{isActive ? t("The property will return to active operational and booking workflows.", "Biashara itarudi kwenye uendeshaji na nafasi zinazoendelea.") : t("New booking visibility may stop immediately. Existing rooms, bookings, guests, and history will remain stored.", "Mwonekano wa nafasi mpya unaweza kusimama mara moja. Vyumba, nafasi, wageni na historia vitabaki.")}</Typography></DialogContent>
+        <DialogContent><Typography color="text.secondary" variant="body2">{isActive ? t("The property will return to active operational and booking workflows.", "Biashara itarudi kwenye uendeshaji na utaratibu wa uhifadhi.") : t("New booking visibility may stop immediately. Existing rooms, bookings, guests, and history will remain stored.", "Uhifadhi mpya unaweza kusimama mara moja. Vyumba, uhifadhi uliopo, wageni na historia vitabaki.")}</Typography></DialogContent>
         <DialogActions><Button onClick={() => setConfirmOpen(false)}>{t("Cancel", "Ghairi")}</Button><Button color={isActive ? "primary" : "warning"} onClick={() => void confirm()} variant="contained">{isActive ? t("Activate property", "Washa biashara") : t("Hide property", "Ficha biashara")}</Button></DialogActions>
       </Dialog>
     </>

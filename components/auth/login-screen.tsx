@@ -172,7 +172,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
                 </Box>
               </Stack>
               <Typography sx={{ color: "rgba(235,245,255,.58)", fontSize: ".75rem" }}>
-                {t("Built for lodges, hotels and guesthouses.", "Imeundwa kwa lodge, hoteli na guesthouse.")}
+                {t("Built for lodges, hotels and guesthouses.", "Imeundwa kwa loji, hoteli na nyumba za wageni.")}
               </Typography>
             </Stack>
           <Stack

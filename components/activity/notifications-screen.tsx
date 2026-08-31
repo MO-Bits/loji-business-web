@@ -28,6 +28,7 @@ import {
 } from "@/features/activity/services/activity-service";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { normalizeWorkspaceRole } from "@/features/session/permissions";
+import { formatLocalDateTime } from "@/lib/date-time";
 import { createClient } from "@/lib/supabase/client";
 
 const PAGE_SIZE = 30;
@@ -86,13 +87,13 @@ export function NotificationsScreen() {
       if (requestId.current === currentRequest) {
         setErrorState({
           propertyId: requestPropertyId,
-          message: caught instanceof Error ? caught.message : "Unable to load notifications.",
+          message: caught instanceof Error ? caught.message : t("Unable to load notifications.", "Imeshindikana kupakia arifa."),
         });
       }
     } finally {
       if (requestId.current === currentRequest) setLoading(false);
     }
-  }, [canView, page, propertyId, supabase, unreadOnly]);
+  }, [canView, page, propertyId, supabase, t, unreadOnly]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -129,7 +130,7 @@ export function NotificationsScreen() {
         setFeedState(previous);
         setErrorState({
           propertyId: requestPropertyId,
-          message: caught instanceof Error ? caught.message : "Unable to update notification.",
+          message: caught instanceof Error ? caught.message : t("Unable to update notification.", "Imeshindikana kusasisha arifa."),
         });
       }
     } finally {
@@ -159,7 +160,7 @@ export function NotificationsScreen() {
         setFeedState(previous);
         setErrorState({
           propertyId: requestPropertyId,
-          message: caught instanceof Error ? caught.message : "Unable to update notifications.",
+          message: caught instanceof Error ? caught.message : t("Unable to update notifications.", "Imeshindikana kusasisha arifa."),
         });
       }
     } finally {
@@ -288,6 +289,8 @@ function NotificationRow({
   onToggleRead: () => void;
   openLabel: string;
 }) {
+  const { t } = useLanguage();
+
   return (
     <Stack
       direction="row"
@@ -315,11 +318,11 @@ function NotificationRow({
         <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.35, sm: 1 }} sx={{ justifyContent: "space-between" }}>
           <Stack direction="row" spacing={0.8} sx={{ alignItems: "center", minWidth: 0 }}>
             {!item.isRead ? <Box aria-hidden sx={{ bgcolor: "primary.main", borderRadius: "50%", flexShrink: 0, height: 7, width: 7 }} /> : null}
-            <Typography sx={{ fontWeight: item.isRead ? 500 : 700 }} variant="body2">{item.title}</Typography>
+            <Typography sx={{ fontWeight: item.isRead ? 500 : 700 }} variant="body2">{t(item.title)}</Typography>
           </Stack>
-          <Typography color="text.secondary" sx={{ flexShrink: 0 }} variant="caption">{formatDate(item.createdAt)}</Typography>
+          <Typography color="text.secondary" sx={{ flexShrink: 0 }} variant="caption">{formatLocalDateTime(item.createdAt)}</Typography>
         </Stack>
-        {item.body ? <Typography color="text.secondary" sx={{ mt: 0.45 }} variant="body2">{item.body}</Typography> : null}
+        {item.body ? <Typography color="text.secondary" sx={{ mt: 0.45 }} variant="body2">{t(item.body)}</Typography> : null}
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap", mt: 0.75, rowGap: 0.75 }}>
           <StatusPill label={item.type.replaceAll("_", " ")} tone="neutral" />
           {item.priority !== "normal" ? <StatusPill label={item.priority} tone={item.priority === "high" || item.priority === "urgent" ? "danger" : "warning"} /> : null}
@@ -335,9 +338,4 @@ function NotificationRow({
       ) : null}
     </Stack>
   );
-}
-
-function formatDate(value: string) {
-  if (!value) return "";
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }

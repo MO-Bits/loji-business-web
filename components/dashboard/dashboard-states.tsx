@@ -58,7 +58,7 @@ export function DashboardError({
             <Typography sx={{ mt: 0.25 }} variant="body2">
               {message ?? t(
                 "The current property overview is temporarily unavailable.",
-                "Muhtasari wa mali hii haupatikani kwa muda.",
+                "Muhtasari wa biashara hii haupatikani kwa muda.",
               )}
             </Typography>
           </Alert>

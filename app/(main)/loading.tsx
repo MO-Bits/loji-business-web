@@ -3,15 +3,17 @@
 import { Box, Skeleton, Stack, Typography } from "@mui/material";
 
 import { Surface, WorkspacePage } from "@/components/shared/workspace-ui";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export default function MainContentLoading() {
+  const { t } = useLanguage();
   return (
     <WorkspacePage>
       <Box aria-busy="true" aria-live="polite" role="status">
         <Typography
           sx={{ border: 0, clip: "rect(0 0 0 0)", height: 1, m: -1, overflow: "hidden", p: 0, position: "absolute", width: 1 }}
         >
-          Loading workspace
+          {t("Loading workspace", "Inapakia eneo la kazi")}
         </Typography>
         <Stack spacing={{ xs: 2.5, sm: 3 }}>
           <Box>

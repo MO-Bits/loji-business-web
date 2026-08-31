@@ -50,6 +50,7 @@ import {
   type BookingListResult,
 } from "@/features/bookings/models/booking";
 import { formatLocalDate } from "@/lib/date-time";
+import { useLanguage } from "@/components/providers/language-provider";
 import { PageHeader } from "@/components/shared/page-header";
 
 const money = new Intl.NumberFormat("en-TZ", {
@@ -93,6 +94,7 @@ function BookingsSearchParamsBoundary() {
 function BookingsWorkspace() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const { session, loading: sessionLoading, error: sessionError } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const propertyId = session?.activePropertyId;
@@ -181,7 +183,9 @@ function BookingsWorkspace() {
         }));
       } catch (cause) {
         if (currentRequest !== requestId.current) return;
-        const message = cause instanceof Error ? cause.message : "Unable to load bookings.";
+        const message = cause instanceof Error
+          ? cause.message
+          : t("Unable to load bookings.", "Imeshindikana kupakia uhifadhi.");
         if (append) setLoadMoreError(message);
         else setErrorState({ propertyId: requestPropertyId, message });
       } finally {
@@ -189,7 +193,7 @@ function BookingsWorkspace() {
         setLoading(false);
         setLoadingMore(false);
       }
-    }, [client, committedQuery, from, propertyId, status, to]);
+    }, [client, committedQuery, from, propertyId, status, t, to]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchPage(false), 0);
@@ -208,7 +212,10 @@ function BookingsWorkspace() {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
         <Alert severity="error">
-          {sessionError?.message ?? "Select an active property to view bookings."}
+          {sessionError?.message ?? t(
+            "Select an active property to view bookings.",
+            "Chagua biashara inayotumika ili kuona uhifadhi.",
+          )}
         </Alert>
       </Container>
     );
@@ -228,13 +235,18 @@ function BookingsWorkspace() {
       <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 2, md: 2.5 }}>
           <PageHeader
-            eyebrow={result?.businessDate ? `Business date · ${formatLocalDate(result.businessDate)}` : "Reservations"}
-            title="Bookings"
-            description="Manage every arrival, in-house stay and departure from one live register."
+            eyebrow={result?.businessDate
+              ? t(`Business date · ${formatLocalDate(result.businessDate)}`)
+              : t("Reservations")}
+            title={t("Bookings")}
+            description={t(
+              "Manage every arrival, in-house stay and departure from one live register.",
+              "Simamia wanaowasili, waliopo na wanaoondoka kutoka rejista moja ya moja kwa moja.",
+            )}
             action={
               showGlobalCreateAction ? (
                 <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", sm: "inline-flex" } }}>
-                  New booking
+                  {t("New booking")}
                 </Button>
               ) : undefined
             }
@@ -251,7 +263,7 @@ function BookingsWorkspace() {
               sx={{ borderBottom: "1px solid", borderColor: "divider", px: { xs: 0.5, sm: 1 } }}
             >
               {statusOptions.map((item) => (
-                <Tab key={item.value} value={item.value} label={item.label} />
+                <Tab key={item.value} value={item.value} label={t(item.label)} />
               ))}
             </Tabs>
 
@@ -268,8 +280,11 @@ function BookingsWorkspace() {
               }}
             >
               <TextField
-                aria-label="Search bookings"
-                placeholder="Search guest, booking number or phone"
+                aria-label={t("Search bookings", "Tafuta uhifadhi")}
+                placeholder={t(
+                  "Search guest, booking number or phone",
+                  "Tafuta mgeni, namba ya uhifadhi au simu",
+                )}
                 size="small"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -280,7 +295,7 @@ function BookingsWorkspace() {
                     ),
                     endAdornment: query ? (
                       <InputAdornment position="end">
-                        <IconButton aria-label="Clear search" onClick={() => setQuery("")} size="small"><ClearRoundedIcon fontSize="small" /></IconButton>
+                        <IconButton aria-label={t("Clear search")} onClick={() => setQuery("")} size="small"><ClearRoundedIcon fontSize="small" /></IconButton>
                       </InputAdornment>
                     ) : undefined,
                   },
@@ -288,7 +303,7 @@ function BookingsWorkspace() {
                 sx={{ gridColumn: { sm: "1 / -1", lg: "auto" } }}
               />
               <TextField
-                label="From"
+                label={t("From", "Kuanzia")}
                 size="small"
                 type="date"
                 value={from}
@@ -296,7 +311,7 @@ function BookingsWorkspace() {
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
-                label="To"
+                label={t("To", "Hadi")}
                 size="small"
                 type="date"
                 value={to}
@@ -309,7 +324,7 @@ function BookingsWorkspace() {
                 startIcon={<ClearRoundedIcon />}
                 sx={{ gridColumn: { sm: "1 / -1", lg: "auto" }, justifySelf: { sm: "end", lg: "stretch" } }}
               >
-                Clear
+                {t("Clear", "Ondoa")}
               </Button>
             </Box>
           </Paper>
@@ -319,7 +334,7 @@ function BookingsWorkspace() {
           ) : error ? (
             <Alert
               severity="error"
-              action={<Button color="inherit" startIcon={<RefreshRoundedIcon />} onClick={() => void fetchPage(false)}>Retry</Button>}
+              action={<Button color="inherit" startIcon={<RefreshRoundedIcon />} onClick={() => void fetchPage(false)}>{t("Retry")}</Button>}
             >
               {error}
             </Alert>
@@ -338,18 +353,20 @@ function BookingsWorkspace() {
               {result.hasMore ? (
                 <Box sx={{ display: "grid", placeItems: "center", pt: 0.5 }}>
                   <Button disabled={loadingMore || result.nextOffset == null} onClick={() => void fetchPage(true, result.nextOffset ?? 0)} variant="outlined">
-                    {loadingMore ? "Loading…" : "Load more bookings"}
+                    {loadingMore
+                      ? t("Loading…")
+                      : t("Load more bookings", "Pakia uhifadhi zaidi")}
                   </Button>
                 </Box>
               ) : null}
-              {loadMoreError ? <Alert severity="error" onClose={() => setLoadMoreError(null)}>More bookings could not be loaded: {loadMoreError}</Alert> : null}
+              {loadMoreError ? <Alert severity="error" onClose={() => setLoadMoreError(null)}>{t("More bookings could not be loaded:", "Uhifadhi zaidi haukuweza kupakiwa:")} {loadMoreError}</Alert> : null}
             </>
           )}
         </Stack>
       </Container>
 
       {showGlobalCreateAction ? (
-        <Fab component={Link} href="/bookings/new" color="primary" aria-label="New booking" sx={{ bottom: "calc(80px + env(safe-area-inset-bottom))", display: { xs: "inline-flex", sm: "none" }, position: "fixed", right: 18 }}>
+        <Fab component={Link} href="/bookings/new" color="primary" aria-label={t("New booking")} sx={{ bottom: "calc(80px + env(safe-area-inset-bottom))", display: { xs: "inline-flex", sm: "none" }, position: "fixed", right: 18 }}>
           <AddRoundedIcon />
         </Fab>
       ) : null}
@@ -358,6 +375,7 @@ function BookingsWorkspace() {
 }
 
 function SummaryStrip({ result, loading }: { result: BookingListResult | null; loading: boolean }) {
+  const { t } = useLanguage();
   const values = [
     { label: "All reservations", value: result?.summary.total ?? 0, icon: <CalendarTodayRoundedIcon /> },
     { label: "Arriving today", value: result?.summary.arrivals ?? 0, icon: <GroupsRoundedIcon /> },
@@ -380,7 +398,7 @@ function SummaryStrip({ result, loading }: { result: BookingListResult | null; l
           >
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", color: "text.secondary" }}>
               <Box sx={{ color: "primary.main", display: "flex", flexShrink: 0, "& .MuiSvgIcon-root": { fontSize: 18 } }}>{item.icon}</Box>
-              <Typography variant="caption">{item.label}</Typography>
+              <Typography variant="caption">{t(item.label)}</Typography>
             </Stack>
             {loading ? <Skeleton width={46} /> : <Typography sx={{ fontSize: { xs: "1.3rem", sm: "1.55rem" }, fontVariantNumeric: "tabular-nums", fontWeight: 700, mt: 0.5 }}>{item.value}</Typography>}
           </Box>
@@ -391,17 +409,18 @@ function SummaryStrip({ result, loading }: { result: BookingListResult | null; l
 }
 
 function BookingsTable({ bookings, showFinance }: { bookings: Booking[]; showFinance: boolean }) {
+  const { t } = useLanguage();
   return (
     <TableContainer component={Paper} variant="outlined">
-      <Table aria-label="Bookings register">
+      <Table aria-label={t("Bookings register", "Rejista ya uhifadhi")}>
         <TableHead>
           <TableRow>
-            <TableCell>Guest & booking</TableCell>
-            <TableCell>Stay</TableCell>
-            <TableCell>Room</TableCell>
-            <TableCell>Status</TableCell>
-            {showFinance ? <TableCell align="right">Payment</TableCell> : null}
-            <TableCell aria-label="Actions" padding="checkbox" />
+            <TableCell>{t("Guest & booking", "Mgeni na uhifadhi")}</TableCell>
+            <TableCell>{t("Stay")}</TableCell>
+            <TableCell>{t("Room")}</TableCell>
+            <TableCell>{t("Status")}</TableCell>
+            {showFinance ? <TableCell align="right">{t("Payment")}</TableCell> : null}
+            <TableCell aria-label={t("Actions")} padding="checkbox" />
           </TableRow>
         </TableHead>
         <TableBody>
@@ -410,10 +429,10 @@ function BookingsTable({ bookings, showFinance }: { bookings: Booking[]; showFin
               <TableCell><GuestIdentity booking={booking} /></TableCell>
               <TableCell>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>{formatLocalDate(booking.checkIn, { day: "numeric", month: "short" })} → {formatLocalDate(booking.checkOut, { day: "numeric", month: "short", year: "numeric" })}</Typography>
-                <Typography color="text.secondary" variant="caption">{booking.totalGuests} guest{booking.totalGuests === 1 ? "" : "s"} · {booking.bookingSource}</Typography>
+                <Typography color="text.secondary" variant="caption">{t(`${booking.totalGuests} guest${booking.totalGuests === 1 ? "" : "s"}`)} · {t(bookingStatusLabel(booking.bookingSource))}</Typography>
               </TableCell>
               <TableCell>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>{booking.roomName || "Unassigned"}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>{booking.roomName || t("Unassigned", "Hakijagawiwa")}</Typography>
                 <Typography color="text.secondary" sx={{ textTransform: "capitalize" }} variant="caption">{booking.roomType}</Typography>
               </TableCell>
               <TableCell><BookingStatusChip booking={booking} /></TableCell>
@@ -428,6 +447,7 @@ function BookingsTable({ bookings, showFinance }: { bookings: Booking[]; showFin
 }
 
 function BookingCard({ booking, showFinance }: { booking: Booking; showFinance: boolean }) {
+  const { t } = useLanguage();
   return (
     <Paper variant="outlined" sx={{ overflow: "hidden" }}>
       <Box component={Link} href={`/bookings/${booking.id}`} sx={{ color: "inherit", display: "block", p: { xs: 1.5, sm: 2 }, textDecoration: "none", "&:hover": { bgcolor: "action.hover" } }}>
@@ -436,13 +456,13 @@ function BookingCard({ booking, showFinance }: { booking: Booking; showFinance: 
           <Box sx={{ ml: "auto!important" }}><BookingStatusChip booking={booking} /></Box>
         </Stack>
         <Box sx={{ display: "grid", gap: 1.25, gridTemplateColumns: "repeat(2,minmax(0,1fr))", mt: 1.5 }}>
-          <CompactFact label="Stay" value={`${formatLocalDate(booking.checkIn, { day: "numeric", month: "short" })} → ${formatLocalDate(booking.checkOut, { day: "numeric", month: "short" })}`} />
-          <CompactFact label="Room" value={booking.roomName || "Unassigned"} />
-          <CompactFact label="Guests" value={`${booking.totalGuests} · ${booking.bookingSource}`} />
-          {showFinance ? <CompactFact label="Payment" value={booking.balanceDue != null && booking.balanceDue > 0 ? `${money.format(booking.balanceDue)} due` : booking.paymentStatus === "paid" ? "Paid" : bookingStatusLabel(booking.paymentStatus)} /> : null}
+          <CompactFact label={t("Stay")} value={`${formatLocalDate(booking.checkIn, { day: "numeric", month: "short" })} → ${formatLocalDate(booking.checkOut, { day: "numeric", month: "short" })}`} />
+          <CompactFact label={t("Room")} value={booking.roomName || t("Unassigned", "Hakijagawiwa")} />
+          <CompactFact label={t("Guests")} value={`${booking.totalGuests} · ${t(bookingStatusLabel(booking.bookingSource))}`} />
+          {showFinance ? <CompactFact label={t("Payment")} value={booking.balanceDue != null && booking.balanceDue > 0 ? t(`${money.format(booking.balanceDue)} due`, `${money.format(booking.balanceDue)} salio`) : booking.paymentStatus === "paid" ? t("Paid", "Imelipwa") : t(bookingStatusLabel(booking.paymentStatus))} /> : null}
         </Box>
         <Stack direction="row" sx={{ alignItems: "center", borderTop: "1px solid", borderColor: "divider", color: "primary.main", justifyContent: "space-between", mt: 1.5, pt: 1.25 }}>
-          <Typography variant="caption" sx={{ fontWeight: 500 }}>Open reservation</Typography>
+          <Typography variant="caption" sx={{ fontWeight: 500 }}>{t("Open reservation")}</Typography>
           <ArrowForwardRoundedIcon fontSize="small" />
         </Stack>
       </Box>
@@ -464,15 +484,18 @@ function GuestIdentity({ booking, compact = false }: { booking: Booking; compact
 }
 
 function BookingStatusChip({ booking }: { booking: Booking }) {
-  return <Chip color={statusTone(booking.status)} label={booking.isOverdue ? `${bookingStatusLabel(booking.status)} · overdue` : bookingStatusLabel(booking.status)} size="small" variant={booking.isOverdue ? "filled" : "outlined"} />;
+  const { t } = useLanguage();
+  const label = t(bookingStatusLabel(booking.status));
+  return <Chip color={statusTone(booking.status)} label={booking.isOverdue ? `${label} · ${t("overdue", "imechelewa")}` : label} size="small" variant={booking.isOverdue ? "filled" : "outlined"} />;
 }
 
 function PaymentPosition({ booking }: { booking: Booking }) {
+  const { t } = useLanguage();
   if (booking.balanceDue == null) return <Typography color="text.secondary">—</Typography>;
   return (
     <Box>
-      <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{booking.balanceDue > 0 ? money.format(booking.balanceDue) : "Paid"}</Typography>
-      <Typography color={booking.balanceDue > 0 ? "warning.main" : "success.main"} variant="caption">{booking.balanceDue > 0 ? "Outstanding" : "Settled"}</Typography>
+      <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{booking.balanceDue > 0 ? money.format(booking.balanceDue) : t("Paid", "Imelipwa")}</Typography>
+      <Typography color={booking.balanceDue > 0 ? "warning.main" : "success.main"} variant="caption">{booking.balanceDue > 0 ? t("Outstanding") : t("Settled", "Imekamilika")}</Typography>
     </Box>
   );
 }
@@ -482,14 +505,15 @@ function CompactFact({ label, value }: { label: string; value: string }) {
 }
 
 function RowMenu({ booking }: { booking: Booking }) {
+  const { t } = useLanguage();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = (event: MouseEvent<HTMLElement>) => setAnchor(event.currentTarget);
   return (
     <>
-      <Tooltip title="Booking actions"><IconButton aria-label={`Actions for ${booking.bookingNumber}`} onClick={open} size="small"><MoreHorizRoundedIcon /></IconButton></Tooltip>
+      <Tooltip title={t("Booking actions")}><IconButton aria-label={t(`Actions for ${booking.bookingNumber}`)} onClick={open} size="small"><MoreHorizRoundedIcon /></IconButton></Tooltip>
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
-        <MenuItem component={Link} href={`/bookings/${booking.id}`} onClick={() => setAnchor(null)}>Open reservation</MenuItem>
-        {booking.phone ? <MenuItem component="a" href={`tel:${booking.phone}`} onClick={() => setAnchor(null)}>Call guest</MenuItem> : null}
+        <MenuItem component={Link} href={`/bookings/${booking.id}`} onClick={() => setAnchor(null)}>{t("Open reservation")}</MenuItem>
+        {booking.phone ? <MenuItem component="a" href={`tel:${booking.phone}`} onClick={() => setAnchor(null)}>{t("Call guest")}</MenuItem> : null}
       </Menu>
     </>
   );
@@ -510,14 +534,15 @@ function BookingListSkeleton() {
 }
 
 function EmptyBookings({ filtered, canCreate, onClear }: { filtered: boolean; canCreate: boolean; onClear: () => void }) {
+  const { t } = useLanguage();
   return (
     <Paper variant="outlined" sx={{ px: 2, py: { xs: 6, sm: 8 }, textAlign: "center" }}>
       <Box sx={{ bgcolor: "action.selected", borderRadius: "50%", color: "primary.main", display: "grid", height: 56, mx: "auto", placeItems: "center", width: 56 }}><CalendarTodayRoundedIcon /></Box>
-      <Typography variant="h6" sx={{ fontWeight: 700, mt: 1.75 }}>{filtered ? "No bookings match these filters" : "Your booking register is ready"}</Typography>
-      <Typography color="text.secondary" variant="body2" sx={{ maxWidth: 420, mx: "auto", mt: 0.5 }}>{filtered ? "Clear or adjust the current filters to see more reservations." : "New reservations will appear here with their room, stay and operational status."}</Typography>
+      <Typography variant="h6" sx={{ fontWeight: 700, mt: 1.75 }}>{filtered ? t("No bookings match these filters", "Hakuna uhifadhi unaolingana na vichujio hivi") : t("Your booking register is ready", "Rejista yako ya uhifadhi iko tayari")}</Typography>
+      <Typography color="text.secondary" variant="body2" sx={{ maxWidth: 420, mx: "auto", mt: 0.5 }}>{filtered ? t("Clear or adjust the current filters to see more reservations.", "Ondoa au badili vichujio ili kuona uhifadhi zaidi.") : t("New reservations will appear here with their room, stay and operational status.", "Uhifadhi mpya utaonekana hapa pamoja na chumba, muda wa ukaaji na hali yake.")}</Typography>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "center", mt: 2 }}>
-        {filtered ? <Button onClick={onClear} variant="outlined">Clear filters</Button> : null}
-        {!filtered && canCreate ? <Button component={Link} href="/bookings/new" variant="contained">Create first booking</Button> : null}
+        {filtered ? <Button onClick={onClear} variant="outlined">{t("Clear filters")}</Button> : null}
+        {!filtered && canCreate ? <Button component={Link} href="/bookings/new" variant="contained">{t("Create first booking")}</Button> : null}
       </Stack>
     </Paper>
   );

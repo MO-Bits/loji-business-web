@@ -59,9 +59,9 @@ const items: FeatureItem[] = [
   {
     icon: DomainRoundedIcon,
     title: "Multiple properties",
-    swTitle: "Majengo mengi",
+    swTitle: "Biashara nyingi",
     description: "Move between properties from one account when your business grows.",
-    swDescription: "Simamia majengo mengi kutoka akaunti moja biashara yako inapokua.",
+    swDescription: "Simamia biashara nyingi kutoka akaunti moja biashara yako inapokua.",
   },
 ];
 

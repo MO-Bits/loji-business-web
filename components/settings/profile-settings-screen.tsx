@@ -96,7 +96,7 @@ export function ProfileSettingsScreen() {
         })
         .catch((cause) => {
           if (!active) return;
-          setError(cause instanceof Error ? cause.message : "Unable to load your profile.");
+          setError(cause instanceof Error ? cause.message : t("Unable to load your profile.", "Imeshindikana kupakia wasifu wako."));
         })
         .finally(() => {
           if (active) setLoading(false);
@@ -107,7 +107,7 @@ export function ProfileSettingsScreen() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [reloadKey, supabase]);
+  }, [reloadKey, supabase, t]);
 
   const errors = validate(form);
   const dirty = profile

@@ -98,7 +98,7 @@ export function DashboardHeader({
             <Stack direction="row" spacing={0.6} sx={{ alignItems: "center" }}>
               <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
               <Typography variant="caption">
-                {propertyName || t("Active property", "Mali inayotumika")}
+                {propertyName || t("Active property", "Biashara inayotumika")}
               </Typography>
             </Stack>
             <Stack direction="row" spacing={0.6} sx={{ alignItems: "center" }}>
@@ -213,10 +213,10 @@ function roleContent(
   return {
     eyebrow: t("Workspace home", "Nyumbani kwa eneo la kazi"),
     roleLabel: t("Member", "Mwanachama"),
-    title: t("Property overview", "Muhtasari wa mali"),
+    title: t("Property overview", "Muhtasari wa biashara"),
     description: t(
       "A read-only view of the property’s current operational position.",
-      "Muonekano wa kusoma tu wa hali ya sasa ya uendeshaji wa mali.",
+      "Mwonekano wa kusoma tu wa hali ya sasa ya uendeshaji wa biashara.",
     ),
   };
 }

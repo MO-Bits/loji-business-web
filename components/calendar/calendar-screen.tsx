@@ -205,7 +205,7 @@ export function CalendarScreen() {
       if (requestId.current === currentRequest) {
         setErrorState({
           propertyId: requestPropertyId,
-          message: caught instanceof Error ? caught.message : "Unable to load the calendar.",
+          message: caught instanceof Error ? caught.message : t("Unable to load the calendar.", "Imeshindikana kupakia kalenda."),
         });
       }
     } finally {
@@ -213,7 +213,7 @@ export function CalendarScreen() {
         setLoading(false);
       }
     }
-  }, [canView, from, invalidRange, propertyId, supabase, to]);
+  }, [canView, from, invalidRange, propertyId, supabase, t, to]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -437,6 +437,7 @@ export function CalendarScreen() {
 }
 
 function TimelineBooking({ booking, days }: { booking: CalendarBooking; days: string[] }) {
+  const { t } = useLanguage();
   const rangeStart = parseDate(days[0]);
   const start = Math.max(0, Math.floor((parseDate(booking.checkIn).getTime() - rangeStart.getTime()) / DAY));
   const end = Math.min(days.length, Math.max(start + 1, Math.ceil((parseDate(booking.checkOut).getTime() - rangeStart.getTime()) / DAY)));
@@ -446,7 +447,10 @@ function TimelineBooking({ booking, days }: { booking: CalendarBooking; days: st
     <Box
       component={Link}
       href={`/bookings/${booking.id}`}
-      aria-label={`${booking.guestName}, ${booking.bookingNumber}, ${booking.checkIn} to ${booking.checkOut}`}
+      aria-label={t(
+        `${booking.guestName}, ${booking.bookingNumber}, ${booking.checkIn} to ${booking.checkOut}`,
+        `${booking.guestName}, ${booking.bookingNumber}, ${booking.checkIn} hadi ${booking.checkOut}`,
+      )}
       sx={{
         alignSelf: "center",
         bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",

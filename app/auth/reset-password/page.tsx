@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { PasswordRecoveryScreen } from "@/components/auth/password-recovery-screen";
 
 export const metadata: Metadata = {
-  title: "Reset password",
+  title: "Badili nenosiri",
 };
 
 export default function ResetPasswordPage() {

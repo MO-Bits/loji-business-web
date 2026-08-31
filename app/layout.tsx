@@ -38,7 +38,7 @@ const websiteData = {
   publisher: {
     "@id": `${baseUrl}/#organization`,
   },
-  inLanguage: "en",
+  inLanguage: "sw",
 };
 
 export const viewport: Viewport = {
@@ -66,17 +66,16 @@ export const metadata: Metadata = {
   },
 
   description:
-    "Manage properties, rooms, bookings, guests and staff with Loji Business.",
+    "Simamia biashara ya malazi, vyumba, uhifadhi, wageni na wafanyakazi kwa Loji Business.",
 
   keywords: [
     "Loji Business",
-    "property management software",
-    "hotel management software",
-    "booking management",
-    "room management",
-    "guest management",
-    "hospitality management",
-    "property management Tanzania",
+    "mfumo wa kusimamia hoteli",
+    "mfumo wa kusimamia loji",
+    "usimamizi wa uhifadhi",
+    "usimamizi wa vyumba",
+    "usimamizi wa wageni",
+    "programu ya biashara za malazi Tanzania",
   ],
 
   authors: [
@@ -89,7 +88,7 @@ export const metadata: Metadata = {
   creator: "Loji Business",
   publisher: "Loji Business",
 
-  category: "Business software",
+  category: "Programu ya biashara",
 
   alternates: {
     canonical: "/",
@@ -108,18 +107,19 @@ export const metadata: Metadata = {
 
   openGraph: {
     type: "website",
-    locale: "en_TZ",
+    locale: "sw_TZ",
+    alternateLocale: ["en_TZ"],
     url: baseUrl,
     siteName: "Loji Business",
     title: "Loji Business",
     description:
-      "Manage properties, rooms, bookings, guests and staff from one workspace.",
+      "Simamia vyumba, uhifadhi, wageni na wafanyakazi kutoka eneo moja la kazi.",
     images: [
       {
         url: "/og.png",
         width: 1792,
         height: 936,
-        alt: "Loji Business — Run your property with confidence",
+        alt: "Loji Business — Simamia biashara yako ya malazi kwa uhakika",
       },
     ],
   },
@@ -128,7 +128,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Loji Business",
     description:
-      "Manage properties, rooms, bookings, guests and staff from one workspace.",
+      "Simamia vyumba, uhifadhi, wageni na wafanyakazi kutoka eneo moja la kazi.",
     images: ["/og.png"],
   },
 
@@ -151,7 +151,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="sw">
       <body>
         <script
           type="application/ld+json"

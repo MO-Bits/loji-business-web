@@ -48,7 +48,7 @@ export function ProfileOnboarding() {
           setEmail(profile.email || user?.email || "");
         })
         .catch((caught) => {
-          if (active) setError(caught instanceof Error ? caught.message : "Unable to load your profile.");
+          if (active) setError(caught instanceof Error ? caught.message : t("Unable to load your profile.", "Imeshindikana kupakia wasifu wako."));
         })
         .finally(() => {
           if (active) setLoading(false);
@@ -58,7 +58,7 @@ export function ProfileOnboarding() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [supabase]);
+  }, [supabase, t]);
 
   const save = async () => {
     const name = displayName.trim();
@@ -77,7 +77,7 @@ export function ProfileOnboarding() {
       await updateMyProfile(supabase, { displayName: name, phone, bio });
       window.location.replace("/");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to save your profile.");
+      setError(caught instanceof Error ? caught.message : t("Unable to save your profile.", "Imeshindikana kuhifadhi wasifu wako."));
       setSaving(false);
     }
   };

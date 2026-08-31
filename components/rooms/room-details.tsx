@@ -168,7 +168,7 @@ export function RoomDetails({ roomId }: { roomId: string }) {
               )}
               action={(
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                  {canCreateBooking && room.isActive ? <Button component={Link} href={`/bookings/new?room=${room.id}`} startIcon={<CalendarMonthRoundedIcon />} variant="contained">{t("New booking", "Nafasi mpya")}</Button> : null}
+                  {canCreateBooking && room.isActive ? <Button component={Link} href={`/bookings/new?room=${room.id}`} startIcon={<CalendarMonthRoundedIcon />} variant="contained">{t("New booking", "Uhifadhi mpya")}</Button> : null}
                   {canManage ? <Button component={Link} href={`/rooms/${room.id}/edit`} startIcon={<EditRoundedIcon />} variant="outlined">{t("Edit room", "Hariri chumba")}</Button> : null}
                 </Stack>
               )}
@@ -184,20 +184,20 @@ export function RoomDetails({ roomId }: { roomId: string }) {
               <SectionHeading
                 eyebrow={t("Live operations", "Uendeshaji wa sasa")}
                 title={t("Today in this room", "Leo katika chumba hiki")}
-                description={t(`Property business date: ${formatLocalDate(workspace.property.businessDate)}`, `Tarehe ya jengo: ${formatLocalDate(workspace.property.businessDate)}`)}
+                description={t(`Property business date: ${formatLocalDate(workspace.property.businessDate)}`, `Tarehe ya biashara: ${formatLocalDate(workspace.property.businessDate)}`)}
                 action={<RoomStatusPill status={room.operationalStatus} t={t} />}
               />
               <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" }, mt: 2.5 }}>
                 <StayPanel label={t("Current stay", "Mgeni wa sasa")} stay={room.currentStay} empty={t("No guest currently checked in.", "Hakuna mgeni aliyeingia sasa.")} />
-                <StayPanel label={t("Next confirmed stay", "Nafasi inayofuata")} stay={room.nextStay} empty={t("No upcoming arrival assigned.", "Hakuna mgeni anayewasili aliyepangiwa.")} />
+                <StayPanel label={t("Next confirmed stay", "Ukaaji unaofuata uliothibitishwa")} stay={room.nextStay} empty={t("No upcoming arrival assigned.", "Hakuna mgeni anayewasili aliyepangiwa.")} />
               </Box>
             </Surface>
 
             <Surface>
-              <SectionHeading eyebrow={t("Reservation pipeline", "Mpangilio wa nafasi")} title={t("Upcoming stays", "Nafasi zijazo")} description={t("The next confirmed stays assigned to this room.", "Nafasi zinazofuata zilizothibitishwa kwa chumba hiki.")} />
+              <SectionHeading eyebrow={t("Reservation pipeline", "Mpangilio wa uhifadhi")} title={t("Upcoming stays", "Ukaaji ujao")} description={t("The next confirmed stays assigned to this room.", "Ukaaji ujao uliothibitishwa na kupangiwa chumba hiki.")} />
               <Stack divider={<Divider flexItem />} sx={{ mt: 1.5 }}>
                 {workspace.upcomingStays.length ? workspace.upcomingStays.map((stay) => <UpcomingStay key={stay.id} stay={stay} />) : (
-                  <EmptyState description={t("Future bookings assigned here will appear in date order.", "Nafasi zijazo zitaonekana hapa kwa mpangilio wa tarehe.")} icon={<CalendarMonthRoundedIcon />} title={t("No upcoming stays", "Hakuna nafasi zijazo")} />
+                  <EmptyState description={t("Future bookings assigned here will appear in date order.", "Uhifadhi ujao uliopangiwa hapa utaonekana kwa mpangilio wa tarehe.")} icon={<CalendarMonthRoundedIcon />} title={t("No upcoming stays", "Hakuna ukaaji ujao")} />
                 )}
               </Stack>
             </Surface>
@@ -281,16 +281,20 @@ function RoomGallery({ activeImage, images, name, onSelect }: { activeImage: num
 }
 
 function StayPanel({ empty, label, stay }: { empty: string; label: string; stay: RoomStay | null }) {
+  const { t } = useLanguage();
+
   return (
     <Box sx={{ border: 1, borderColor: "divider", borderRadius: 2.5, minHeight: 142, p: 2 }}>
       <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 500 }}>{label}</Typography>
-      {stay ? <Stack component={Link} href={`/bookings/${stay.id}`} spacing={0.5} sx={{ color: "inherit", minWidth: 0, mt: 1, textDecoration: "none" }}><Typography variant="subtitle1" sx={{ fontWeight: 700, overflowWrap: "anywhere" }}>{stay.guestName}</Typography><Typography color="text.secondary" variant="body2" sx={{ overflowWrap: "anywhere" }}>{formatLocalDate(stay.checkIn)} – {formatLocalDate(stay.checkOut)}</Typography><Typography color="primary.main" variant="caption" sx={{ overflowWrap: "anywhere" }}>{stay.totalGuests} guests · {stay.bookingNumber || "Booking"}</Typography></Stack> : <Typography color="text.secondary" sx={{ mt: 1 }} variant="body2">{empty}</Typography>}
+      {stay ? <Stack component={Link} href={`/bookings/${stay.id}`} spacing={0.5} sx={{ color: "inherit", minWidth: 0, mt: 1, textDecoration: "none" }}><Typography variant="subtitle1" sx={{ fontWeight: 700, overflowWrap: "anywhere" }}>{stay.guestName}</Typography><Typography color="text.secondary" variant="body2" sx={{ overflowWrap: "anywhere" }}>{formatLocalDate(stay.checkIn)} – {formatLocalDate(stay.checkOut)}</Typography><Typography color="primary.main" variant="caption" sx={{ overflowWrap: "anywhere" }}>{t(`${stay.totalGuests} guests`)} · {stay.bookingNumber || t("Booking", "Uhifadhi")}</Typography></Stack> : <Typography color="text.secondary" sx={{ mt: 1 }} variant="body2">{empty}</Typography>}
     </Box>
   );
 }
 
 function UpcomingStay({ stay }: { stay: RoomStay }) {
-  return <Stack component={Link} href={`/bookings/${stay.id}`} direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, color: "inherit", justifyContent: "space-between", minWidth: 0, py: 1.5, textDecoration: "none" }}><Box sx={{ minWidth: 0 }}><Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: "anywhere" }}>{stay.guestName}</Typography><Typography color="text.secondary" variant="caption" sx={{ overflowWrap: "anywhere" }}>{stay.bookingNumber || "Booking"} · {stay.totalGuests} guests</Typography></Box><Typography variant="body2" sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 500, textAlign: { sm: "right" } }}>{formatLocalDate(stay.checkIn)} – {formatLocalDate(stay.checkOut)}</Typography></Stack>;
+  const { t } = useLanguage();
+
+  return <Stack component={Link} href={`/bookings/${stay.id}`} direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, color: "inherit", justifyContent: "space-between", minWidth: 0, py: 1.5, textDecoration: "none" }}><Box sx={{ minWidth: 0 }}><Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: "anywhere" }}>{stay.guestName}</Typography><Typography color="text.secondary" variant="caption" sx={{ overflowWrap: "anywhere" }}>{stay.bookingNumber || t("Booking", "Uhifadhi")} · {t(`${stay.totalGuests} guests`)}</Typography></Box><Typography variant="body2" sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 500, textAlign: { sm: "right" } }}>{formatLocalDate(stay.checkIn)} – {formatLocalDate(stay.checkOut)}</Typography></Stack>;
 }
 
 function InfoRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {

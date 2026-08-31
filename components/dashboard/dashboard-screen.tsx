@@ -40,7 +40,7 @@ export function DashboardScreen() {
           sessionState.error?.message ??
           t(
             "Select an active property to open its dashboard.",
-            "Chagua mali inayotumika ili kufungua dashibodi yake.",
+            "Chagua biashara inayotumika ili kufungua dashibodi yake.",
           )
         }
         onRetry={() => void sessionState.refresh()}

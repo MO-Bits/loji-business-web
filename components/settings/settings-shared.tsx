@@ -134,8 +134,9 @@ export function SettingsError({
 }
 
 export function SettingsFormSkeleton() {
+  const { t } = useLanguage();
   return (
-    <Stack aria-label="Loading settings" spacing={2.5}>
+    <Stack aria-label={t("Loading settings", "Inapakia mipangilio")} spacing={2.5}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Skeleton height={44} variant="rounded" width={44} />
         <Box sx={{ flex: 1 }}>

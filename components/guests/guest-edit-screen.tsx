@@ -843,9 +843,11 @@ function FormActions({
 }
 
 function GuestEditLoading() {
+  const { t } = useLanguage();
+
   return (
     <WorkspacePage maxWidth={1080}>
-      <Stack aria-label="Loading guest editor" spacing={{ xs: 2, sm: 2.5 }}>
+      <Stack aria-label={t("Loading guest editor", "Inapakia sehemu ya kuhariri mgeni")} spacing={{ xs: 2, sm: 2.5 }}>
         <Skeleton height={36} width={150} />
         <Surface>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>

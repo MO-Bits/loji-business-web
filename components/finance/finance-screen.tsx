@@ -117,6 +117,10 @@ const paymentTone = (status: string): "danger" | "neutral" | "success" | "warnin
   if (["failed", "refund", "refunded", "void", "voided"].includes(status)) return "danger";
   return "neutral";
 };
+const financeLabel = (value: string) =>
+  value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
 
 export function FinanceScreen() {
   const { loading: sessionLoading, session } = useAppSession();
@@ -245,7 +249,7 @@ export function FinanceScreen() {
       if (requestId.current === currentRequest) {
         setErrorState({
           propertyId: requestPropertyId,
-          message: caught instanceof Error ? caught.message : "Unable to load finance data.",
+          message: caught instanceof Error ? caught.message : t("Unable to load finance data.", "Imeshindikana kupakia taarifa za fedha."),
         });
       }
     } finally {
@@ -253,7 +257,7 @@ export function FinanceScreen() {
         setLoading(false);
       }
     }
-  }, [canView, from, invalidRange, method, page, propertyId, query, status, supabase, to]);
+  }, [canView, from, invalidRange, method, page, propertyId, query, status, supabase, t, to]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), query ? 250 : 0);
@@ -301,13 +305,13 @@ export function FinanceScreen() {
         idempotencyKey: activeReversal.idempotencyKey,
       });
       if (currentRequest !== reversalRequestId.current || activePropertyId.current !== requestPropertyId) return;
-      feedback.success(activeReversal.action === "refund" ? "Payment refunded." : "Payment voided.");
+      feedback.success(activeReversal.action === "refund" ? t("Payment refunded.", "Malipo yamerejeshwa.") : t("Payment voided.", "Malipo yamebatilishwa."));
       setReversal(null);
       setReversalReason("");
       await load();
     } catch (caught) {
       if (currentRequest === reversalRequestId.current && activePropertyId.current === requestPropertyId) {
-        setReversalError(caught instanceof Error ? caught.message : "Unable to reverse payment.");
+        setReversalError(caught instanceof Error ? caught.message : t("Unable to reverse payment.", "Imeshindikana kubadilisha malipo."));
       }
     } finally {
       if (currentRequest === reversalRequestId.current) setReversing(false);
@@ -317,7 +321,7 @@ export function FinanceScreen() {
   const exportLedger = () => {
     if (!ledger?.items.length) return;
     const rows = [
-      ["Entry ID", "Entry type", "Booking", "Guest", "Date", "Method", "Reference", "Status", "Amount", "Currency", "Received by", "Approved by", "Reversal reason"],
+      [t("Entry ID", "Namba ya rekodi"), t("Entry type", "Aina ya rekodi"), t("Booking"), t("Guest"), t("Date", "Tarehe"), t("Method"), t("Reference"), t("Status"), t("Amount"), t("Currency", "Sarafu"), t("Received by", "Aliyepokea"), t("Approved by", "Aliyeidhinisha"), t("Reversal reason", "Sababu ya kubadilisha")],
       ...ledger.items.map((item) => [
         item.id,
         item.entryType,
@@ -440,7 +444,7 @@ export function FinanceScreen() {
                 return (
                   <Box key={item.method}>
                     <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500, textTransform: "capitalize" }}>{item.method.replaceAll("_", " ")}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>{t(financeLabel(item.method))}</Typography>
                       <Typography variant="body2" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money(item.amount)}</Typography>
                     </Stack>
                     <Box sx={{ bgcolor: "action.disabledBackground", borderRadius: 99, height: 6, mt: 0.8, overflow: "hidden" }}><Box sx={{ bgcolor: "primary.main", height: "100%", width: `${share}%` }} /></Box>
@@ -521,23 +525,24 @@ function PaymentRow({
   timeZone: string;
   onReverse: ReversalHandler;
 }) {
+  const { t } = useLanguage();
   return (
     <TableRow hover>
       <TableCell><Typography sx={{ fontWeight: 700 }} variant="body2">{item.guestName}</Typography><Typography color="text.secondary" variant="caption">{item.bookingNumber}</Typography></TableCell>
       <TableCell>{item.paidAt ? formatTimestamp(item.paidAt, locale, timeZone, { dateStyle: "medium", timeStyle: "short" }) : "—"}</TableCell>
       <TableCell>
         <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-          <StatusPill label={item.method.replaceAll("_", " ")} tone="info" />
-          <StatusPill label={item.status.replaceAll("_", " ")} tone={paymentTone(item.status)} />
+          <StatusPill label={t(financeLabel(item.method))} tone="info" />
+          <StatusPill label={t(financeLabel(item.status))} tone={paymentTone(item.status)} />
         </Stack>
       </TableCell>
       <TableCell><Typography variant="body2">{item.reference || "—"}</Typography>{item.reversalReason ? <Typography color="text.secondary" variant="caption">{item.reversalReason}</Typography> : null}</TableCell>
       <TableCell align="right" sx={{ color: item.amount < 0 ? "error.main" : undefined, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money(item.amount, item.currency)}</TableCell>
       <TableCell align="right">
         <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", justifyContent: "flex-end" }}>
-          {item.canVoid ? <Button color="error" onClick={() => onReverse(item, "void")} size="small">Void</Button> : null}
-          {item.canRefund ? <Button color="error" onClick={() => onReverse(item, "refund")} size="small">Refund</Button> : null}
-          <IconButton aria-label={`Open ${item.bookingNumber}`} component={Link} href={`/bookings/${item.bookingId}`}><ArrowOutwardRoundedIcon fontSize="small" /></IconButton>
+          {item.canVoid ? <Button color="error" onClick={() => onReverse(item, "void")} size="small">{t("Void")}</Button> : null}
+          {item.canRefund ? <Button color="error" onClick={() => onReverse(item, "refund")} size="small">{t("Refund")}</Button> : null}
+          <IconButton aria-label={t(`Open ${item.bookingNumber}`, `Fungua ${item.bookingNumber}`)} component={Link} href={`/bookings/${item.bookingId}`}><ArrowOutwardRoundedIcon fontSize="small" /></IconButton>
         </Stack>
       </TableCell>
     </TableRow>
@@ -555,14 +560,15 @@ function PaymentCard({
   timeZone: string;
   onReverse: ReversalHandler;
 }) {
+  const { t } = useLanguage();
   return (
     <Box sx={{ p: 2 }}>
       <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
         <Box sx={{ minWidth: 0 }}>
           <Typography component={Link} href={`/bookings/${item.bookingId}`} noWrap sx={{ color: "inherit", display: "block", fontWeight: 700, textDecoration: "none" }}>{item.guestName}</Typography>
-          <Typography color="text.secondary" variant="body2">{item.bookingNumber} · {item.method.replaceAll("_", " ")}</Typography>
+          <Typography color="text.secondary" variant="body2">{item.bookingNumber} · {t(financeLabel(item.method))}</Typography>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.5 }}>
-            <StatusPill label={item.status.replaceAll("_", " ")} tone={paymentTone(item.status)} />
+            <StatusPill label={t(financeLabel(item.status))} tone={paymentTone(item.status)} />
             <Typography color="text.secondary" variant="caption">{item.paidAt ? formatTimestamp(item.paidAt, locale, timeZone, { dateStyle: "medium" }) : ""}</Typography>
           </Stack>
         </Box>
@@ -570,8 +576,8 @@ function PaymentCard({
       </Stack>
       {item.reversalReason ? <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>{item.reversalReason}</Typography> : null}
       {item.canRefund || item.canVoid ? <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-        {item.canVoid ? <Button color="error" fullWidth onClick={() => onReverse(item, "void")} startIcon={<BlockRoundedIcon />} variant="outlined">Void</Button> : null}
-        {item.canRefund ? <Button color="error" fullWidth onClick={() => onReverse(item, "refund")} startIcon={<ReplayRoundedIcon />} variant="outlined">Refund</Button> : null}
+        {item.canVoid ? <Button color="error" fullWidth onClick={() => onReverse(item, "void")} startIcon={<BlockRoundedIcon />} variant="outlined">{t("Void")}</Button> : null}
+        {item.canRefund ? <Button color="error" fullWidth onClick={() => onReverse(item, "refund")} startIcon={<ReplayRoundedIcon />} variant="outlined">{t("Refund")}</Button> : null}
       </Stack> : null}
     </Box>
   );
@@ -598,14 +604,17 @@ function PaymentReversalModal({
   onReason: (value: string) => void;
   onSubmit: () => void;
 }) {
+  const { t } = useLanguage();
   if (!reversal) return null;
   const isVoid = reversal.action === "void";
   return (
     <ResponsiveModal maxWidth="xs" onClose={onClose} open>
-      <DialogTitle>{isVoid ? "Void this payment?" : "Refund this payment?"}</DialogTitle>
+      <DialogTitle>{isVoid ? t("Void this payment?", "Batilisha malipo haya?") : t("Refund this payment?", "Rejesha malipo haya?")}</DialogTitle>
       <DialogContent>
         <Alert severity="warning">
-          This creates a linked {reversal.action} entry for the full amount. The original payment remains unchanged in the audit ledger.
+          {isVoid
+            ? t("This creates a linked void entry for the full amount. The original payment remains unchanged in the audit ledger.", "Hii inatengeneza rekodi iliyounganishwa ya kubatilisha kiasi chote. Malipo ya awali hayabadilishwi kwenye daftari la ukaguzi.")
+            : t("This creates a linked refund entry for the full amount. The original payment remains unchanged in the audit ledger.", "Hii inatengeneza rekodi iliyounganishwa ya kurejesha kiasi chote. Malipo ya awali hayabadilishwi kwenye daftari la ukaguzi.")}
         </Alert>
         <Box sx={{ bgcolor: "action.hover", borderRadius: 2, mt: 2, p: 1.5 }}>
           <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between" }}>
@@ -620,11 +629,11 @@ function PaymentReversalModal({
           autoFocus
           disabled={working}
           fullWidth
-          label="Reason"
+          label={t("Reason", "Sababu")}
           minRows={3}
           multiline
           onChange={(event) => onReason(event.target.value)}
-          placeholder={isVoid ? "Example: Duplicate payment entered at front desk" : "Example: Guest cancellation approved by manager"}
+          placeholder={isVoid ? t("Example: Duplicate payment entered at front desk", "Mfano: Malipo yaliingizwa mara mbili mapokezi") : t("Example: Guest cancellation approved by manager", "Mfano: Meneja ameridhia kughairiwa kwa mgeni")}
           required
           value={reason}
           sx={{ mt: 2 }}
@@ -632,9 +641,9 @@ function PaymentReversalModal({
         {error ? <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert> : null}
       </DialogContent>
       <DialogActions>
-        <Button disabled={working} onClick={onClose}>Keep payment</Button>
+        <Button disabled={working} onClick={onClose}>{t("Keep payment", "Acha malipo")}</Button>
         <Button color="error" disabled={working || reason.trim().length < 3} onClick={onSubmit} startIcon={isVoid ? <BlockRoundedIcon /> : <ReplayRoundedIcon />} variant="contained">
-          {working ? "Processing…" : isVoid ? "Void payment" : "Issue refund"}
+          {working ? t("Processing…", "Inashughulikia…") : isVoid ? t("Void payment", "Batilisha malipo") : t("Issue refund", "Rejesha malipo")}
         </Button>
       </DialogActions>
     </ResponsiveModal>

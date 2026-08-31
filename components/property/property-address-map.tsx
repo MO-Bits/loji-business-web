@@ -543,14 +543,14 @@ export function PropertyAddressMap() {
         );
       } catch (cause) {
         setMapError(
-          cause instanceof Error ? cause.message : "Search is unavailable.",
+          cause instanceof Error ? cause.message : t("Search is unavailable.", "Utafutaji haupatikani."),
         );
       } finally {
         setSearching(false);
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [query, position.lat, position.lng, sessionToken]);
+  }, [position.lat, position.lng, query, sessionToken, t]);
 
   const choosePrediction = async (prediction: PlacePrediction) => {
     setQuery(prediction.text);
@@ -562,7 +562,7 @@ export function PropertyAddressMap() {
       );
       const data = (await response.json()) as Record<string, unknown>;
       if (!response.ok)
-        throw new Error(String(data.error ?? "Unable to select this place."));
+        throw new Error(String(data.error ?? t("Unable to select this place.", "Imeshindikana kuchagua eneo hili.")));
       const details = detailsFromGoogle(data);
       setSelected(details);
       setPosition({ lat: details.latitude, lng: details.longitude });
@@ -571,7 +571,7 @@ export function PropertyAddressMap() {
       setSessionToken(createSessionToken());
     } catch (cause) {
       setMapError(
-        cause instanceof Error ? cause.message : "Unable to select this place.",
+        cause instanceof Error ? cause.message : t("Unable to select this place.", "Imeshindikana kuchagua eneo hili."),
       );
     } finally {
       setLoadingAddress(false);

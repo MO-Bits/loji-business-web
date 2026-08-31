@@ -6,9 +6,9 @@ import {
 } from "@/components/content/info-page";
 
 export const metadata: Metadata = {
-  title: "Data Deletion Instructions",
+  title: "Maelekezo ya Kufuta Taarifa",
   description:
-    "Instructions for requesting deletion of your Loji Business account and personal data.",
+    "Maelekezo ya kuomba kufutwa kwa akaunti na taarifa binafsi za Loji Business.",
   alternates: {
     canonical: "/data-deletion",
   },
@@ -32,10 +32,10 @@ Never send your Facebook password, Loji Business password, access token, payment
 Tafadhali jumuisha:
 • Jina lililotumika kwenye akaunti yako ya Loji Business.
 • Barua pepe iliyounganishwa na akaunti yako ya Facebook au Loji Business.
-• Jina la Lodge, Hotel au Guesthouse yako, ikiwa linahusika.
+• Jina la loji, hoteli au nyumba yako ya wageni, ikiwa linahusika.
 • Maelezo ya wazi kwamba unataka akaunti yako na taarifa binafsi zinazohusiana nayo zifutwe.
 
-Usitume nenosiri lako la Facebook au Loji Business, access token, taarifa za malipo au kitambulisho kwa barua pepe.`,
+Usitume nenosiri lako la Facebook au Loji Business, tokeni ya ufikiaji, taarifa za malipo au kitambulisho kwa barua pepe.`,
   },
   {
     title: "2. Identity verification",
@@ -61,7 +61,7 @@ If you manage a property workspace, we may contact you before deletion to protec
 • Mapendeleo na vitambulisho vya akaunti ambavyo havihitajiki tena.
 • Taarifa nyingine binafsi ambazo hatulazimiki kuzihifadhi kisheria au kiutendaji.
 
-Ikiwa unasimamia Lodge, Hotel au Guesthouse, tunaweza kuwasiliana nawe kabla ya kufuta ili kulinda booking, kumbukumbu za wageni, taarifa za fedha na taarifa nyingine za biashara zinazomilikiwa na eneo hilo.`,
+Ikiwa unasimamia loji, hoteli au nyumba ya wageni, tunaweza kuwasiliana nawe kabla ya kufuta ili kulinda uhifadhi, kumbukumbu za wageni, taarifa za fedha na taarifa nyingine za biashara hiyo.`,
   },
   {
     title: "4. Processing period",

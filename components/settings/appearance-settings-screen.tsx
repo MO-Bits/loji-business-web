@@ -84,16 +84,22 @@ export function AppearanceSettingsScreen() {
     value: AppLanguage;
   }> = [
     {
-      description: "Use Loji Business in English.",
-      icon: <LanguageRoundedIcon />,
-      label: "English",
-      value: "en",
-    },
-    {
-      description: "Tumia Loji Business kwa Kiswahili.",
+      description: t(
+        "Use Loji Business in Swahili, the default language.",
+        "Tumia Loji Business kwa Kiswahili, lugha ya chaguo-msingi.",
+      ),
       icon: <TranslateRoundedIcon />,
       label: "Kiswahili",
       value: "sw",
+    },
+    {
+      description: t(
+        "Use Loji Business in English.",
+        "Tumia Loji Business kwa Kiingereza.",
+      ),
+      icon: <LanguageRoundedIcon />,
+      label: t("English", "Kiingereza"),
+      value: "en",
     },
   ];
 

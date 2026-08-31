@@ -1,6 +1,18 @@
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const EXPLICIT_TIME_ZONE = /T.*(?:Z|[+-]\d{2}(?::?\d{2})?)$/i;
 
+export type AppLocale = "en-TZ" | "sw-TZ";
+
+function currentLocale(): AppLocale {
+  if (
+    typeof document !== "undefined" &&
+    document.documentElement.lang.toLowerCase().startsWith("en")
+  ) {
+    return "en-TZ";
+  }
+  return "sw-TZ";
+}
+
 /** Convert a Supabase/Postgres date or timestamp into the user's local time. */
 export function parseDatabaseDate(value: Date | string | null | undefined): Date {
   if (value instanceof Date) return new Date(value.getTime());
@@ -26,23 +38,31 @@ export function localDateKey(value: Date | string = new Date()): string {
 export function formatLocalDate(
   value: Date | string | null | undefined,
   options: Intl.DateTimeFormatOptions = { dateStyle: "medium" },
+  locale: AppLocale = currentLocale(),
 ): string {
   const date = parseDatabaseDate(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-TZ", options).format(date);
+  return new Intl.DateTimeFormat(locale, options).format(date);
 }
 
 export function formatLocalTime(
   value: Date | string | null | undefined,
   options: Intl.DateTimeFormatOptions = { hour: "numeric", minute: "2-digit" },
+  locale: AppLocale = currentLocale(),
 ): string {
   const date = parseDatabaseDate(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-TZ", options).format(date);
+  return new Intl.DateTimeFormat(locale, options).format(date);
 }
 
-export function formatLocalDateTime(value: Date | string | null | undefined): string {
+export function formatLocalDateTime(
+  value: Date | string | null | undefined,
+  locale: AppLocale = currentLocale(),
+): string {
   const date = parseDatabaseDate(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-TZ", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }

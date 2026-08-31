@@ -136,7 +136,7 @@ function roleDescription(role: TeamRole, t: Translator) {
   }
   return t(
     "Handles front-desk bookings, guests, arrivals, and room visibility.",
-    "Hushughulikia nafasi, wageni, wanaowasili na mwonekano wa vyumba mapokezi.",
+    "Hushughulikia uhifadhi, wageni, wanaowasili na mwonekano wa vyumba mapokezi.",
   );
 }
 
@@ -1522,7 +1522,7 @@ function RolesAndPermissions({ currentRole }: { currentRole: TeamRole }) {
   const { t } = useLanguage();
   const capabilities = [
     {
-      label: t("Bookings & guests", "Nafasi na wageni"),
+      label: t("Bookings & guests", "Uhifadhi na wageni"),
       owner: t("Full", "Kamili"),
       manager: t("Full", "Kamili"),
       receptionist: t("Front desk", "Mapokezi"),

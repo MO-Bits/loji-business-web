@@ -16,6 +16,7 @@ import {
   useTheme,
   type DialogProps,
 } from "@mui/material";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type ResponsiveModalProps = {
   ariaLabel?: string;
@@ -33,6 +34,7 @@ export function ResponsiveModal({
   onClose,
   maxWidth = "sm",
 }: ResponsiveModalProps) {
+  const { t } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const generatedTitleId = useId();
@@ -101,7 +103,7 @@ export function ResponsiveModal({
       ModalProps={{ keepMounted: true }}
       slotProps={{
         paper: {
-          "aria-label": drawerTitleId ? undefined : (ariaLabel ?? "Dialog"),
+          "aria-label": drawerTitleId ? undefined : (ariaLabel ?? t("Dialog", "Kidirisha")),
           "aria-labelledby": drawerTitleId,
           "aria-modal": true,
           role: "dialog",

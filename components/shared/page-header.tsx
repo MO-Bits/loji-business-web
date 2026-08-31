@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Stack, Typography } from "@mui/material";
+import { useLanguage } from "@/components/providers/language-provider";
 
 type PageHeaderProps = {
   eyebrow?: string;
@@ -15,6 +16,11 @@ export function PageHeader({
   description,
   action,
 }: PageHeaderProps) {
+  const { t } = useLanguage();
+  const localizedEyebrow = eyebrow ? t(eyebrow) : undefined;
+  const localizedTitle = t(title);
+  const localizedDescription = description ? t(description) : undefined;
+
   return (
     <Stack
       component="header"
@@ -27,7 +33,7 @@ export function PageHeader({
       }}
     >
       <Box sx={{ minWidth: 0 }}>
-        {eyebrow ? (
+        {localizedEyebrow ? (
           <Typography
             color="text.secondary"
             component="p"
@@ -41,7 +47,7 @@ export function PageHeader({
               textTransform: "uppercase",
             }}
           >
-            {eyebrow}
+            {localizedEyebrow}
           </Typography>
         ) : null}
 
@@ -55,10 +61,10 @@ export function PageHeader({
             maxWidth: 760,
           }}
         >
-          {title}
+          {localizedTitle}
         </Typography>
 
-        {description ? (
+        {localizedDescription ? (
           <Typography
             color="text.secondary"
             sx={{
@@ -68,7 +74,7 @@ export function PageHeader({
               mt: 0.55,
             }}
           >
-            {description}
+            {localizedDescription}
           </Typography>
         ) : null}
       </Box>
