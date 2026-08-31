@@ -33,7 +33,12 @@ import {
   Typography,
 } from "@mui/material";
 import { usePropertyController } from "@/features/property/hooks/use-property-controller";
-import { clearPropertyRegistrationDraft } from "@/features/property/services/property-service";
+import {
+  clearPropertyLocationDraft,
+  clearPropertyRegistrationDraft,
+  getPendingPropertySetup,
+  propertyLocationDraftKey,
+} from "@/features/property/services/property-service";
 import type {
   PlaceDetails,
   PlacePrediction,
@@ -452,26 +457,97 @@ function detailsFromGeocode(
   };
 }
 
-export function PropertyAddressMap() {
+type StoredLocationDraft = {
+  propertyId: string;
+  query: string;
+  selected: PlaceDetails;
+};
+
+function parseStoredLocationDraft(
+  raw: string | null,
+  propertyId: string,
+): StoredLocationDraft | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as {
+      propertyId?: unknown;
+      query?: unknown;
+      selected?: Record<string, unknown>;
+    };
+    const address = value.selected;
+    const stringFields = [
+      "name",
+      "placeId",
+      "formattedAddress",
+      "country",
+      "region",
+      "district",
+      "ward",
+      "street",
+    ] as const;
+    if (
+      value.propertyId !== propertyId ||
+      !address ||
+      !stringFields.every((field) => typeof address[field] === "string") ||
+      typeof address.latitude !== "number" ||
+      !Number.isFinite(address.latitude) ||
+      typeof address.longitude !== "number" ||
+      !Number.isFinite(address.longitude)
+    ) {
+      return null;
+    }
+    const selected = rebuildAddress(address as unknown as PlaceDetails);
+    if (!isTanzaniaAddress(selected)) return null;
+    return {
+      propertyId,
+      query: typeof value.query === "string" ? value.query.slice(0, 240) : "",
+      selected,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function PropertyAddressMap({
+  initialStage,
+}: {
+  initialStage?: string;
+}) {
   const router = useRouter();
   const feedback = useAppFeedback();
   const { t } = useLanguage();
   const { session, refresh } = useAppSession();
+  const ownerId = session?.user?.id ?? "";
+  const pendingPropertyId = ownerId
+    ? getPendingPropertySetup(ownerId).propertyId
+    : null;
+  const locationPropertyId =
+    pendingPropertyId ?? session?.activePropertyId ?? "";
+  const locationDraftKey =
+    ownerId && locationPropertyId
+      ? propertyLocationDraftKey(ownerId, locationPropertyId)
+      : "";
+  const stage = ADDRESS_STAGES.includes(initialStage as AddressStage)
+    ? (initialStage as AddressStage)
+    : "map";
   const mapElement = useRef<HTMLDivElement>(null);
   const map = useRef<MapInstance | null>(null);
+  const positionRef = useRef<LatLng>(DEFAULT_POSITION);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reverseRequest = useRef<AbortController | null>(null);
   const reverseGeneration = useRef(0);
   const placeRequest = useRef<AbortController | null>(null);
   const placeGeneration = useRef(0);
+  const geolocationGeneration = useRef(0);
   const skipNextIdle = useRef(true);
   const stageFocusRef = useRef<HTMLDivElement>(null);
-  const [stage, setStage] = useState<AddressStage>("map");
   const [query, setQuery] = useState("");
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [activePredictionIndex, setActivePredictionIndex] = useState(-1);
   const [selected, setSelected] = useState<PlaceDetails | null>(null);
   const [position, setPosition] = useState(DEFAULT_POSITION);
+  const [locationDraftLoaded, setLocationDraftLoaded] = useState(false);
+  const [loadedLocationDraftKey, setLoadedLocationDraftKey] = useState("");
   const [searching, setSearching] = useState(false);
   const [loadingAddress, setLoadingAddress] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
@@ -485,6 +561,7 @@ export function PropertyAddressMap() {
     reverseRequest.current?.abort();
     placeGeneration.current += 1;
     placeRequest.current?.abort();
+    geolocationGeneration.current += 1;
     setLoadingAddress(false);
   };
 
@@ -544,6 +621,98 @@ export function PropertyAddressMap() {
   }, [t]);
 
   useEffect(() => {
+    let restored: StoredLocationDraft | null = null;
+    if (locationDraftKey && locationPropertyId) {
+      try {
+        restored = parseStoredLocationDraft(
+          window.localStorage.getItem(locationDraftKey),
+          locationPropertyId,
+        );
+      } catch {
+        // Browser storage is only a resume convenience.
+      }
+    }
+
+    const timer = window.setTimeout(() => {
+      const nextPosition = restored
+        ? {
+            lat: restored.selected.latitude,
+            lng: restored.selected.longitude,
+          }
+        : DEFAULT_POSITION;
+      positionRef.current = nextPosition;
+      setPosition(nextPosition);
+      setSelected(restored?.selected ?? null);
+      setQuery(restored?.query ?? "");
+      setPredictions([]);
+      setActivePredictionIndex(-1);
+      setMapError(null);
+      setLoadedLocationDraftKey(locationDraftKey);
+      setLocationDraftLoaded(true);
+      if (restored && map.current) {
+        skipNextIdle.current = true;
+        map.current.panTo(nextPosition);
+        map.current.setZoom(17);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [locationDraftKey, locationPropertyId]);
+
+  useEffect(() => {
+    if (
+      !locationDraftLoaded ||
+      !locationDraftKey ||
+      !locationPropertyId ||
+      loadedLocationDraftKey !== locationDraftKey
+    ) {
+      return;
+    }
+    try {
+      if (!selected) {
+        window.localStorage.removeItem(locationDraftKey);
+        return;
+      }
+      window.localStorage.setItem(
+        locationDraftKey,
+        JSON.stringify({
+          propertyId: locationPropertyId,
+          query,
+          selected: rebuildAddress(selected),
+        } satisfies StoredLocationDraft),
+      );
+    } catch {
+      // Browser storage is only a resume convenience.
+    }
+  }, [
+    loadedLocationDraftKey,
+    locationDraftKey,
+    locationDraftLoaded,
+    locationPropertyId,
+    query,
+    selected,
+  ]);
+
+  useEffect(() => {
+    if (
+      locationDraftLoaded &&
+      locationDraftKey &&
+      loadedLocationDraftKey === locationDraftKey &&
+      stage !== "map" &&
+      !selected
+    ) {
+      router.replace("/onboarding/property/address/map?stage=map");
+    }
+  }, [
+    loadedLocationDraftKey,
+    locationDraftKey,
+    locationDraftLoaded,
+    router,
+    selected,
+    stage,
+  ]);
+
+  useEffect(() => {
     let cancelled = false;
     let idleListener: { remove(): void } | null = null;
     let loadingScript: HTMLScriptElement | null = null;
@@ -552,8 +721,8 @@ export function PropertyAddressMap() {
       if (cancelled || !mapElement.current || !window.google || map.current)
         return;
       map.current = new window.google.maps.Map(mapElement.current, {
-        center: DEFAULT_POSITION,
-        zoom: 14.5,
+        center: positionRef.current,
+        zoom: positionRef.current === DEFAULT_POSITION ? 14.5 : 17,
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
@@ -567,12 +736,14 @@ export function PropertyAddressMap() {
         const center = map.current?.getCenter();
         if (!center) return;
         const next = { lat: center.lat(), lng: center.lng() };
+        positionRef.current = next;
         setPosition(next);
         if (skipNextIdle.current) {
           skipNextIdle.current = false;
           return;
         }
         if (idleTimer.current) clearTimeout(idleTimer.current);
+        geolocationGeneration.current += 1;
         placeGeneration.current += 1;
         placeRequest.current?.abort();
         idleTimer.current = setTimeout(() => void reverseGeocode(next), 700);
@@ -767,7 +938,12 @@ export function PropertyAddressMap() {
 
       const normalized = rebuildAddress(details);
       setSelected(normalized);
-      setPosition({ lat: normalized.latitude, lng: normalized.longitude });
+      const nextPosition = {
+        lat: normalized.latitude,
+        lng: normalized.longitude,
+      };
+      positionRef.current = nextPosition;
+      setPosition(nextPosition);
       skipNextIdle.current = true;
       map.current?.panTo({
         lat: normalized.latitude,
@@ -803,10 +979,14 @@ export function PropertyAddressMap() {
       return;
     }
     invalidateLocationLookup();
+    const generation = geolocationGeneration.current + 1;
+    geolocationGeneration.current = generation;
     setLoadingAddress(true);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        if (generation !== geolocationGeneration.current) return;
         const next = { lat: coords.latitude, lng: coords.longitude };
+        positionRef.current = next;
         setPosition(next);
         skipNextIdle.current = true;
         map.current?.panTo(next);
@@ -814,6 +994,7 @@ export function PropertyAddressMap() {
         void reverseGeocode(next);
       },
       (error) => {
+        if (generation !== geolocationGeneration.current) return;
         setLoadingAddress(false);
         setMapError(
           error.code === error.PERMISSION_DENIED
@@ -862,7 +1043,10 @@ export function PropertyAddressMap() {
     setMapError(null);
     controller.clearError();
     if (stageIndex > 0) {
-      setStage(ADDRESS_STAGES[stageIndex - 1]);
+      invalidateLocationLookup();
+      router.push(
+        `/onboarding/property/address/map?stage=${ADDRESS_STAGES[stageIndex - 1]}`,
+      );
       return;
     }
     router.push("/onboarding/property/basic?step=photos");
@@ -920,7 +1104,9 @@ export function PropertyAddressMap() {
     }
     if (stageIndex < ADDRESS_STAGES.length - 1) {
       invalidateLocationLookup();
-      setStage(ADDRESS_STAGES[stageIndex + 1]);
+      router.push(
+        `/onboarding/property/address/map?stage=${ADDRESS_STAGES[stageIndex + 1]}`,
+      );
     }
   };
 
@@ -945,6 +1131,9 @@ export function PropertyAddressMap() {
         normalizedAddress as PropertyAddress,
       );
       clearPropertyRegistrationDraft(user.id);
+      if (locationPropertyId) {
+        clearPropertyLocationDraft(user.id, locationPropertyId);
+      }
       await refresh();
       feedback.success(
         t(

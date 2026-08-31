@@ -397,7 +397,7 @@ export function PropertyBasicForm({
       feedback.success(
         t("Your property profile is ready.", "Wasifu wa biashara yako uko tayari."),
       );
-      router.replace("/onboarding/property/address/map");
+      router.push("/onboarding/property/address/map?stage=map");
       router.refresh();
     } catch {
       // The controller exposes a retry-safe error below.
