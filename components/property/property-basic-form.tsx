@@ -16,19 +16,26 @@ import {
   CircularProgress,
   IconButton,
   InputAdornment,
-  LinearProgress,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from "react";
 
 import { OnboardingFrame } from "@/components/auth/onboarding-frame";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { usePropertyController } from "@/features/property/hooks/use-property-controller";
+import { useAppSession } from "@/features/session/hooks/use-app-session";
 import type { InventoryType, PropertyType } from "@/features/property/models/property";
 import {
   getPropertyTypeDefinition,
@@ -38,9 +45,17 @@ import {
   MAX_PROPERTY_IMAGE_BYTES,
   MAX_PROPERTY_IMAGES,
   PROPERTY_IMAGE_TYPES,
+  propertyRegistrationDraftKey,
 } from "@/features/property/services/property-service";
 
-const DRAFT_KEY = "loji-property-registration:v2";
+const BASIC_STEP_SLUGS = [
+  "type",
+  "name",
+  "contact",
+  "spaces",
+  "amenities",
+  "photos",
+] as const;
 
 const amenities = [
   { label: ["Wi-Fi", "Wi-Fi"], value: "WiFi" },
@@ -60,7 +75,7 @@ const amenities = [
 ] as const;
 
 type RegistrationDraft = {
-  type: PropertyType;
+  type: PropertyType | null;
   name: string;
   phone: string;
   email: string;
@@ -71,7 +86,7 @@ type RegistrationDraft = {
 };
 
 const initialDraft: RegistrationDraft = {
-  type: "hotel",
+  type: null,
   name: "",
   phone: "",
   email: "",
@@ -81,23 +96,42 @@ const initialDraft: RegistrationDraft = {
   amenities: [],
 };
 
-export function PropertyBasicForm() {
+export function PropertyBasicForm({
+  initialStep,
+}: {
+  initialStep?: string | null;
+}) {
   const router = useRouter();
   const controller = usePropertyController();
   const feedback = useAppFeedback();
   const { t } = useLanguage();
-  const [activeStep, setActiveStep] = useState(0);
+  const { session, refresh } = useAppSession();
+  const ownerId = session?.user?.id ?? "";
+  const registrationDraftKey = ownerId
+    ? propertyRegistrationDraftKey(ownerId)
+    : "";
+  const routeStep = BASIC_STEP_SLUGS.indexOf(
+    initialStep as (typeof BASIC_STEP_SLUGS)[number],
+  );
+  const activeStep = routeStep >= 0 ? routeStep : 0;
+  const stepFocusRef = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState<RegistrationDraft>(initialDraft);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [loadedDraftKey, setLoadedDraftKey] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
-  const definition = getPropertyTypeDefinition(draft.type);
+  const definition = draft.type
+    ? getPropertyTypeDefinition(draft.type)
+    : null;
+  const inventoryType = definition?.inventoryType ?? "room";
+  const inventoryPlural =
+    definition?.inventoryPlural ?? (["spaces", "sehemu"] as const);
 
   const stepLabels = [
     t("Property type", "Aina ya biashara"),
     t("Property name", "Jina la biashara"),
     t("Contact", "Mawasiliano"),
-    definition.inventoryType === "house"
+    inventoryType === "house"
       ? t("Home layout", "Mpangilio wa nyumba")
       : t("Bookable spaces", "Sehemu za kuhifadhi"),
     t("Amenities", "Huduma"),
@@ -106,35 +140,99 @@ export function PropertyBasicForm() {
   ];
 
   useEffect(() => {
-    let stored: Partial<RegistrationDraft> | null = null;
-    try {
-      stored = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null") as Partial<RegistrationDraft> | null;
-    } catch {
-      // A malformed draft should not block a fresh registration.
-    }
-    const timer = window.setTimeout(() => {
-      if (stored?.type && propertyTypeDefinitions.some((item) => item.value === stored?.type)) {
-        setDraft({
-          ...initialDraft,
-          ...stored,
-          amenities: Array.isArray(stored.amenities)
-            ? stored.amenities.filter((item): item is string => typeof item === "string")
-            : [],
-        });
+    let stored:
+      | (Partial<RegistrationDraft> & { activeStep?: unknown })
+      | null = null;
+    if (registrationDraftKey) {
+      try {
+        window.localStorage.removeItem("loji-property-registration:v2");
+        stored = JSON.parse(
+          window.localStorage.getItem(registrationDraftKey) ?? "null",
+        ) as
+        | (Partial<RegistrationDraft> & { activeStep?: unknown })
+        | null;
+      } catch {
+        // A malformed draft should not block a fresh registration.
       }
-      setDraftLoaded(true);
+    }
+
+    const timer = window.setTimeout(() => {
+      const validStoredType =
+        stored?.type &&
+        propertyTypeDefinitions.some((item) => item.value === stored?.type);
+      setDraft(
+        validStoredType && stored
+          ? {
+              ...initialDraft,
+              ...stored,
+              amenities: Array.isArray(stored.amenities)
+                ? stored.amenities.filter(
+                    (item): item is string => typeof item === "string",
+                  )
+                : [],
+            }
+          : initialDraft,
+      );
+      setFiles([]);
+      setLocalError(null);
+      setLoadedDraftKey(registrationDraftKey);
+      setDraftLoaded(Boolean(registrationDraftKey));
+
+      const storedStep =
+        typeof stored?.activeStep === "number" &&
+        Number.isInteger(stored.activeStep) &&
+        stored.activeStep >= 0 &&
+        stored.activeStep < BASIC_STEP_SLUGS.length
+          ? stored.activeStep
+          : 0;
+      if (!initialStep && storedStep > 0) {
+        router.replace(
+          `/onboarding/property/basic?step=${BASIC_STEP_SLUGS[storedStep]}`,
+        );
+      }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [initialStep, registrationDraftKey, router]);
 
   useEffect(() => {
-    if (!draftLoaded) return;
+    if (draftLoaded && activeStep > 0 && !draft.type) {
+      router.replace("/onboarding/property/basic?step=type");
+    }
+  }, [activeStep, draft.type, draftLoaded, router]);
+
+  useEffect(() => {
+    if (
+      !draftLoaded ||
+      !registrationDraftKey ||
+      loadedDraftKey !== registrationDraftKey
+    ) {
+      return;
+    }
     try {
-      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      window.localStorage.setItem(
+        registrationDraftKey,
+        JSON.stringify({ ...draft, activeStep }),
+      );
     } catch {
       // Browser storage is a convenience; the form remains usable without it.
     }
-  }, [draft, draftLoaded]);
+  }, [
+    activeStep,
+    draft,
+    draftLoaded,
+    loadedDraftKey,
+    registrationDraftKey,
+  ]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const firstControl = stepFocusRef.current?.querySelector<HTMLElement>(
+        "input:not([type='hidden']), [role='radio'], [role='button'], button",
+      );
+      (firstControl ?? stepFocusRef.current)?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeStep]);
 
   const previews = useMemo(
     () => files.map((file) => ({ file, url: URL.createObjectURL(file) })),
@@ -204,6 +302,12 @@ export function PropertyBasicForm() {
   };
 
   const validateCurrentStep = () => {
+    if (activeStep === 0 && !draft.type) {
+      return t(
+        "Choose the type that best matches your business.",
+        "Chagua aina inayolingana zaidi na biashara yako.",
+      );
+    }
     if (activeStep === 1 && draft.name.trim().length < 2) {
       return t(
         "Enter a name with at least 2 characters.",
@@ -228,7 +332,7 @@ export function PropertyBasicForm() {
     }
     if (
       activeStep === 3 &&
-      definition.inventoryType !== "house" &&
+      inventoryType !== "house" &&
       (!Number.isInteger(draft.expectedInventoryCount) ||
         draft.expectedInventoryCount < 1 ||
         draft.expectedInventoryCount > 1000)
@@ -237,7 +341,7 @@ export function PropertyBasicForm() {
     }
     if (
       activeStep === 3 &&
-      definition.inventoryType === "house" &&
+      inventoryType === "house" &&
       (!Number.isInteger(draft.defaultBedroomCount) ||
         draft.defaultBedroomCount < 0 ||
         draft.defaultBedroomCount > 20 ||
@@ -256,6 +360,16 @@ export function PropertyBasicForm() {
   const submit = async () => {
     setLocalError(null);
     controller.clearError();
+    const propertyType = draft.type;
+    if (!propertyType) {
+      setLocalError(
+        t(
+          "Choose the type that best matches your business.",
+          "Chagua aina inayolingana zaidi na biashara yako.",
+        ),
+      );
+      return;
+    }
     try {
       await controller.createProperty(
         {
@@ -263,31 +377,27 @@ export function PropertyBasicForm() {
           email: draft.email,
           name: draft.name,
           phone: draft.phone,
-          type: draft.type,
+          type: propertyType,
           expectedInventoryCount:
-            definition.inventoryType === "house"
+            inventoryType === "house"
               ? 1
               : draft.expectedInventoryCount,
           defaultBedroomCount:
-            definition.inventoryType === "house"
+            inventoryType === "house"
               ? draft.defaultBedroomCount
               : null,
           defaultBathroomCount:
-            definition.inventoryType === "house"
+            inventoryType === "house"
               ? draft.defaultBathroomCount
               : null,
         },
         files,
       );
-      try {
-        window.localStorage.removeItem(DRAFT_KEY);
-      } catch {
-        // No cleanup is required when storage is unavailable.
-      }
+      await refresh();
       feedback.success(
         t("Your property profile is ready.", "Wasifu wa biashara yako uko tayari."),
       );
-      router.replace("/onboarding/property/address");
+      router.push("/onboarding/property/address/map?stage=map");
       router.refresh();
     } catch {
       // The controller exposes a retry-safe error below.
@@ -300,8 +410,10 @@ export function PropertyBasicForm() {
       setLocalError(message);
       return;
     }
-    if (activeStep < 5) {
-      setActiveStep((step) => step + 1);
+    if (activeStep < BASIC_STEP_SLUGS.length - 1) {
+      router.push(
+        `/onboarding/property/basic?step=${BASIC_STEP_SLUGS[activeStep + 1]}`,
+      );
       setLocalError(null);
       return;
     }
@@ -311,14 +423,19 @@ export function PropertyBasicForm() {
   const goBack = () => {
     setLocalError(null);
     controller.clearError();
-    if (activeStep > 0) setActiveStep((step) => step - 1);
-    else router.back();
+    if (activeStep > 0) {
+      router.push(
+        `/onboarding/property/basic?step=${BASIC_STEP_SLUGS[activeStep - 1]}`,
+      );
+    } else {
+      router.back();
+    }
   };
 
   const screen = screenContent(
     activeStep,
-    definition.inventoryType,
-    definition.inventoryPlural,
+    inventoryType,
+    inventoryPlural,
     t,
   );
   const progressLabel =
@@ -363,17 +480,28 @@ export function PropertyBasicForm() {
       title={screen.title}
       wide
     >
-      <Stack spacing={{ xs: 2.25, sm: 3 }}>
-        <LinearProgress
-          aria-label={t(
-            "Property registration progress",
-            "Maendeleo ya usajili wa biashara",
-          )}
-          value={((activeStep + 1) / 6) * 100}
-          variant="determinate"
-          sx={{ borderRadius: 99, height: 6 }}
-        />
-
+      <Stack
+        aria-label={screen.question}
+        ref={stepFocusRef}
+        spacing={{ xs: 2.25, sm: 3 }}
+        sx={{ outline: "none" }}
+        tabIndex={-1}
+      >
+        <Box
+          aria-atomic="true"
+          aria-live="polite"
+          sx={{
+            clip: "rect(0 0 0 0)",
+            clipPath: "inset(50%)",
+            height: 1,
+            overflow: "hidden",
+            position: "absolute",
+            whiteSpace: "nowrap",
+            width: 1,
+          }}
+        >
+          {screen.question}
+        </Box>
         {activeStep === 0 ? (
           <PropertyTypeChoices selected={draft.type} onChange={chooseType} />
         ) : null}
@@ -448,7 +576,7 @@ export function PropertyBasicForm() {
         ) : null}
 
         {activeStep === 3 ? (
-          definition.inventoryType === "house" ? (
+          inventoryType === "house" ? (
             <Box
               sx={{
                 display: "grid",
@@ -519,7 +647,7 @@ export function PropertyBasicForm() {
                 autoFocus
                 fullWidth
                 label={
-                  definition.inventoryType === "apartment"
+                  inventoryType === "apartment"
                     ? t(
                         "How many apartments can be booked separately?",
                         "Fleti ngapi zinaweza kuhifadhiwa tofauti?",
@@ -547,7 +675,7 @@ export function PropertyBasicForm() {
                 value={draft.expectedInventoryCount}
               />
               <FriendlyNote>
-                {definition.inventoryType === "apartment"
+                {inventoryType === "apartment"
                   ? t(
                       "Each apartment will get its own bedrooms, bathrooms, capacity and nightly price later.",
                       "Kila fleti itawekewa vyumba vya kulala, bafu, uwezo na bei yake baadaye.",
@@ -756,11 +884,12 @@ function PropertyTypeChoices({
   selected,
 }: {
   onChange: (value: PropertyType) => void;
-  selected: PropertyType;
+  selected: PropertyType | null;
 }) {
   const { t } = useLanguage();
   return (
     <Box
+      role="radiogroup"
       sx={{
         display: "grid",
         gap: 1.25,
@@ -774,8 +903,9 @@ function PropertyTypeChoices({
         const active = item.value === selected;
         return (
           <ButtonBase
-            aria-pressed={active}
+            aria-checked={active}
             key={item.value}
+            role="radio"
             onClick={() => onChange(item.value)}
             sx={{
               alignItems: "flex-start",
@@ -872,7 +1002,7 @@ function numericValue(value: string, fallback: number) {
 }
 
 function propertyNamePlaceholder(
-  type: PropertyType,
+  type: PropertyType | null,
   t: (english: string, swahili: string) => string,
 ) {
   if (type === "apartment") {

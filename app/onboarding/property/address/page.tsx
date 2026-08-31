@@ -1,5 +1,5 @@
-import { PropertyAddressIntro } from "@/components/property/property-address-intro";
+import { redirect } from "next/navigation";
 
 export default function PropertyAddressOnboardingPage() {
-  return <PropertyAddressIntro />;
+  redirect("/onboarding/property/address/map");
 }

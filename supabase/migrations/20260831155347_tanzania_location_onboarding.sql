@@ -1,0 +1,3 @@
+-- Historical production migration.
+-- The final compatible definition is applied by
+-- 20260831160342_relax_tanzania_onboarding_address_requirements.sql.
