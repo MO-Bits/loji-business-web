@@ -132,7 +132,7 @@ export function PropertyBasicForm() {
         stored?.type &&
         propertyTypeDefinitions.some((item) => item.value === stored?.type);
       setDraft(
-        validStoredType
+        validStoredType && stored
           ? {
               ...initialDraft,
               ...stored,
