@@ -2409,13 +2409,13 @@ begin
     begin
       insert into public.bookings(
         booking_number, property_id, room_id, guest_id, created_by,
-        check_in, check_out, adults, children, total_guests, total_price,
+        check_in, check_out, adults, children, total_price,
         booking_source, status, payment_status, special_requests,
         idempotency_key, idempotency_fingerprint, updated_at
       ) values (
         v_booking_number, p_property_id, p_room_id, v_guest_id, v_user_id,
         p_check_in, p_check_out, coalesce(p_adults, 1), coalesce(p_children, 0),
-        coalesce(p_adults, 1) + coalesce(p_children, 0), v_total,
+        v_total,
         nullif(btrim(coalesce(p_source, 'front_desk')), ''),
         'confirmed', v_payment_status,
         nullif(btrim(coalesce(p_special_requests, '')), ''),
@@ -4503,7 +4503,7 @@ begin
       check_out = p_check_out,
       adults = p_adults,
       children = p_children,
-      total_guests = p_adults + p_children,
+      
       total_price = v_total,
       payment_status = v_payment_status,
       booking_source = coalesce(
