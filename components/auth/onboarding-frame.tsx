@@ -70,8 +70,9 @@ export function OnboardingFrame({
               gridTemplateColumns: {
                 xs: "minmax(0, 1fr)",
                 md: wide
-                  ? "minmax(250px, .52fr) minmax(0, 1.48fr)"
+                  ? "minmax(280px, .58fr) minmax(0, 1.42fr)"
                   : "minmax(260px, .64fr) minmax(0, 1fr)",
+                lg: wide ? "minmax(310px, .58fr) minmax(0, 1.42fr)" : undefined,
               },
               mx: "auto",
               width: wide ? "min(100%, 1160px)" : "min(100%, 1040px)",
@@ -85,8 +86,16 @@ export function OnboardingFrame({
                 <Typography
                   component="h1"
                   sx={{
-                    fontSize: { xs: "2rem", sm: "2.5rem", lg: "2.75rem" },
+                    fontSize: {
+                      xs: "2rem",
+                      sm: "2.5rem",
+                      md: wide ? "2.25rem" : "2.5rem",
+                      lg: wide ? "2.5rem" : "2.75rem",
+                    },
                     fontWeight: 700,
+                    hyphens: "none",
+                    overflowWrap: "normal",
+                    wordBreak: "normal",
                     letterSpacing: "-.045em",
                     lineHeight: 1.06,
                     mt: 0.5,
