@@ -19,6 +19,9 @@ type PropertyRow = {
   name: string;
   description: string | null;
   property_type: string;
+  expected_inventory_count: number;
+  default_bedroom_count: number | null;
+  default_bathroom_count: number | null;
   phone: string;
   email: string | null;
   country: string | null;
@@ -46,8 +49,11 @@ type RoomRow = {
   property_id: string | null;
   name: string;
   room_type: string;
+  inventory_type: string;
   capacity: number | null;
   bed_count: number | null;
+  bedroom_count: number;
+  bathroom_count: number;
   price_per_night: number;
   description: string | null;
   amenities: Json | null;
@@ -326,6 +332,20 @@ export type Database = {
         Args: { p_name: string; p_type: string; p_phone: string; p_email: string | null; p_amenities: Json; p_request_key?: string | null };
         Returns: string;
       };
+      save_property_onboarding_profile: {
+        Args: {
+          p_name: string;
+          p_type: string;
+          p_phone: string;
+          p_email: string | null;
+          p_amenities: Json;
+          p_expected_inventory_count: number;
+          p_default_bedroom_count?: number | null;
+          p_default_bathroom_count?: number | null;
+          p_request_key?: string | null;
+        };
+        Returns: string;
+      };
       complete_property_onboarding_location: {
         Args: { p_property_id: string; p_country: string; p_region: string; p_district: string; p_ward: string; p_street: string; p_formatted_address: string; p_place_id: string | null; p_latitude: number | null; p_longitude: number | null };
         Returns: Json;
@@ -334,7 +354,16 @@ export type Database = {
       get_home_dashboard: { Args: { p_property_id: string }; Returns: Json };
       get_room_board: { Args: { p_property_id: string }; Returns: Json };
       get_room_workspace: { Args: { p_property_id: string; p_room_id: string }; Returns: Json };
+      get_property_inventory_setup: { Args: { p_property_id: string }; Returns: Json };
       get_property_operations_board: { Args: { p_property_id: string }; Returns: Json };
+      create_inventory_unit: {
+        Args: { p_property_id: string; p_unit_id: string; p_name: string; p_space_type: string; p_inventory_type: string; p_is_active: boolean; p_price_per_night: number; p_capacity: number; p_bed_count: number; p_bedroom_count: number; p_bathroom_count: number; p_description: string | null; p_amenities: string[]; p_images: Json };
+        Returns: Json;
+      };
+      update_inventory_unit: {
+        Args: { p_property_id: string; p_unit_id: string; p_name: string; p_space_type: string; p_inventory_type: string; p_is_active: boolean; p_price_per_night: number; p_capacity: number; p_bed_count: number; p_bedroom_count: number; p_bathroom_count: number; p_description: string | null; p_amenities: string[]; p_images: Json };
+        Returns: Json;
+      };
       create_room: {
         Args: { p_property_id: string; p_room_id: string; p_room_name: string; p_room_type: string; p_is_active: boolean; p_price_per_night: number; p_capacity: number; p_bed_count: number; p_description: string | null; p_amenities: string[]; p_images: Json };
         Returns: Json;
@@ -352,6 +381,25 @@ export type Database = {
           room_type: string;
           capacity: number;
           bed_count: number;
+          price_per_night: number;
+          total_price: number;
+          nights: number;
+          operational_status: string;
+          amenities: Json;
+          images: Json;
+        }[];
+      };
+      get_available_inventory: {
+        Args: { p_property_id: string; p_check_in: string; p_check_out: string; p_guests?: number };
+        Returns: {
+          room_id: string;
+          room_name: string;
+          room_type: string;
+          inventory_type: string;
+          capacity: number;
+          bed_count: number;
+          bedroom_count: number;
+          bathroom_count: number;
           price_per_night: number;
           total_price: number;
           nights: number;

@@ -64,6 +64,10 @@ import { formatLocalDate } from "@/lib/date-time";
 import { trackEvent } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 import { housekeepingOptions, RoomStatusPill } from "./room-status";
+import {
+  getInventoryDefinition,
+  getPropertyTypeDefinition,
+} from "@/features/property/property-type";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -111,6 +115,17 @@ export function RoomsScreen() {
   const dataLoading = loading || Boolean(boardState && boardState.property.id !== propertyId);
   const canManage = Boolean(board?.capabilities.manageRooms);
   const canCreateBooking = Boolean(board?.capabilities.createBooking);
+  const propertyDefinition = getPropertyTypeDefinition(
+    board?.property.propertyType ?? session?.property?.type,
+  );
+  const singular = t(
+    propertyDefinition.inventorySingular[0],
+    propertyDefinition.inventorySingular[1],
+  );
+  const plural = t(
+    propertyDefinition.inventoryPlural[0],
+    propertyDefinition.inventoryPlural[1],
+  );
 
   useEffect(() => {
     activePropertyId.current = propertyId;
@@ -140,7 +155,7 @@ export function RoomsScreen() {
       if (currentRequest === requestId.current && activePropertyId.current === requestPropertyId) {
         setErrorState({
           propertyId: requestPropertyId,
-          message: cause instanceof Error ? cause.message : t("Unable to load rooms.", "Imeshindikana kupakia vyumba."),
+          message: cause instanceof Error ? cause.message : t("Unable to load bookable inventory.", "Imeshindikana kupakia sehemu za kuhifadhi."),
         });
       }
     } finally {
@@ -169,6 +184,9 @@ export function RoomsScreen() {
   }, []);
 
   const rooms = useMemo(() => board?.rooms ?? [], [board]);
+  const canAddInventory =
+    canManage &&
+    (propertyDefinition.allowsMultipleInventory || rooms.length === 0);
   const visibleRooms = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
     return rooms.filter((room) => {
@@ -225,7 +243,7 @@ export function RoomsScreen() {
       }
     } catch (cause) {
       if (activePropertyId.current === actionPropertyId) {
-        feedback.error(cause instanceof Error ? cause.message : t("Unable to update room.", "Imeshindikana kubadili chumba."));
+        feedback.error(cause instanceof Error ? cause.message : t(`Unable to update ${singular}.`, `Imeshindikana kubadili ${singular}.`));
       }
     } finally {
       if (activePropertyId.current === actionPropertyId) setPendingRoom(null);
@@ -241,13 +259,13 @@ export function RoomsScreen() {
       if (activePropertyId.current === actionPropertyId) {
         trackEvent("room_status_updated", { room_id: room.id, active });
         feedback.success(active
-          ? t("Room activated.", "Chumba kimewashwa.")
-          : t("Room deactivated.", "Chumba kimezimwa."));
+          ? t(`${singular} activated.`, `${singular} imewashwa.`)
+          : t(`${singular} deactivated.`, `${singular} imezimwa.`));
         await refresh(true);
       }
     } catch (cause) {
       if (activePropertyId.current === actionPropertyId) {
-        feedback.error(cause instanceof Error ? cause.message : t("Unable to update room.", "Imeshindikana kubadili chumba."));
+        feedback.error(cause instanceof Error ? cause.message : t(`Unable to update ${singular}.`, `Imeshindikana kubadili ${singular}.`));
       }
     } finally {
       if (activePropertyId.current === actionPropertyId) setPendingRoom(null);
@@ -259,30 +277,47 @@ export function RoomsScreen() {
   const attention = (summary?.needsCleaningRooms ?? 0) +
     (summary?.cleaningRooms ?? 0) +
     (summary?.outOfServiceRooms ?? 0);
+  const expectedInventoryCount = board?.property.expectedInventoryCount ?? 1;
+  const remainingSetupCount = Math.max(0, expectedInventoryCount - rooms.length);
 
   return (
     <WorkspacePage>
       <Stack spacing={{ xs: 2.25, sm: 3 }}>
         <PageHeader
           eyebrow={t("Property operations", "Uendeshaji wa biashara")}
-          title={t("Room board", "Ubao wa vyumba")}
           description={businessDate
             ? t(
-                `Live occupancy and housekeeping for ${formatLocalDate(businessDate, { weekday: "long", day: "numeric", month: "long" })}.`,
-                `Hali ya wageni na usafi kwa ${formatLocalDate(businessDate, { weekday: "long", day: "numeric", month: "long" })}.`,
+                `Live occupancy and readiness for every ${singular} on ${formatLocalDate(businessDate, { weekday: "long", day: "numeric", month: "long" })}.`,
+                `Hali ya wageni na utayari wa kila ${singular} tarehe ${formatLocalDate(businessDate, { weekday: "long", day: "numeric", month: "long" })}.`,
               )
-            : t("Live occupancy, arrivals, and housekeeping in one operational view.", "Hali ya wageni, wanaowasili na usafi katika sehemu moja.")}
-          action={canManage && rooms.length > 0 ? (
+            : t(`Live occupancy, arrivals and readiness across your ${plural}.`, `Hali ya wageni, wanaowasili na utayari wa ${plural} zako.`)}
+          action={canAddInventory && rooms.length > 0 ? (
             <Button component={Link} href="/rooms/new" startIcon={<AddRoundedIcon />} variant="contained">
-              {t("Add room", "Ongeza chumba")}
+              {t(`Add ${singular}`, `Ongeza ${singular}`)}
             </Button>
           ) : undefined}
+          title={t(
+            propertyDefinition.inventoryBoard[0],
+            propertyDefinition.inventoryBoard[1],
+          )}
         />
 
+        {canManage && rooms.length > 0 && propertyDefinition.allowsMultipleInventory && remainingSetupCount > 0 ? (
+          <Alert
+            action={<Button component={Link} href="/rooms/new" color="inherit" size="small">{t(`Add ${singular}`, `Ongeza ${singular}`)}</Button>}
+            severity="info"
+          >
+            {t(
+              `Setup progress: ${rooms.length} of ${expectedInventoryCount} ${plural} added. Add ${remainingSetupCount} more to match the number you gave during registration.`,
+              `Maandalizi: ${rooms.length} kati ya ${expectedInventoryCount} ${plural} zimeongezwa. Ongeza ${remainingSetupCount} ili kufikia idadi uliyoweka wakati wa usajili.`,
+            )}
+          </Alert>
+        ) : null}
+
         <Box sx={{ display: "grid", gap: { xs: 1.25, sm: 1.5 }, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", lg: "repeat(4,minmax(0,1fr))" } }}>
-          <MetricCell icon={<BedRoundedIcon />} label={t("Total rooms", "Vyumba vyote")} value={summary?.totalRooms ?? 0} caption={t(`${summary?.activeRooms ?? 0} active inventory`, `${summary?.activeRooms ?? 0} vinatumika`)} />
+          <MetricCell icon={<BedRoundedIcon />} label={t(`Total ${plural}`, `${plural} zote`)} value={summary?.totalRooms ?? 0} caption={t(`${summary?.activeRooms ?? 0} active`, `${summary?.activeRooms ?? 0} zinatumika`)} />
           <MetricCell icon={<CheckCircleRoundedIcon />} label={t("Ready to sell", "Tayari kuuzwa")} value={summary?.readyRooms ?? 0} tone="success" caption={t("Clean and available now", "Visafi na vinapatikana sasa")} />
-          <MetricCell icon={<HotelRoundedIcon />} label={t("In house", "Waliopo hotelini")} value={(summary?.occupiedRooms ?? 0) + (summary?.checkingOutTodayRooms ?? 0)} tone="info" caption={t(`${summary?.checkingOutTodayRooms ?? 0} due out today`, `${summary?.checkingOutTodayRooms ?? 0} wanatoka leo`)} />
+          <MetricCell icon={<HotelRoundedIcon />} label={t("Occupied", "Zinatumika")} value={(summary?.occupiedRooms ?? 0) + (summary?.checkingOutTodayRooms ?? 0)} tone="info" caption={t(`${summary?.checkingOutTodayRooms ?? 0} due out today`, `${summary?.checkingOutTodayRooms ?? 0} wanatoka leo`)} />
           <MetricCell icon={<CleaningServicesRoundedIcon />} label={t("Needs attention", "Vinahitaji uangalizi")} value={attention} tone={attention ? "warning" : "success"} caption={t("Cleaning or service queue", "Foleni ya usafi au matengenezo")} />
         </Box>
 
@@ -293,9 +328,9 @@ export function RoomsScreen() {
             sx={{ alignItems: { lg: "center" }, justifyContent: "space-between", p: { xs: 1.5, sm: 2 } }}
           >
             <TextField
-              aria-label={t("Search rooms", "Tafuta vyumba")}
+              aria-label={t(`Search ${plural}`, `Tafuta ${plural}`)}
               onChange={(event) => updateQuery(event.target.value)}
-              placeholder={t("Search room, guest, type or amenity", "Tafuta chumba, mgeni, aina au huduma")}
+              placeholder={t(`Search ${singular}, guest, type or amenity`, `Tafuta ${singular}, mgeni, aina au huduma`)}
               size="small"
               slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRoundedIcon fontSize="small" /></InputAdornment> } }}
               sx={{ maxWidth: 420, width: "100%" }}
@@ -307,9 +342,9 @@ export function RoomsScreen() {
                   {t("Property date", "Tarehe ya biashara")}: {formatLocalDate(businessDate)}
                 </Typography>
               ) : null}
-              <Tooltip title={t("Refresh room board", "Pakua upya ubao wa vyumba")}>
+              <Tooltip title={t(`Refresh ${plural} board`, `Pakua upya ubao wa ${plural}`)}>
                 <span>
-                  <IconButton aria-label={t("Refresh room board", "Pakua upya ubao wa vyumba")} disabled={loading} onClick={() => void refresh()} size="small">
+                  <IconButton aria-label={t(`Refresh ${plural} board`, `Pakua upya ubao wa ${plural}`)} disabled={loading} onClick={() => void refresh()} size="small">
                     <RefreshRoundedIcon fontSize="small" />
                   </IconButton>
                 </span>
@@ -319,7 +354,7 @@ export function RoomsScreen() {
           <Divider />
           <Box sx={{ overflowX: "auto", px: { xs: 1.5, sm: 2 }, py: 1.25 }}>
             <ToggleButtonGroup
-              aria-label={t("Filter room board", "Chuja ubao wa vyumba")}
+              aria-label={t(`Filter ${plural} board`, `Chuja ubao wa ${plural}`)}
               exclusive
               onChange={(_, value: RoomFilter | null) => value && updateFilter(value)}
               size="small"
@@ -347,16 +382,16 @@ export function RoomsScreen() {
         ) : !rooms.length ? (
           <Surface padding={false}>
             <EmptyState
-              actionHref={canManage ? "/rooms/new" : undefined}
-              actionLabel={canManage ? t("Add your first room", "Ongeza chumba cha kwanza") : undefined}
-              description={t("Create rooms with rates, capacity, photos and amenities to start taking bookings.", "Unda vyumba vyenye bei, uwezo, picha na huduma ili kuanza kupokea uhifadhi.")}
+              actionHref={canAddInventory ? "/rooms/new" : undefined}
+              actionLabel={canAddInventory ? t(`Add your first ${singular}`, `Ongeza ${singular} yako ya kwanza`) : undefined}
+              description={t(`Add the rate, capacity, layout and photos for each bookable ${singular}.`, `Ongeza bei, uwezo, mpangilio na picha za kila ${singular} inayoweza kuhifadhiwa.`)}
               icon={<BedRoundedIcon />}
-              title={t("Your room inventory is empty", "Orodha ya vyumba haina kitu")}
+              title={t(`Your ${singular} inventory is empty`, `Orodha ya ${plural} haina kitu`)}
             />
           </Surface>
         ) : !visibleRooms.length ? (
           <Surface padding={false}>
-            <EmptyState description={t("Change the search or choose another operational status.", "Badili utafutaji au chagua hali nyingine ya uendeshaji.")} icon={<SearchRoundedIcon />} title={t("No rooms match this view", "Hakuna vyumba vinavyolingana")} />
+            <EmptyState description={t("Change the search or choose another operational status.", "Badili utafutaji au chagua hali nyingine ya uendeshaji.")} icon={<SearchRoundedIcon />} title={t(`No ${plural} match this view`, `Hakuna ${plural} zinazolingana`)} />
           </Surface>
         ) : (
           <Stack spacing={1.5}>
@@ -390,9 +425,9 @@ export function RoomsScreen() {
                   component="div"
                   count={visibleRooms.length}
                   labelDisplayedRows={({ from: first, to: last, count }) =>
-                    t(`${first}–${last} of ${count} rooms`, `${first}–${last} kati ya vyumba ${count}`)
+                    t(`${first}–${last} of ${count} ${plural}`, `${first}–${last} kati ya ${plural} ${count}`)
                   }
-                  labelRowsPerPage={t("Rooms per page", "Vyumba kwa ukurasa")}
+                  labelRowsPerPage={t(`${plural} per page`, `${plural} kwa ukurasa`)}
                   onPageChange={(_, nextPage) => setPage(nextPage)}
                   onRowsPerPageChange={(event) => {
                     setRowsPerPage(Number(event.target.value));
@@ -438,16 +473,19 @@ function RoomTable({
   rooms: RoomBoardItem[];
 }) {
   const { t } = useLanguage();
+  const definition = getInventoryDefinition(rooms[0]?.inventoryType);
+  const singular = t(definition.inventorySingular[0], definition.inventorySingular[1]);
+  const plural = t(definition.inventoryPlural[0], definition.inventoryPlural[1]);
   return (
     <Surface padding={false}>
       <Box sx={{ px: 2.5, py: 2 }}>
-        <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 700 }}>{t("Today’s room plan", "Mpango wa vyumba wa leo")}</Typography>
-        <Typography color="text.secondary" variant="body2">{t("Current stay, next arrival and readiness for every room.", "Mgeni wa sasa, anayefuata na utayari wa kila chumba.")}</Typography>
+        <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 700 }}>{t(`Today’s ${singular} plan`, `Mpango wa ${plural} wa leo`)}</Typography>
+        <Typography color="text.secondary" variant="body2">{t(`Current stay, next arrival and readiness for every ${singular}.`, `Mgeni wa sasa, anayefuata na utayari wa kila ${singular}.`)}</Typography>
       </Box>
       <Table sx={{ tableLayout: "fixed" }}>
         <TableHead>
           <TableRow>
-            <TableCell sx={{ width: "23%" }}>{t("Room", "Chumba")}</TableCell>
+            <TableCell sx={{ width: "23%" }}>{t(definition.inventorySingular[0], definition.inventorySingular[1])}</TableCell>
             <TableCell sx={{ width: "21%" }}>{t("Today", "Leo")}</TableCell>
             <TableCell sx={{ width: "21%" }}>{t("Next arrival", "Anayewasili")}</TableCell>
             <TableCell sx={{ width: "16%" }}>{t("Status", "Hali")}</TableCell>
@@ -467,7 +505,7 @@ function RoomTable({
                   <RoomThumb room={room} />
                   <Box sx={{ minWidth: 0 }}>
                     <Typography noWrap variant="body2" sx={{ fontWeight: 700 }}>{room.name}</Typography>
-                    <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")}</Typography>
+                    <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")}{room.inventoryType !== "room" ? ` · ${room.bedroomCount} ${t("bedrooms", "vyumba vya kulala")}` : ""}</Typography>
                   </Box>
                 </Stack>
               </TableCell>
@@ -505,6 +543,8 @@ function RoomCard({
   room: RoomBoardItem;
 }) {
   const { t } = useLanguage();
+  const definition = getInventoryDefinition(room.inventoryType);
+  const singular = t(definition.inventorySingular[0], definition.inventorySingular[1]);
   const hasInlineBookingAction = canCreateBooking && room.operationalStatus === "ready";
   return (
     <Paper variant="outlined" sx={{ borderRadius: 3, minWidth: 0, opacity: pending ? 0.55 : 1, overflow: "hidden" }}>
@@ -521,7 +561,7 @@ function RoomCard({
           <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
             <Box sx={{ minWidth: 0 }}>
               <Typography noWrap variant="subtitle1" sx={{ fontWeight: 700 }}>{room.name}</Typography>
-              <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")} · {room.bedCount} {t("beds", "vitanda")}</Typography>
+              <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")} · {room.bedCount} {t("beds", "vitanda")}{room.inventoryType !== "room" ? ` · ${room.bedroomCount} ${t("bedrooms", "vyumba vya kulala")}` : ""}</Typography>
             </Box>
             <Typography noWrap sx={{ fontSize: ".875rem", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money.format(room.pricePerNight)}</Typography>
           </Stack>
@@ -534,7 +574,7 @@ function RoomCard({
       <Divider />
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", px: 1.5, py: 1 }}>
         {hasInlineBookingAction ? (
-          <Button component={Link} href={`/bookings/new?room=${room.id}`} size="small" startIcon={<CalendarMonthRoundedIcon />}>{t("Book room", "Hifadhi chumba")}</Button>
+          <Button component={Link} href={`/bookings/new?room=${room.id}`} size="small" startIcon={<CalendarMonthRoundedIcon />}>{t(`Book ${singular}`, `Hifadhi ${singular}`)}</Button>
         ) : <Box />}
         <RoomActions canCreateBooking={canCreateBooking} canManage={canManage} disabled={pending} hideCreateBooking={hasInlineBookingAction} onActive={onActive} onHousekeeping={onHousekeeping} room={room} />
       </Stack>
@@ -588,16 +628,18 @@ function RoomActions({
   room: RoomBoardItem;
 }) {
   const { t } = useLanguage();
+  const definition = getInventoryDefinition(room.inventoryType);
+  const singular = t(definition.inventorySingular[0], definition.inventorySingular[1]);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   return (
     <>
-      <Tooltip title={t("Room actions", "Vitendo vya chumba")}>
+      <Tooltip title={t(`${singular} actions`, `Vitendo vya ${singular}`)}>
         <span><IconButton aria-label={t(`Actions for ${room.name}`, `Vitendo vya ${room.name}`)} disabled={disabled} onClick={(event) => setAnchor(event.currentTarget)} size="small"><MoreHorizRoundedIcon /></IconButton></span>
       </Tooltip>
       <Menu anchorEl={anchor} onClose={() => setAnchor(null)} open={Boolean(anchor)}>
-        <MenuItem component={Link} href={`/rooms/${room.id}`} onClick={() => setAnchor(null)}>{t("Open room workspace", "Fungua eneo la chumba")}</MenuItem>
+        <MenuItem component={Link} href={`/rooms/${room.id}`} onClick={() => setAnchor(null)}>{t(`Open ${singular} workspace`, `Fungua eneo la ${singular}`)}</MenuItem>
         {canCreateBooking && room.isActive && !hideCreateBooking ? <MenuItem component={Link} href={`/bookings/new?room=${room.id}`} onClick={() => setAnchor(null)}>{t("Create booking", "Tengeneza uhifadhi")}</MenuItem> : null}
-        {canManage ? <MenuItem component={Link} href={`/rooms/${room.id}/edit`} onClick={() => setAnchor(null)}>{t("Edit room", "Hariri chumba")}</MenuItem> : null}
+        {canManage ? <MenuItem component={Link} href={`/rooms/${room.id}/edit`} onClick={() => setAnchor(null)}>{t(`Edit ${singular}`, `Hariri ${singular}`)}</MenuItem> : null}
         {canManage && room.isActive && !["occupied", "checking_out_today"].includes(room.operationalStatus)
           ? housekeepingOptions.map((option) => (
               <MenuItem
@@ -612,7 +654,7 @@ function RoomActions({
         {canManage ? <Divider /> : null}
         {canManage ? (
           <MenuItem onClick={() => { setAnchor(null); void onActive(room, !room.isActive); }}>
-            {room.isActive ? t("Deactivate room", "Zima chumba") : t("Activate room", "Washa chumba")}
+            {room.isActive ? t(`Deactivate ${singular}`, `Zima ${singular}`) : t(`Activate ${singular}`, `Washa ${singular}`)}
           </MenuItem>
         ) : null}
       </Menu>

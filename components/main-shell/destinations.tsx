@@ -33,7 +33,7 @@ export type MainDestination = {
   capability?: keyof WorkspaceCapabilities;
   icon: React.ReactNode;
   label: string;
-  localizedLabel: [english: string, swahili: string];
+  localizedLabel: readonly [english: string, swahili: string];
   match: (pathname: string) => boolean;
   path: string;
 };

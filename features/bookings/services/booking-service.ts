@@ -97,13 +97,12 @@ export async function getAvailableRooms(
   checkOut: string,
   guests: number,
 ): Promise<AvailableRoom[]> {
-  const { data, error } = await client.rpc("get_walkin_available_rooms", {
+  const data = await callJsonRpc(client, "get_available_inventory", {
     p_property_id: propertyId,
     p_check_in: checkIn,
     p_check_out: checkOut,
     p_guests: guests,
   });
-  if (error) throw new Error(error.message);
   return Array.isArray(data)
     ? data.map((item) => parseAvailableRoom(object(item)))
     : [];

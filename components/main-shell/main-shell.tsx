@@ -71,22 +71,27 @@ import {
 } from "./destinations";
 import { PropertySwitcher } from "./property-switcher";
 import { TopBarLanguageSwitch } from "./top-bar-language-switch";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 const drawerWidth = 248;
 
 function getLocationLabel(
   pathname: string,
   translate: (english: string, swahili: string) => string,
+  propertyType?: string,
 ) {
+  const inventory = getPropertyTypeDefinition(propertyType);
+  const singular = translate(inventory.inventorySingular[0], inventory.inventorySingular[1]);
+  const plural = translate(inventory.inventoryPlural[0], inventory.inventoryPlural[1]);
   if (pathname === "/dashboard") return translate("Home", "Nyumbani");
   if (pathname.startsWith("/calendar")) return translate("Calendar", "Kalenda");
   if (pathname === "/bookings/new") return translate("New booking", "Uhifadhi mpya");
   if (pathname.startsWith("/bookings/")) return translate("Booking details", "Maelezo ya uhifadhi");
   if (pathname === "/bookings") return translate("Bookings", "Uhifadhi");
-  if (pathname === "/rooms/new") return translate("Add room", "Ongeza chumba");
-  if (pathname.endsWith("/edit") && pathname.startsWith("/rooms/")) return translate("Edit room", "Hariri chumba");
-  if (pathname.startsWith("/rooms/")) return translate("Room details", "Maelezo ya chumba");
-  if (pathname === "/rooms") return translate("Rooms", "Vyumba");
+  if (pathname === "/rooms/new") return translate(`Add ${singular}`, `Ongeza ${singular}`);
+  if (pathname.endsWith("/edit") && pathname.startsWith("/rooms/")) return translate(`Edit ${singular}`, `Hariri ${singular}`);
+  if (pathname.startsWith("/rooms/")) return translate(`${singular} details`, `Maelezo ya ${singular}`);
+  if (pathname === "/rooms") return plural;
   if (pathname.startsWith("/guests/")) return translate("Guest profile", "Taarifa za mgeni");
   if (pathname.startsWith("/guests")) return translate("Guests", "Wageni");
   if (pathname.startsWith("/operations")) return translate("Operations", "Shughuli");
@@ -192,7 +197,12 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const locationLabel = getLocationLabel(pathname, t);
+  const propertyDefinition = getPropertyTypeDefinition(session.property?.type);
+  const inventoryPlural = t(
+    propertyDefinition.inventoryPlural[0],
+    propertyDefinition.inventoryPlural[1],
+  );
+  const locationLabel = getLocationLabel(pathname, t, session.property?.type);
   const mobileNavValue = pathname.startsWith("/bookings")
     ? "/bookings"
     : pathname.startsWith("/rooms")
@@ -510,7 +520,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           ) : null}
           {capabilities.canViewRooms ? (
             <BottomNavigationAction
-              label={t("Rooms", "Vyumba")}
+              label={inventoryPlural}
               value="/rooms"
               icon={mobileNavValue === "/rooms" ? <BedRoundedIcon /> : <BedOutlinedIcon />}
             />
@@ -623,9 +633,20 @@ function SidebarContent({
 }: SidebarContentProps) {
   const { t } = useLanguage();
   const [preferencesOpen, setPreferencesOpen] = useState(false);
-  const operations = visibleDestinations(operationsDestinations, capabilities);
-  const business = visibleDestinations(businessDestinations, capabilities);
-  const management = visibleDestinations(managementDestinations, capabilities);
+  const propertyDefinition = getPropertyTypeDefinition(property?.type);
+  const contextualize = (items: MainDestination[]) =>
+    items.map((item) =>
+      item.path === "/rooms"
+        ? {
+            ...item,
+            label: propertyDefinition.inventoryPlural[0],
+            localizedLabel: propertyDefinition.inventoryPlural,
+          }
+        : item,
+    );
+  const operations = contextualize(visibleDestinations(operationsDestinations, capabilities));
+  const business = contextualize(visibleDestinations(businessDestinations, capabilities));
+  const management = contextualize(visibleDestinations(managementDestinations, capabilities));
 
   return (
     <Box
@@ -694,7 +715,7 @@ function SidebarContent({
         }}
       >
         <NavigationSection
-          items={visibleDestinations(workspaceDestinations, capabilities).filter(
+          items={contextualize(visibleDestinations(workspaceDestinations, capabilities)).filter(
             (item) => item.path !== "/dashboard" || dashboardAllowed,
           )}
           label={t("Workspace", "Eneo la kazi")}

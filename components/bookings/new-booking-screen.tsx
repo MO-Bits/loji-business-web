@@ -54,6 +54,10 @@ import { formatLocalDate, localDateKey } from "@/lib/date-time";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { trackEvent } from "@/lib/analytics";
+import {
+  getInventoryDefinition,
+  getPropertyTypeDefinition,
+} from "@/features/property/property-type";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -121,6 +125,7 @@ export function NewBookingScreen() {
       <BookingWizard
         key={`${session.user.id}:${session.activePropertyId}`}
         propertyId={session.activePropertyId}
+        propertyType={session.property?.type}
         userId={session.user.id}
         canRecordPayment={capabilities.canRecordPayment}
       />
@@ -128,13 +133,22 @@ export function NewBookingScreen() {
   );
 }
 
-function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: string; userId: string; canRecordPayment: boolean }) {
+function BookingWizard({ propertyId, propertyType, userId, canRecordPayment }: { propertyId: string; propertyType?: string; userId: string; canRecordPayment: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedGuestId = searchParams.get("guest");
   const client = useMemo(() => createClient(), []);
   const feedback = useAppFeedback();
   const { t } = useLanguage();
+  const propertyDefinition = getPropertyTypeDefinition(propertyType);
+  const singular = t(propertyDefinition.inventorySingular[0], propertyDefinition.inventorySingular[1]);
+  const plural = t(propertyDefinition.inventoryPlural[0], propertyDefinition.inventoryPlural[1]);
+  const bookingSteps = [
+    t("Stay", "Ukaaji"),
+    t(propertyDefinition.inventorySingular[0], propertyDefinition.inventorySingular[1]),
+    t("Guest", "Mgeni"),
+    t("Review", "Kagua"),
+  ];
   const idempotencyKey = useRef(crypto.randomUUID());
   const availabilityRequestInFlight = useRef(false);
   const bookingRequestInFlight = useRef(false);
@@ -290,7 +304,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
       if (requestedRoom) setSelectedRoom(available.find((room) => room.id === requestedRoom) ?? null);
       setActiveStep(1);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("Unable to check room availability.", "Imeshindikana kukagua vyumba vinavyopatikana."));
+      setError(cause instanceof Error ? cause.message : t(`Unable to check ${singular} availability.`, `Imeshindikana kukagua upatikanaji wa ${plural}.`));
     } finally {
       availabilityRequestInFlight.current = false;
       setLoadingRooms(false);
@@ -323,7 +337,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
     setError(null);
     if (activeStep === 0) return void searchRooms();
     if (activeStep === 1) {
-      if (!selectedRoom) return setError(t("Select an available room to continue.", "Chagua chumba kinachopatikana ili kuendelea."));
+      if (!selectedRoom) return setError(t(`Select an available ${singular} to continue.`, `Chagua ${singular} inayopatikana ili kuendelea.`));
       setActiveStep(2);
       return;
     }
@@ -396,10 +410,10 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
     >
       <Container maxWidth="xl" sx={{ py: { xs: 1.5, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, md: 2.5 }}>
-          <WizardHeader activeStep={activeStep} onBack={() => activeStep ? setActiveStep((value) => value - 1) : router.back()} />
+          <WizardHeader activeStep={activeStep} inventoryPlural={plural} onBack={() => activeStep ? setActiveStep((value) => value - 1) : router.back()} />
 
           <Stepper activeStep={activeStep} sx={{ display: { xs: "none", sm: "flex" }, maxWidth: 760, mx: "auto", width: "100%" }}>
-            {steps.map((label, index) => <Step aria-current={index === activeStep ? "step" : undefined} key={label}><StepLabel>{t(label)}</StepLabel></Step>)}
+            {bookingSteps.map((label, index) => <Step aria-current={index === activeStep ? "step" : undefined} key={label}><StepLabel>{label}</StepLabel></Step>)}
           </Stepper>
 
           {error ? <Alert severity="error" onClose={() => setError(null)}>{error}</Alert> : null}
@@ -409,10 +423,10 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
           <Box sx={{ alignItems: "start", display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: "minmax(0,1fr) 340px" } }}>
             <Box>
               {activeStep === 0 ? (
-                <StayStep checkIn={checkIn} checkOut={checkOut} adults={adults} childCount={children} source={source} onCheckIn={setCheckIn} onCheckOut={setCheckOut} onAdults={setAdults} onChildren={setChildren} onSource={setSource} />
+                <StayStep checkIn={checkIn} checkOut={checkOut} adults={adults} childCount={children} inventoryPlural={plural} source={source} onCheckIn={setCheckIn} onCheckOut={setCheckOut} onAdults={setAdults} onChildren={setChildren} onSource={setSource} />
               ) : null}
               {activeStep === 1 ? (
-                <RoomStep rooms={rooms} selectedId={selectedRoom?.id} onSelect={setSelectedRoom} onSearchAgain={() => setActiveStep(0)} />
+                <RoomStep rooms={rooms} singular={singular} plural={plural} selectedId={selectedRoom?.id} onSelect={setSelectedRoom} onSearchAgain={() => setActiveStep(0)} />
               ) : null}
               {activeStep === 2 ? (
                 <GuestStep
@@ -452,7 +466,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
             </Box>
 
             <Box sx={{ display: { xs: "none", lg: "block" }, position: "sticky", top: 84 }}>
-              <BookingSummary room={selectedRoom} checkIn={checkIn} checkOut={checkOut} guests={guests} nights={nights} guestName={`${guest.firstName} ${guest.lastName}`.trim()} />
+              <BookingSummary room={selectedRoom} singular={singular} checkIn={checkIn} checkOut={checkOut} guests={guests} nights={nights} guestName={`${guest.firstName} ${guest.lastName}`.trim()} />
             </Box>
           </Box>
 
@@ -463,7 +477,7 @@ function BookingWizard({ propertyId, userId, canRecordPayment }: { propertyId: s
   );
 }
 
-function WizardHeader({ activeStep, onBack }: { activeStep: number; onBack: () => void }) {
+function WizardHeader({ activeStep, inventoryPlural, onBack }: { activeStep: number; inventoryPlural: string; onBack: () => void }) {
   const { t } = useLanguage();
   return (
     <Stack component="header" direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
@@ -471,7 +485,7 @@ function WizardHeader({ activeStep, onBack }: { activeStep: number; onBack: () =
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography color="text.secondary" variant="overline">{t("Reservations")} · {t(`Step ${activeStep + 1} of ${steps.length}`)}</Typography>
         <Typography component="h1" variant="h3">{t("Create a booking")}</Typography>
-        <Typography color="text.secondary" variant="body2" sx={{ mt: 0.35 }}>{t("Live availability, guest details and an optional payment in one controlled flow.", "Upatikanaji wa vyumba, taarifa za mgeni na malipo ya hiari katika mtiririko mmoja salama.")}</Typography>
+        <Typography color="text.secondary" variant="body2" sx={{ mt: 0.35 }}>{t(`Live ${inventoryPlural} availability, guest details and an optional payment in one controlled flow.`, `Upatikanaji wa ${inventoryPlural}, taarifa za mgeni na malipo ya hiari katika mtiririko mmoja salama.`)}</Typography>
         <LinearProgress aria-label={t("Booking progress")} value={((activeStep + 1) / steps.length) * 100} variant="determinate" sx={{ display: { xs: "block", sm: "none" }, height: 4, mt: 1.25 }} />
       </Box>
     </Stack>
@@ -490,10 +504,10 @@ function Section({ icon, title, description, children }: { icon: ReactNode; titl
   );
 }
 
-function StayStep(props: { checkIn: string; checkOut: string; adults: number; childCount: number; source: string; onCheckIn: (v: string) => void; onCheckOut: (v: string) => void; onAdults: (v: number) => void; onChildren: (v: number) => void; onSource: (v: string) => void }) {
+function StayStep(props: { checkIn: string; checkOut: string; adults: number; childCount: number; inventoryPlural: string; source: string; onCheckIn: (v: string) => void; onCheckOut: (v: string) => void; onAdults: (v: number) => void; onChildren: (v: number) => void; onSource: (v: string) => void }) {
   const { t } = useLanguage();
   return (
-    <Section icon={<CalendarMonthRoundedIcon />} title={t("When is the guest staying?", "Mgeni atakaa lini?")} description={t("Set the stay and party size before checking current room inventory.", "Weka tarehe za ukaaji na idadi ya wageni kabla ya kukagua vyumba vinavyopatikana.")}>
+    <Section icon={<CalendarMonthRoundedIcon />} title={t("When is the guest staying?", "Mgeni atakaa lini?")} description={t(`Set the stay and party size before checking available ${props.inventoryPlural}.`, `Weka tarehe za ukaaji na idadi ya wageni kabla ya kukagua ${props.inventoryPlural} zinazopatikana.`)}>
       <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
         <TextField required label={t("Check-in")} type="date" value={props.checkIn} onChange={(event) => props.onCheckIn(event.target.value)} slotProps={{ htmlInput: { min: localDateKey() }, inputLabel: { shrink: true } }} />
         <TextField required label={t("Check-out")} type="date" value={props.checkOut} onChange={(event) => props.onCheckOut(event.target.value)} slotProps={{ htmlInput: { min: props.checkIn || localDateKey() }, inputLabel: { shrink: true } }} />
@@ -507,14 +521,14 @@ function StayStep(props: { checkIn: string; checkOut: string; adults: number; ch
   );
 }
 
-function RoomStep({ rooms, selectedId, onSelect, onSearchAgain }: { rooms: AvailableRoom[]; selectedId?: string; onSelect: (room: AvailableRoom) => void; onSearchAgain: () => void }) {
+function RoomStep({ rooms, singular, plural, selectedId, onSelect, onSearchAgain }: { rooms: AvailableRoom[]; singular: string; plural: string; selectedId?: string; onSelect: (room: AvailableRoom) => void; onSearchAgain: () => void }) {
   const { t } = useLanguage();
   return (
-    <Section icon={<BedRoundedIcon />} title={rooms.length ? t(`${rooms.length} available room${rooms.length === 1 ? "" : "s"}`, `Vyumba ${rooms.length} vinapatikana`) : t("No matching rooms", "Hakuna vyumba vinavyolingana")} description={rooms.length ? t("Choose the best room for this guest. Rates are verified again when you confirm.", "Chagua chumba kinachomfaa mgeni. Bei itakaguliwa tena unapothibitisha.") : t("Change the stay dates or guest count and search again.", "Badili tarehe za ukaaji au idadi ya wageni kisha utafute tena.")}>
+    <Section icon={<BedRoundedIcon />} title={rooms.length ? t(`${rooms.length} available ${rooms.length === 1 ? singular : plural}`, `${plural} ${rooms.length} zinapatikana`) : t(`No matching ${plural}`, `Hakuna ${plural} zinazolingana`)} description={rooms.length ? t(`Choose the best ${singular} for this guest. Rates are verified again when you confirm.`, `Chagua ${singular} inayomfaa mgeni. Bei itakaguliwa tena unapothibitisha.`) : t("Change the stay dates or guest count and search again.", "Badili tarehe za ukaaji au idadi ya wageni kisha utafute tena.")}>
       {!rooms.length ? (
-        <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}><Alert severity="info" sx={{ width: "100%" }}>{t("No rooms are available for this stay.", "Hakuna chumba kinachopatikana kwa ukaaji huu.")}</Alert><Button type="button" onClick={onSearchAgain} startIcon={<SearchRoundedIcon />} variant="outlined">{t("Change search")}</Button></Stack>
+        <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}><Alert severity="info" sx={{ width: "100%" }}>{t(`No ${plural} are available for this stay.`, `Hakuna ${plural} zinazopatikana kwa ukaaji huu.`)}</Alert><Button type="button" onClick={onSearchAgain} startIcon={<SearchRoundedIcon />} variant="outlined">{t("Change search")}</Button></Stack>
       ) : (
-        <Box role="radiogroup" aria-label={t("Available rooms")} sx={{ display: "grid", gap: 1.25, gridTemplateColumns: { xs: "1fr", xl: "repeat(2,minmax(0,1fr))" } }}>
+        <Box role="radiogroup" aria-label={t(`Available ${plural}`, `${plural} zinazopatikana`)} sx={{ display: "grid", gap: 1.25, gridTemplateColumns: { xs: "1fr", xl: "repeat(2,minmax(0,1fr))" } }}>
           {rooms.map((room) => <RoomChoice key={room.id} room={room} selected={room.id === selectedId} onSelect={() => onSelect(room)} />)}
         </Box>
       )}
@@ -524,13 +538,14 @@ function RoomStep({ rooms, selectedId, onSelect, onSearchAgain }: { rooms: Avail
 
 function RoomChoice({ room, selected, onSelect }: { room: AvailableRoom; selected: boolean; onSelect: () => void }) {
   const { t } = useLanguage();
+  const definition = getInventoryDefinition(room.inventoryType);
   return (
     <Paper component="button" type="button" role="radio" aria-checked={selected} onClick={onSelect} variant="outlined" sx={{ appearance: "none", bgcolor: selected ? "action.selected" : "background.paper", borderColor: selected ? "primary.main" : "divider", color: "text.primary", cursor: "pointer", overflow: "hidden", p: 0, textAlign: "left", width: "100%", "&:hover": { borderColor: "primary.main" } }}>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "104px minmax(0,1fr)", sm: "132px minmax(0,1fr)" }, minHeight: 128 }}>
         <Box sx={{ bgcolor: "action.hover", position: "relative" }}>{room.images[0] ? <Image src={room.images[0]} alt={room.name} fill sizes="132px" style={{ objectFit: "cover" }} /> : <Box sx={{ color: "text.disabled", display: "grid", height: "100%", placeItems: "center" }}><BedRoundedIcon /></Box>}</Box>
         <Stack spacing={0.45} sx={{ minWidth: 0, p: { xs: 1.25, sm: 1.5 } }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", justifyContent: "space-between", minWidth: 0 }}><Typography noWrap variant="subtitle1" sx={{ flex: 1, fontWeight: 700, minWidth: 0 }}>{room.name}</Typography>{selected ? <CheckCircleRoundedIcon color="primary" fontSize="small" sx={{ flexShrink: 0 }} /> : null}</Stack>
-          <Typography color="text.secondary" variant="body2" sx={{ overflowWrap: "anywhere", textTransform: "capitalize" }}>{room.roomType} · {t(`${room.capacity} guests`)} · {t(`${room.bedCount} bed${room.bedCount === 1 ? "" : "s"}`)}</Typography>
+          <Typography color="text.secondary" variant="body2" sx={{ overflowWrap: "anywhere", textTransform: "capitalize" }}>{room.roomType} · {t(`${room.capacity} guests`)} · {t(`${room.bedCount} bed${room.bedCount === 1 ? "" : "s"}`)}{definition.inventoryType !== "room" ? t(` · ${room.bedroomCount} bedroom${room.bedroomCount === 1 ? "" : "s"} · ${room.bathroomCount} bathroom${room.bathroomCount === 1 ? "" : "s"}`, ` · vyumba vya kulala ${room.bedroomCount} · bafu ${room.bathroomCount}`) : ""}</Typography>
           <Typography color="text.secondary" noWrap variant="caption">{room.amenities.slice(0, 3).join(" · ") || t("Standard amenities", "Huduma za kawaida")}</Typography>
           <Box sx={{ mt: "auto!important", pt: 0.75 }}><Typography color="primary.main" sx={{ fontWeight: 700 }}>{money.format(room.totalPrice)}</Typography><Typography color="text.secondary" variant="caption">{money.format(room.pricePerNight)} / {t("night", "usiku")}</Typography></Box>
         </Stack>
@@ -586,12 +601,14 @@ function GuestStep({ existingGuestId, field, showMore, onChangeGuest, onToggleMo
 
 function ReviewStep(props: { room: AvailableRoom; guest: GuestForm; checkIn: string; checkOut: string; guests: number; canRecordPayment: boolean; paymentMode: "none" | "deposit" | "full"; paymentAmount: string; paymentMethod: string; paymentReference: string; onPaymentMode: (v: "none" | "deposit" | "full") => void; onPaymentAmount: (v: string) => void; onPaymentMethod: (v: string) => void; onPaymentReference: (v: string) => void }) {
   const { t } = useLanguage();
+  const definition = getInventoryDefinition(props.room.inventoryType);
+  const singular = t(definition.inventorySingular[0], definition.inventorySingular[1]);
   return (
     <Stack spacing={2}>
-      <Section icon={<CheckCircleRoundedIcon />} title={t("Review the reservation", "Kagua uhifadhi")} description={t("Confirm the stay, room and lead guest before creating the booking.", "Thibitisha ukaaji, chumba na mgeni mkuu kabla ya kutengeneza uhifadhi.")}>
+      <Section icon={<CheckCircleRoundedIcon />} title={t("Review the reservation", "Kagua uhifadhi")} description={t(`Confirm the stay, ${singular} and lead guest before creating the booking.`, `Thibitisha ukaaji, ${singular} na mgeni mkuu kabla ya kutengeneza uhifadhi.`)}>
         <Stack divider={<Divider flexItem />} spacing={0}>
           <ReviewRow label={t("Guest")} value={`${props.guest.firstName} ${props.guest.lastName}`} /><ReviewRow label={t("Phone")} value={props.guest.phone} />
-          <ReviewRow label={t("Room")} value={`${props.room.name} · ${props.room.roomType}`} /><ReviewRow label={t("Stay")} value={`${formatLocalDate(props.checkIn)} → ${formatLocalDate(props.checkOut)}`} />
+          <ReviewRow label={t(definition.inventorySingular[0], definition.inventorySingular[1])} value={`${props.room.name} · ${props.room.roomType}`} /><ReviewRow label={t("Stay")} value={`${formatLocalDate(props.checkIn)} → ${formatLocalDate(props.checkOut)}`} />
           <ReviewRow label={t("Party")} value={t(`${props.guests} guest${props.guests === 1 ? "" : "s"}`)} /><ReviewRow label={t("Booking total")} value={money.format(props.room.totalPrice)} accent />
         </Stack>
       </Section>
@@ -608,12 +625,12 @@ function ReviewStep(props: { room: AvailableRoom; guest: GuestForm; checkIn: str
   );
 }
 
-function BookingSummary({ room, checkIn, checkOut, guests, nights, guestName }: { room: AvailableRoom | null; checkIn: string; checkOut: string; guests: number; nights: number; guestName: string }) {
+function BookingSummary({ room, singular, checkIn, checkOut, guests, nights, guestName }: { room: AvailableRoom | null; singular: string; checkIn: string; checkOut: string; guests: number; nights: number; guestName: string }) {
   const { t } = useLanguage();
   return (
     <Paper variant="outlined" sx={{ overflow: "hidden" }}>
       <Box sx={{ borderBottom: "1px solid", borderColor: "divider", p: 2 }}><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("Booking summary")}</Typography><Typography color="text.secondary" variant="caption">{t("Updates as you complete the steps", "Husasishwa kadiri unavyokamilisha hatua")}</Typography></Box>
-      <Stack divider={<Divider flexItem />} spacing={0} sx={{ px: 2 }}><ReviewRow label={t("Stay")} value={`${formatLocalDate(checkIn)} → ${formatLocalDate(checkOut)}`} /><ReviewRow label={t("Guests")} value={String(guests)} /><ReviewRow label={t("Room")} value={room?.name || t("Not selected")} /><ReviewRow label={t("Lead guest")} value={guestName || t("Not added")} /></Stack>
+      <Stack divider={<Divider flexItem />} spacing={0} sx={{ px: 2 }}><ReviewRow label={t("Stay")} value={`${formatLocalDate(checkIn)} → ${formatLocalDate(checkOut)}`} /><ReviewRow label={t("Guests")} value={String(guests)} /><ReviewRow label={singular} value={room?.name || t("Not selected")} /><ReviewRow label={t("Lead guest")} value={guestName || t("Not added")} /></Stack>
       <Box sx={{ bgcolor: "action.hover", p: 2 }}><Typography color="text.secondary" variant="caption">{t(`${nights} night${nights === 1 ? "" : "s"}`, `Usiku ${nights}`)} · {t("booking total", "jumla ya uhifadhi")}</Typography><Typography color="primary.main" variant="h4">{room ? money.format(room.totalPrice) : "—"}</Typography></Box>
     </Paper>
   );

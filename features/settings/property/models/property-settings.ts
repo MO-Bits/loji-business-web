@@ -153,6 +153,7 @@ export const propertyTypes = [
   "lodge",
   "guesthouse",
   "apartment",
+  "house",
   "resort",
   "hostel",
   "villa",

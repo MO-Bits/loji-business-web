@@ -62,16 +62,16 @@ export function PropertySetupIntro() {
         </Button>
       }
       description={t(
-        "A short guided setup creates the shared workspace your rooms, bookings and team will use.",
-        "Usanidi mfupi unaongozwa utatengeneza sehemu ya kazi ambayo vyumba, uhifadhi na timu yako vitatumia.",
+        "Answer one or two simple questions at a time. Loji will shape the workspace around a hotel, apartments, a guesthouse or one whole home.",
+        "Jibu swali moja au mawili kwa wakati. Loji itaandaa mfumo kulingana na hoteli, fleti, nyumba ya wageni au nyumba moja nzima.",
       )}
       eyebrow={t("Property setup", "Usanidi wa biashara")}
       icon={<ApartmentRoundedIcon />}
       panelDescription={t(
-        "You can update these details later in Settings",
-        "Unaweza kubadili taarifa hizi baadaye kwenye Mipangilio",
+        "Your answers are saved as you move through the short guide",
+        "Majibu yako huhifadhiwa unapoendelea kwenye mwongozo mfupi",
       )}
-      panelTitle={t("What you will set up", "Utakachoweka")}
+      panelTitle={t("A setup that fits your property", "Usanidi unaoendana na biashara yako")}
       step={2}
       steps={[
         t("Personal profile", "Wasifu binafsi"),
@@ -79,8 +79,8 @@ export function PropertySetupIntro() {
         t("Location & finish", "Eneo na kumaliza"),
       ]}
       title={t(
-        "Build your property workspace.",
-        "Tengeneza sehemu ya kazi ya biashara yako.",
+        "Let’s set up Loji around your business.",
+        "Tuiandae Loji kulingana na biashara yako.",
       )}
     >
       <Stack divider={<Divider flexItem />}>
@@ -130,7 +130,7 @@ export function PropertySetupIntro() {
         size="large"
         variant="contained"
       >
-        {t("Start property setup", "Anza usanidi wa biashara")}
+        {t("Start the guided setup", "Anza usanidi unaoongozwa")}
       </Button>
     </OnboardingFrame>
   );

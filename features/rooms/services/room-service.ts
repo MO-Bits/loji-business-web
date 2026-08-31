@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/types/database.types";
+import type { InventoryType } from "@/features/property/models/property";
 import {
   parseRoomBoard,
   parseRoomWorkspace,
@@ -18,13 +19,23 @@ type JsonRpc = (
 export type RoomInput = {
   name: string;
   roomType: string;
+  inventoryType: InventoryType;
   capacity: number;
   bedCount: number;
+  bedroomCount: number;
+  bathroomCount: number;
   pricePerNight: number;
   amenities: string[];
   images: string[];
   description: string;
   isActive?: boolean;
+};
+
+export type PropertyInventorySetup = {
+  inventoryType: InventoryType;
+  expectedInventoryCount: number;
+  defaultBedroomCount: number | null;
+  defaultBathroomCount: number | null;
 };
 
 async function callJsonRpc(
@@ -70,6 +81,27 @@ export async function getRoomWorkspace(
   return parseRoomWorkspace(data, propertyId);
 }
 
+export async function getPropertyInventorySetup(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+): Promise<PropertyInventorySetup> {
+  const data = await callJsonRpc(client, "get_property_inventory_setup", {
+    p_property_id: propertyId,
+  });
+  const result = resultRecord(data);
+  const inventoryType = String(result.inventory_type ?? "room");
+  const bedroomCount = result.default_bedroom_count;
+  const bathroomCount = result.default_bathroom_count;
+  return {
+    inventoryType: inventoryType === "apartment" || inventoryType === "house"
+      ? inventoryType
+      : "room",
+    expectedInventoryCount: Math.max(1, Number(result.expected_inventory_count ?? 1)),
+    defaultBedroomCount: bedroomCount == null ? null : Number(bedroomCount),
+    defaultBathroomCount: bathroomCount == null ? null : Number(bathroomCount),
+  };
+}
+
 export async function setRoomHousekeepingStatus(
   client: SupabaseClient<Database>,
   propertyId: string,
@@ -89,13 +121,16 @@ export async function setRoomHousekeepingStatus(
 function mutationArgs(propertyId: string, roomId: string, input: RoomInput) {
   return {
     p_property_id: propertyId,
-    p_room_id: roomId,
-    p_room_name: input.name.trim(),
-    p_room_type: input.roomType,
+    p_unit_id: roomId,
+    p_name: input.name.trim(),
+    p_space_type: input.roomType,
+    p_inventory_type: input.inventoryType,
     p_is_active: input.isActive ?? true,
     p_price_per_night: input.pricePerNight,
     p_capacity: input.capacity,
     p_bed_count: input.bedCount,
+    p_bedroom_count: input.bedroomCount,
+    p_bathroom_count: input.bathroomCount,
     p_description: input.description.trim() || null,
     p_amenities: input.amenities,
     p_images: input.images,
@@ -108,7 +143,7 @@ export async function createRoom(
   input: RoomInput,
   requestedRoomId = crypto.randomUUID(),
 ): Promise<string> {
-  const data = await callJsonRpc(client, "create_room", mutationArgs(propertyId, requestedRoomId, input));
+  const data = await callJsonRpc(client, "create_inventory_unit", mutationArgs(propertyId, requestedRoomId, input));
   const result = ensureSuccess(data, "Unable to create room.");
   return String(result.room_id ?? requestedRoomId);
 }
@@ -119,7 +154,7 @@ export async function updateRoom(
   roomId: string,
   input: RoomInput,
 ): Promise<string> {
-  const data = await callJsonRpc(client, "update_room", mutationArgs(propertyId, roomId, input));
+  const data = await callJsonRpc(client, "update_inventory_unit", mutationArgs(propertyId, roomId, input));
   const result = ensureSuccess(data, "Unable to update room.");
   return String(result.room_id ?? roomId);
 }
@@ -133,8 +168,11 @@ export async function setRoomActive(
   return updateRoom(client, propertyId, room.id, {
     name: room.name,
     roomType: room.roomType,
+    inventoryType: room.inventoryType,
     capacity: room.capacity,
     bedCount: room.bedCount,
+    bedroomCount: room.bedroomCount,
+    bathroomCount: room.bathroomCount,
     pricePerNight: room.pricePerNight,
     amenities: room.amenities,
     images: room.images,

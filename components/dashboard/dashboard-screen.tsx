@@ -78,6 +78,7 @@ export function DashboardScreen() {
             capabilities={dashboard.capabilities}
             onRefresh={() => void refresh()}
             propertyName={String(sessionState.session?.property?.name ?? "")}
+            propertyType={String(sessionState.session?.property?.type ?? "hotel")}
             refreshing={loading}
             role={role}
           />
@@ -100,7 +101,7 @@ export function DashboardScreen() {
           ) : (
             <>
               <DailyStatusBanner dashboard={dashboard} role={role} />
-              <DashboardMetricGrid dashboard={dashboard} role={role} />
+              <DashboardMetricGrid dashboard={dashboard} propertyType={sessionState.session?.property?.type} role={role} />
 
               {role === "owner" ? (
                 <>
@@ -118,6 +119,7 @@ export function DashboardScreen() {
                     />
                     <RoomReadinessPanel
                       housekeeping={dashboard.housekeeping}
+                      propertyType={sessionState.session?.property?.type}
                       role={role}
                       summary={dashboard.summary}
                     />
@@ -139,6 +141,7 @@ export function DashboardScreen() {
                   <Box sx={managerLayout}>
                     <RoomReadinessPanel
                       housekeeping={dashboard.housekeeping}
+                      propertyType={sessionState.session?.property?.type}
                       role={role}
                       summary={dashboard.summary}
                     />
@@ -164,6 +167,7 @@ export function DashboardScreen() {
                     />
                     <RoomReadinessPanel
                       housekeeping={dashboard.housekeeping}
+                      propertyType={sessionState.session?.property?.type}
                       role={role}
                       summary={dashboard.summary}
                     />

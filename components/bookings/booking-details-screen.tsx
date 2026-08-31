@@ -64,6 +64,7 @@ import {
 import { formatLocalDate, formatLocalDateTime, localDateKey } from "@/lib/date-time";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -104,6 +105,11 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
   const feedback = useAppFeedback();
   const { t } = useLanguage();
   const propertyId = session?.activePropertyId;
+  const propertyDefinition = getPropertyTypeDefinition(session?.property?.type);
+  const inventorySingular = t(
+    propertyDefinition.inventorySingular[0],
+    propertyDefinition.inventorySingular[1],
+  );
   const localCapabilities = getWorkspaceCapabilities(session?.activeRole);
   const [workspaceState, setWorkspaceState] = useState<BookingWorkspace | null>(null);
   const [loading, setLoading] = useState(true);
@@ -273,9 +279,9 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
 
           <Box sx={{ alignItems: "start", display: "grid", gap: { xs: 1.5, lg: 2 }, gridTemplateColumns: { xs: "1fr", lg: "minmax(0,1.35fr) minmax(320px,.75fr)" } }}>
             <Stack spacing={{ xs: 1.5, md: 2 }}>
-              <DetailsSection icon={<CalendarMonthRoundedIcon />} title={t("Stay and room")}>
+              <DetailsSection icon={<CalendarMonthRoundedIcon />} title={t(`Stay and ${inventorySingular}`, `Ukaaji na ${inventorySingular}`)}>
                 <DetailRow label={t("Dates")} value={`${formatLocalDate(booking.checkIn)} → ${formatLocalDate(booking.checkOut)}`} />
-                <DetailRow label={t("Room")} value={<LinkValue href={`/rooms/${booking.roomId}`}>{booking.roomName} · {booking.roomType}</LinkValue>} />
+                <DetailRow label={inventorySingular} value={<LinkValue href={`/rooms/${booking.roomId}`}>{booking.roomName} · {booking.roomType}</LinkValue>} />
                 <DetailRow label={t("Guests")} value={`${t(`${booking.adults} adult${booking.adults === 1 ? "" : "s"}`)} · ${t(`${booking.children} child${booking.children === 1 ? "" : "ren"}`)}`} />
                 <DetailRow label={t("Source")} value={t(bookingStatusLabel(booking.bookingSource))} />
                 <DetailRow label={t("Special requests")} value={booking.specialRequests || t("None recorded")} />
@@ -331,6 +337,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
         error={error}
         reason={reason}
         requiresSettlement={workspace.requiresSettlement}
+        inventorySingular={inventorySingular}
         working={working}
         onAllowBalance={setAllowBalance}
         onClose={closeAction}
@@ -353,6 +360,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
         <AmendBookingModal
           booking={booking}
           businessDate={workspace.businessDate}
+          inventorySingular={inventorySingular}
           propertyId={propertyId}
           onClose={() => setAmendOpen(false)}
           onSaved={async () => {
@@ -462,24 +470,33 @@ function ReservationFacts({ booking }: { booking: Booking }) {
   return <Paper variant="outlined" sx={{ p: 2 }}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><ReceiptLongRoundedIcon color="primary" /><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("Reservation record", "Kumbukumbu ya uhifadhi")}</Typography></Stack><Stack divider={<Divider flexItem />} spacing={0} sx={{ mt: 1 }}><DetailRow label={t("Created")} value={formatLocalDateTime(booking.createdAt)} /><DetailRow label={t("Checked in", "Aliingia")} value={booking.checkedInAt ? formatLocalDateTime(booking.checkedInAt) : t("Not yet")} /><DetailRow label={t("Checked out", "Alitoka")} value={booking.checkedOutAt ? formatLocalDateTime(booking.checkedOutAt) : t("Not yet")} /></Stack></Paper>;
 }
 
-function LifecycleModal(props: { action: BookingLifecycleAction | null; allowBalance: boolean; error: string | null; reason: string; requiresSettlement: boolean; working: boolean; onAllowBalance: (value: boolean) => void; onClose: () => void; onConfirm: () => void; onReason: (value: string) => void }) {
+function LifecycleModal(props: { action: BookingLifecycleAction | null; allowBalance: boolean; error: string | null; inventorySingular: string; reason: string; requiresSettlement: boolean; working: boolean; onAllowBalance: (value: boolean) => void; onClose: () => void; onConfirm: () => void; onReason: (value: string) => void }) {
   const { t } = useLanguage();
   if (!props.action) return null;
   const definition = actionDefinitions[props.action];
   const balanceAction = props.action === "check_out" && props.requiresSettlement;
   const needsReason = definition.reasonRequired || (balanceAction && props.allowBalance);
+  const actionDescription = props.action === "check_in"
+    ? t(`This confirms the guest has arrived and marks the assigned ${props.inventorySingular} as occupied.`, `Hii inathibitisha mgeni amewasili na inaweka ${props.inventorySingular} aliyopangiwa kuwa inatumika.`)
+    : props.action === "check_out"
+      ? t(`This ends the stay and sends the assigned ${props.inventorySingular} to housekeeping.`, `Hii inamaliza ukaaji na kupeleka ${props.inventorySingular} aliyopangiwa kwenye usafi.`)
+      : props.action === "cancel"
+        ? t(`The ${props.inventorySingular} will become available again. Add a reason for the operational record.`, `${props.inventorySingular} itapatikana tena. Weka sababu kwa kumbukumbu ya uendeshaji.`)
+        : props.action === "reinstate"
+          ? t(`The server will revalidate the ${props.inventorySingular} and restore the reservation when possible.`, `Seva itakagua tena ${props.inventorySingular} na kurudisha uhifadhi inapowezekana.`)
+          : t(definition.description);
   return (
     <ResponsiveModal open onClose={props.onClose} maxWidth="xs">
       <DialogTitle>{t(definition.title)}</DialogTitle>
       <Box aria-busy={props.working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); props.onConfirm(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
-        <DialogContent><Typography color="text.secondary">{t(definition.description)}</Typography>{balanceAction ? <Alert severity="warning" sx={{ mt: 2 }}>{t("This stay has an outstanding balance. Resolve it first or explicitly approve checkout with a balance.", "Ukaaji huu una salio. Lipa kwanza au thibitisha wazi kumtoa mgeni akiwa na salio.")}</Alert> : null}{balanceAction ? <FormControlLabel control={<Checkbox checked={props.allowBalance} onChange={(event) => props.onAllowBalance(event.target.checked)} />} label={t("Approve checkout with outstanding balance", "Thibitisha kutoka akiwa na salio")} sx={{ alignItems: "flex-start", mt: 1 }} /> : null}{needsReason ? <TextField autoFocus fullWidth label={t("Reason", "Sababu")} multiline minRows={3} value={props.reason} onChange={(event) => props.onReason(event.target.value)} sx={{ mt: 1.5 }} /> : null}{props.error ? <Alert severity="error" sx={{ mt: 1.5 }}>{props.error}</Alert> : null}</DialogContent>
+        <DialogContent><Typography color="text.secondary">{actionDescription}</Typography>{balanceAction ? <Alert severity="warning" sx={{ mt: 2 }}>{t("This stay has an outstanding balance. Resolve it first or explicitly approve checkout with a balance.", "Ukaaji huu una salio. Lipa kwanza au thibitisha wazi kumtoa mgeni akiwa na salio.")}</Alert> : null}{balanceAction ? <FormControlLabel control={<Checkbox checked={props.allowBalance} onChange={(event) => props.onAllowBalance(event.target.checked)} />} label={t("Approve checkout with outstanding balance", "Thibitisha kutoka akiwa na salio")} sx={{ alignItems: "flex-start", mt: 1 }} /> : null}{needsReason ? <TextField autoFocus fullWidth label={t("Reason", "Sababu")} multiline minRows={3} value={props.reason} onChange={(event) => props.onReason(event.target.value)} sx={{ mt: 1.5 }} /> : null}{props.error ? <Alert severity="error" sx={{ mt: 1.5 }}>{props.error}</Alert> : null}</DialogContent>
         <DialogActions><Button disabled={props.working} onClick={props.onClose}>{t("Back")}</Button><Button color={definition.dangerous ? "error" : "primary"} disabled={props.working || (needsReason && !props.reason.trim()) || (balanceAction && !props.allowBalance)} type="submit" variant="contained">{props.working ? t("Please wait…") : t(definition.label)}</Button></DialogActions>
       </Box>
     </ResponsiveModal>
   );
 }
 
-function AmendBookingModal({ booking, businessDate, propertyId, onClose, onSaved }: { booking: Booking; businessDate: string; propertyId: string; onClose: () => void; onSaved: () => Promise<void> }) {
+function AmendBookingModal({ booking, businessDate, inventorySingular, propertyId, onClose, onSaved }: { booking: Booking; businessDate: string; inventorySingular: string; propertyId: string; onClose: () => void; onSaved: () => Promise<void> }) {
   const client = useMemo(() => createClient(), []);
   const { t } = useLanguage();
   const originalCheckIn = localDateKey(booking.checkIn);
@@ -534,7 +551,7 @@ function AmendBookingModal({ booking, businessDate, propertyId, onClose, onSaved
       const available = await getAvailableRooms(client, propertyId, checkIn, checkOut, guests);
       setRooms(available.filter((room) => room.id !== booking.roomId));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : t("Unable to check room availability.", "Imeshindikana kukagua vyumba vinavyopatikana."));
+      setError(cause instanceof Error ? cause.message : t(`Unable to check ${inventorySingular} availability.`, `Imeshindikana kukagua upatikanaji wa ${inventorySingular}.`));
     } finally {
       setCheckingRooms(false);
     }
@@ -568,7 +585,7 @@ function AmendBookingModal({ booking, businessDate, propertyId, onClose, onSaved
       <Box aria-busy={working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void save(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
         <DialogContent dividers>
           <Stack spacing={2}>
-          <Alert severity="info">{t("Availability, room capacity and the stay total are revalidated by the server when you save.", "Seva itakagua tena upatikanaji, uwezo wa chumba na jumla ya ukaaji unapohifadhi.")}</Alert>
+          <Alert severity="info">{t(`Availability, ${inventorySingular} capacity and the stay total are revalidated by the server when you save.`, `Seva itakagua tena upatikanaji, uwezo wa ${inventorySingular} na jumla ya ukaaji unapohifadhi.`)}</Alert>
           <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
             <TextField required label={t("Check-in")} type="date" value={checkIn} onChange={(event) => { setCheckIn(event.target.value); invalidateRoomSearch(); }} slotProps={{ htmlInput: { min: businessDate || undefined }, inputLabel: { shrink: true } }} />
             <TextField required label={t("Check-out")} type="date" value={checkOut} onChange={(event) => { setCheckOut(event.target.value); invalidateRoomSearch(); }} slotProps={{ htmlInput: { min: checkIn || businessDate || undefined }, inputLabel: { shrink: true } }} />
@@ -577,14 +594,14 @@ function AmendBookingModal({ booking, businessDate, propertyId, onClose, onSaved
           </Box>
           <Box>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between", mb: 1 }}>
-              <Box><Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{t("Room assignment", "Ugawaji wa chumba")}</Typography><Typography color="text.secondary" variant="caption">{t("Keep the current room or check live alternatives.", "Acha chumba cha sasa au kagua vyumba vingine vinavyopatikana.")}</Typography></Box>
-              <Button disabled={checkingRooms} onClick={() => void checkOtherRooms()} startIcon={<SearchRoundedIcon />} variant="outlined">{checkingRooms ? t("Checking…", "Inakagua…") : t("Check other rooms", "Kagua vyumba vingine")}</Button>
+              <Box><Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{t(`${inventorySingular} assignment`, `Ugawaji wa ${inventorySingular}`)}</Typography><Typography color="text.secondary" variant="caption">{t(`Keep the current ${inventorySingular} or check live alternatives.`, `Acha ${inventorySingular} ya sasa au kagua nyingine zinazopatikana.`)}</Typography></Box>
+              <Button disabled={checkingRooms} onClick={() => void checkOtherRooms()} startIcon={<SearchRoundedIcon />} variant="outlined">{checkingRooms ? t("Checking…", "Inakagua…") : t(`Check other ${inventorySingular}`, `Kagua ${inventorySingular} nyingine`)}</Button>
             </Stack>
-            <TextField fullWidth select label={t("Room")} value={roomId} onChange={(event) => setRoomId(event.target.value)}>
+            <TextField fullWidth select label={inventorySingular} value={roomId} onChange={(event) => setRoomId(event.target.value)}>
               <MenuItem value={booking.roomId}>{booking.roomName} · {booking.roomType} ({t("current", "sasa")})</MenuItem>
               {rooms.map((room) => <MenuItem key={room.id} value={room.id}>{room.name} · {room.roomType} · {money.format(room.totalPrice)}</MenuItem>)}
             </TextField>
-            {rooms.length === 0 && !checkingRooms ? <Typography color="text.secondary" variant="caption" sx={{ display: "block", mt: 0.75 }}>{t("No alternative rooms loaded. The current room will still be revalidated on save.", "Hakuna vyumba mbadala vilivyopakiwa. Chumba cha sasa kitakaguliwa tena unapohifadhi.")}</Typography> : null}
+            {rooms.length === 0 && !checkingRooms ? <Typography color="text.secondary" variant="caption" sx={{ display: "block", mt: 0.75 }}>{t(`No alternative ${inventorySingular} loaded. The current one will still be revalidated on save.`, `Hakuna ${inventorySingular} mbadala iliyopakiwa. Iliyopo sasa bado itakaguliwa unapohifadhi.`)}</Typography> : null}
           </Box>
           <TextField select label={t("Booking source")} value={source} onChange={(event) => setSource(event.target.value)}><MenuItem value="front_desk">{t("Front desk / walk-in")}</MenuItem><MenuItem value="phone">{t("Phone")}</MenuItem><MenuItem value="direct">{t("Direct")}</MenuItem><MenuItem value="agent">{t("Agent")}</MenuItem><MenuItem value="other">{t("Other")}</MenuItem></TextField>
           <TextField label={t("Special requests")} multiline minRows={3} value={specialRequests} onChange={(event) => setSpecialRequests(event.target.value)} />

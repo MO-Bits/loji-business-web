@@ -52,6 +52,7 @@ import {
 import { formatLocalDate } from "@/lib/date-time";
 import { useLanguage } from "@/components/providers/language-provider";
 import { PageHeader } from "@/components/shared/page-header";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -99,6 +100,11 @@ function BookingsWorkspace() {
   const client = useMemo(() => createClient(), []);
   const propertyId = session?.activePropertyId;
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
+  const propertyDefinition = getPropertyTypeDefinition(session?.property?.type);
+  const inventorySingular = t(
+    propertyDefinition.inventorySingular[0],
+    propertyDefinition.inventorySingular[1],
+  );
   const [resultState, setResultState] = useState<{
     propertyId: string;
     value: BookingListResult;
@@ -339,15 +345,15 @@ function BookingsWorkspace() {
               {error}
             </Alert>
           ) : !result?.bookings.length ? (
-            <EmptyBookings filtered={filtersActive} canCreate={canCreateBooking} onClear={clearFilters} />
+            <EmptyBookings filtered={filtersActive} canCreate={canCreateBooking} inventorySingular={inventorySingular} onClear={clearFilters} />
           ) : (
             <>
               <Box sx={{ display: { xs: "none", lg: "block" } }}>
-                <BookingsTable bookings={result.bookings} showFinance={showFinance} />
+                <BookingsTable bookings={result.bookings} inventorySingular={inventorySingular} showFinance={showFinance} />
               </Box>
               <Stack spacing={1} sx={{ display: { xs: "flex", lg: "none" } }}>
                 {result.bookings.map((booking) => (
-                  <BookingCard key={booking.id} booking={booking} showFinance={showFinance} />
+                  <BookingCard key={booking.id} booking={booking} inventorySingular={inventorySingular} showFinance={showFinance} />
                 ))}
               </Stack>
               {result.hasMore ? (
@@ -408,7 +414,7 @@ function SummaryStrip({ result, loading }: { result: BookingListResult | null; l
   );
 }
 
-function BookingsTable({ bookings, showFinance }: { bookings: Booking[]; showFinance: boolean }) {
+function BookingsTable({ bookings, inventorySingular, showFinance }: { bookings: Booking[]; inventorySingular: string; showFinance: boolean }) {
   const { t } = useLanguage();
   return (
     <TableContainer component={Paper} variant="outlined">
@@ -417,7 +423,7 @@ function BookingsTable({ bookings, showFinance }: { bookings: Booking[]; showFin
           <TableRow>
             <TableCell>{t("Guest & booking", "Mgeni na uhifadhi")}</TableCell>
             <TableCell>{t("Stay")}</TableCell>
-            <TableCell>{t("Room")}</TableCell>
+            <TableCell sx={{ textTransform: "capitalize" }}>{inventorySingular}</TableCell>
             <TableCell>{t("Status")}</TableCell>
             {showFinance ? <TableCell align="right">{t("Payment")}</TableCell> : null}
             <TableCell aria-label={t("Actions")} padding="checkbox" />
@@ -446,7 +452,7 @@ function BookingsTable({ bookings, showFinance }: { bookings: Booking[]; showFin
   );
 }
 
-function BookingCard({ booking, showFinance }: { booking: Booking; showFinance: boolean }) {
+function BookingCard({ booking, inventorySingular, showFinance }: { booking: Booking; inventorySingular: string; showFinance: boolean }) {
   const { t } = useLanguage();
   return (
     <Paper variant="outlined" sx={{ overflow: "hidden" }}>
@@ -457,7 +463,7 @@ function BookingCard({ booking, showFinance }: { booking: Booking; showFinance: 
         </Stack>
         <Box sx={{ display: "grid", gap: 1.25, gridTemplateColumns: "repeat(2,minmax(0,1fr))", mt: 1.5 }}>
           <CompactFact label={t("Stay")} value={`${formatLocalDate(booking.checkIn, { day: "numeric", month: "short" })} → ${formatLocalDate(booking.checkOut, { day: "numeric", month: "short" })}`} />
-          <CompactFact label={t("Room")} value={booking.roomName || t("Unassigned", "Hakijagawiwa")} />
+          <CompactFact label={inventorySingular} value={booking.roomName || t("Unassigned", "Hakijagawiwa")} />
           <CompactFact label={t("Guests")} value={`${booking.totalGuests} · ${t(bookingStatusLabel(booking.bookingSource))}`} />
           {showFinance ? <CompactFact label={t("Payment")} value={booking.balanceDue != null && booking.balanceDue > 0 ? t(`${money.format(booking.balanceDue)} due`, `${money.format(booking.balanceDue)} salio`) : booking.paymentStatus === "paid" ? t("Paid", "Imelipwa") : t(bookingStatusLabel(booking.paymentStatus))} /> : null}
         </Box>
@@ -533,13 +539,13 @@ function BookingListSkeleton() {
   );
 }
 
-function EmptyBookings({ filtered, canCreate, onClear }: { filtered: boolean; canCreate: boolean; onClear: () => void }) {
+function EmptyBookings({ filtered, canCreate, inventorySingular, onClear }: { filtered: boolean; canCreate: boolean; inventorySingular: string; onClear: () => void }) {
   const { t } = useLanguage();
   return (
     <Paper variant="outlined" sx={{ px: 2, py: { xs: 6, sm: 8 }, textAlign: "center" }}>
       <Box sx={{ bgcolor: "action.selected", borderRadius: "50%", color: "primary.main", display: "grid", height: 56, mx: "auto", placeItems: "center", width: 56 }}><CalendarTodayRoundedIcon /></Box>
       <Typography variant="h6" sx={{ fontWeight: 700, mt: 1.75 }}>{filtered ? t("No bookings match these filters", "Hakuna uhifadhi unaolingana na vichujio hivi") : t("Your booking register is ready", "Rejista yako ya uhifadhi iko tayari")}</Typography>
-      <Typography color="text.secondary" variant="body2" sx={{ maxWidth: 420, mx: "auto", mt: 0.5 }}>{filtered ? t("Clear or adjust the current filters to see more reservations.", "Ondoa au badili vichujio ili kuona uhifadhi zaidi.") : t("New reservations will appear here with their room, stay and operational status.", "Uhifadhi mpya utaonekana hapa pamoja na chumba, muda wa ukaaji na hali yake.")}</Typography>
+      <Typography color="text.secondary" variant="body2" sx={{ maxWidth: 420, mx: "auto", mt: 0.5 }}>{filtered ? t("Clear or adjust the current filters to see more reservations.", "Ondoa au badili vichujio ili kuona uhifadhi zaidi.") : t(`New reservations will appear here with their ${inventorySingular}, stay and operational status.`, `Uhifadhi mpya utaonekana hapa pamoja na ${inventorySingular}, muda wa ukaaji na hali yake.`)}</Typography>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "center", mt: 2 }}>
         {filtered ? <Button onClick={onClear} variant="outlined">{t("Clear filters")}</Button> : null}
         {!filtered && canCreate ? <Button component={Link} href="/bookings/new" variant="contained">{t("Create first booking")}</Button> : null}

@@ -19,12 +19,14 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { StatusPill, Surface } from "@/components/shared/workspace-ui";
 import type { DashboardCapabilities } from "@/features/dashboard/models/dashboard";
 import type { WorkspaceRole } from "@/features/session/permissions";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 export function DashboardHeader({
   businessDate,
   capabilities,
   onRefresh,
   propertyName,
+  propertyType,
   refreshing,
   role,
 }: {
@@ -32,11 +34,15 @@ export function DashboardHeader({
   capabilities: DashboardCapabilities;
   onRefresh: () => void;
   propertyName: string;
+  propertyType: string;
   refreshing: boolean;
   role: WorkspaceRole;
 }) {
   const { language, t } = useLanguage();
-  const content = roleContent(role, t);
+  const propertyDefinition = getPropertyTypeDefinition(propertyType);
+  const singular = t(propertyDefinition.inventorySingular[0], propertyDefinition.inventorySingular[1]);
+  const plural = t(propertyDefinition.inventoryPlural[0], propertyDefinition.inventoryPlural[1]);
+  const content = roleContent(role, singular, plural, t);
   const date = Number.isNaN(businessDate.getTime())
     ? t("Business date unavailable", "Tarehe ya biashara haipatikani")
     : businessDate.toLocaleDateString(language === "sw" ? "sw-TZ" : "en-TZ", {
@@ -132,7 +138,7 @@ export function DashboardHeader({
                 startIcon={<ApartmentRoundedIcon />}
                 variant="outlined"
               >
-                {t("Room board", "Ubao wa vyumba")}
+                {t(propertyDefinition.inventoryBoard[0], propertyDefinition.inventoryBoard[1])}
               </Button>
             ) : role === "receptionist" ? (
               <Button
@@ -175,6 +181,8 @@ export function DashboardHeader({
 
 function roleContent(
   role: WorkspaceRole,
+  singular: string,
+  plural: string,
   t: (english: string, swahili: string) => string,
 ) {
   if (role === "owner") {
@@ -183,8 +191,8 @@ function roleContent(
       roleLabel: t("Owner", "Mmiliki"),
       title: t("Business performance today", "Utendaji wa biashara leo"),
       description: t(
-        "Revenue, occupancy, service demand, and room readiness in one decision-ready view.",
-        "Mapato, matumizi ya vyumba, mahitaji ya huduma na utayari wa vyumba katika muonekano mmoja.",
+        `Revenue, occupancy, service demand, and ${singular} readiness in one decision-ready view.`,
+        `Mapato, matumizi ya ${plural}, mahitaji ya huduma na utayari wa ${plural} katika muonekano mmoja.`,
       ),
     };
   }
@@ -194,8 +202,8 @@ function roleContent(
       roleLabel: t("Manager", "Meneja"),
       title: t("Keep today’s operation moving", "Endesha shughuli za leo kwa ufanisi"),
       description: t(
-        "Prioritize arrivals, departures, room turnover, and housekeeping work for the team.",
-        "Panga wanaowasili, wanaoondoka, mabadiliko ya vyumba na kazi za usafi kwa timu.",
+        `Prioritize arrivals, departures, ${singular} turnover, and housekeeping work for the team.`,
+        `Panga wanaowasili, wanaoondoka, maandalizi ya ${plural} na kazi za usafi kwa timu.`,
       ),
     };
   }
@@ -205,8 +213,8 @@ function roleContent(
       roleLabel: t("Receptionist", "Mapokezi"),
       title: t("Run the front desk with confidence", "Endesha mapokezi kwa uhakika"),
       description: t(
-        "See every guest due in or out, confirm room readiness, and open the next action quickly.",
-        "Ona kila mgeni anayewasili au kuondoka, thibitisha vyumba na fungua hatua inayofuata haraka.",
+        `See every guest due in or out, confirm ${singular} readiness, and open the next action quickly.`,
+        `Ona kila mgeni anayewasili au kuondoka, thibitisha utayari wa ${plural} na fungua hatua inayofuata haraka.`,
       ),
     };
   }

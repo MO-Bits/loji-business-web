@@ -10,8 +10,9 @@ import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { SettingsSection } from "@/components/settings/settings-shared";
 import { usePropertySettings } from "@/features/settings/property/hooks/use-property-settings";
-import { propertyTypes, type PropertyProfileInput, type PropertySettingsWorkspace } from "@/features/settings/property/models/property-settings";
+import { type PropertyProfileInput, type PropertySettingsWorkspace } from "@/features/settings/property/models/property-settings";
 import { notifyPropertySettingsChanged, updatePropertyProfile } from "@/features/settings/property/services/property-settings-service";
+import { propertyTypeDefinitions } from "@/features/property/property-type";
 import {
   EditorSaveBar,
   PropertyAccessDenied,
@@ -92,7 +93,22 @@ function ProfileForm({ client, propertyId, workspace }: { client: ReturnType<typ
       <SettingsSection description={t("These details appear across bookings, staff workflows, and property summaries.", "Taarifa hizi huonekana kwenye uhifadhi, kazi za timu na muhtasari wa biashara.")} title={t("Business identity", "Utambulisho wa biashara")}>
         <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" }, p: { xs: 2, sm: 2.5 } }}>
           <TextField autoComplete="organization" error={attempted && errors.name} helperText={attempted && errors.name ? t("Use 2–120 characters.", "Tumia herufi 2–120.") : " "} label={t("Property name", "Jina la biashara")} onChange={(event) => field("name", event.target.value)} required slotProps={{ htmlInput: { maxLength: 120 } }} value={form.name} />
-          <TextField error={attempted && errors.propertyType} helperText=" " label={t("Property type", "Aina ya biashara")} onChange={(event) => field("propertyType", event.target.value)} select value={form.propertyType}>{propertyTypes.map((type) => <MenuItem key={type} sx={{ textTransform: "capitalize" }} value={type}>{type.replaceAll("_", " ")}</MenuItem>)}</TextField>
+          <TextField
+            error={attempted && errors.propertyType}
+            helperText={form.propertyType !== initial.propertyType
+              ? t("Changing this may also change how your bookable spaces are organised. Existing incompatible inventory is protected.", "Kubadili aina kunaweza kubadili jinsi sehemu za kuhifadhi zinavyopangwa. Orodha iliyopo inalindwa dhidi ya mabadiliko yasiyolingana.")
+              : " "}
+            label={t("Property type", "Aina ya biashara")}
+            onChange={(event) => field("propertyType", event.target.value)}
+            select
+            value={form.propertyType}
+          >
+            {propertyTypeDefinitions.map((definition) => (
+              <MenuItem key={definition.value} value={definition.value}>
+                {t(definition.label[0], definition.label[1])}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField error={attempted && errors.description} helperText={attempted && errors.description ? t("Keep the description under 2,000 characters.", "Maelezo yawe chini ya herufi 2,000.") : t(`${form.description.length}/2000 · Optional`, `${form.description.length}/2000 · Si lazima`)} label={t("Property description", "Maelezo ya biashara")} minRows={5} multiline onChange={(event) => field("description", event.target.value)} placeholder={t("Describe the location, atmosphere, and experience guests can expect.", "Eleza eneo, mazingira na uzoefu ambao wageni watapata.")} slotProps={{ htmlInput: { maxLength: 2000 } }} sx={{ gridColumn: { sm: "1/-1" } }} value={form.description} />
         </Box>
       </SettingsSection>

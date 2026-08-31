@@ -56,14 +56,16 @@ export function usePropertyController() {
           savePendingPropertySetup({ ...pending, propertyId });
         }
 
-        setPhase("uploading");
-        const uploaded = await uploadPropertyImages(supabase, propertyId, files);
-        try {
-          setPhase("saving");
-          await savePropertyImages(supabase, propertyId, uploaded.urls);
-        } catch (cause) {
-          await removePropertyImages(supabase, uploaded.paths);
-          throw cause;
+        if (files.length) {
+          setPhase("uploading");
+          const uploaded = await uploadPropertyImages(supabase, propertyId, files);
+          try {
+            setPhase("saving");
+            await savePropertyImages(supabase, propertyId, uploaded.urls);
+          } catch (cause) {
+            await removePropertyImages(supabase, uploaded.paths);
+            throw cause;
+          }
         }
 
         return propertyId;

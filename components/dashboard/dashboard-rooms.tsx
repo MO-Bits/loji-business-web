@@ -21,17 +21,23 @@ import type { WorkspaceRole } from "@/features/session/permissions";
 import { formatLocalDateTime } from "@/lib/date-time";
 
 import { percentage } from "./dashboard-metrics";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 export function RoomReadinessPanel({
   housekeeping,
+  propertyType,
   role,
   summary,
 }: {
   housekeeping: DashboardHousekeepingRoom[];
+  propertyType?: string;
   role: WorkspaceRole;
   summary: DashboardSummary;
 }) {
   const { t } = useLanguage();
+  const propertyDefinition = getPropertyTypeDefinition(propertyType);
+  const singular = t(propertyDefinition.inventorySingular[0], propertyDefinition.inventorySingular[1]);
+  const plural = t(propertyDefinition.inventoryPlural[0], propertyDefinition.inventoryPlural[1]);
   const occupiedRate = percentage(summary.occupiedRooms, summary.totalActiveRooms);
   const readyRate = percentage(summary.readyRooms, summary.totalActiveRooms);
 
@@ -46,21 +52,21 @@ export function RoomReadinessPanel({
               href="/rooms"
               size="small"
             >
-              {t("Room board", "Ubao wa vyumba")}
+              {t(propertyDefinition.inventoryBoard[0], propertyDefinition.inventoryBoard[1])}
             </Button>
           }
           description={
             role === "manager"
               ? t(
-                  "Room availability and the team’s active turnaround work.",
-                  "Upatikanaji wa vyumba na kazi zinazoendelea za maandalizi.",
+                  `${singular} availability and the team’s active turnaround work.`,
+                  `Upatikanaji wa ${plural} na kazi zinazoendelea za maandalizi.`,
                 )
               : t(
-                  "Live occupancy, saleable inventory, and rooms blocked by service work.",
-                  "Matumizi ya vyumba, vinavyopatikana na vilivyozuiwa na kazi za huduma.",
+                  `Live occupancy, saleable inventory, and ${plural} blocked by service work.`,
+                  `Matumizi ya ${plural}, zinazopatikana na zilizozuiwa na kazi za huduma.`,
                 )
           }
-          title={t("Room readiness", "Utayari wa vyumba")}
+          title={t(`${singular} readiness`, `Utayari wa ${plural}`)}
         />
       </Box>
       <Divider />
@@ -81,7 +87,7 @@ export function RoomReadinessPanel({
       <Stack spacing={1.3} sx={{ p: { xs: 2, sm: 2.5 } }}>
         <RateBar
           color="info.main"
-          label={t("Occupied inventory", "Vyumba vilivyokaliwa")}
+          label={t("Occupied inventory", `${plural} zilizokaliwa`)}
           trailing={`${occupiedRate}%`}
           value={occupiedRate}
         />
@@ -110,8 +116,8 @@ export function RoomReadinessPanel({
           <Typography color="text.secondary" variant="caption">
             {housekeeping.length
               ? t(
-                  `${housekeeping.length} room${housekeeping.length === 1 ? "" : "s"} need follow-up`,
-                  `Vyumba ${housekeeping.length} vinahitaji ufuatiliaji`,
+                  `${housekeeping.length} ${housekeeping.length === 1 ? singular : plural} need follow-up`,
+                  `${plural} ${housekeeping.length} zinahitaji ufuatiliaji`,
                 )
               : t("Every available room is ready", "Kila chumba kinachopatikana kiko tayari")}
           </Typography>
@@ -143,12 +149,12 @@ export function RoomReadinessPanel({
           <CheckCircleRoundedIcon color="success" fontSize="small" />
           <Box>
             <Typography sx={{ fontSize: ".8125rem", fontWeight: 700 }}>
-              {t("No room follow-up waiting", "Hakuna ufuatiliaji wa chumba unaosubiri")}
+              {t(`No ${singular} follow-up waiting`, `Hakuna ufuatiliaji wa ${singular} unaosubiri`)}
             </Typography>
             <Typography color="text.secondary" sx={{ mt: 0.25 }} variant="caption">
               {t(
-                "Housekeeping exceptions and out-of-service rooms will appear here.",
-                "Vyumba vyenye tatizo la usafi au visivyotumika vitaonekana hapa.",
+                `Housekeeping exceptions and out-of-service ${plural} will appear here.`,
+                `${plural} zenye tatizo la usafi au zisizotumika zitaonekana hapa.`,
               )}
             </Typography>
           </Box>

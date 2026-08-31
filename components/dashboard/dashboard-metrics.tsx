@@ -17,6 +17,7 @@ import {
 } from "@/components/shared/workspace-ui";
 import type { HomeDashboard } from "@/features/dashboard/models/dashboard";
 import type { WorkspaceRole } from "@/features/session/permissions";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 const compactMoney = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -36,13 +37,18 @@ type DashboardMetric = {
 
 export function DashboardMetricGrid({
   dashboard,
+  propertyType,
   role,
 }: {
   dashboard: HomeDashboard;
+  propertyType?: string;
   role: WorkspaceRole;
 }) {
   const { t } = useLanguage();
   const { finance, summary } = dashboard;
+  const propertyDefinition = getPropertyTypeDefinition(propertyType);
+  const singular = t(propertyDefinition.inventorySingular[0], propertyDefinition.inventorySingular[1]);
+  const plural = t(propertyDefinition.inventoryPlural[0], propertyDefinition.inventoryPlural[1]);
   const occupancy = percentage(summary.occupiedRooms, summary.totalActiveRooms);
   const serviceDue = summary.arrivalsDue + summary.departuresDue;
   let metrics: DashboardMetric[];
@@ -51,12 +57,12 @@ export function DashboardMetricGrid({
     metrics = [
       {
         caption: t(
-          `${summary.occupiedRooms} of ${summary.totalActiveRooms} active rooms`,
-          `${summary.occupiedRooms} kati ya vyumba ${summary.totalActiveRooms} hai`,
+          `${summary.occupiedRooms} of ${summary.totalActiveRooms} active ${plural}`,
+          `${summary.occupiedRooms} kati ya ${plural} ${summary.totalActiveRooms} zinazotumika`,
         ),
         href: "/rooms",
         icon: <HotelRoundedIcon />,
-        label: t("Occupancy", "Matumizi ya vyumba"),
+        label: t("Occupancy", `Matumizi ya ${plural}`),
         tone: "info",
         value: `${occupancy}%`,
       },
@@ -106,12 +112,12 @@ export function DashboardMetricGrid({
     metrics = [
       {
         caption: t(
-          `${summary.occupiedRooms} of ${summary.totalActiveRooms} rooms`,
-          `${summary.occupiedRooms} kati ya vyumba ${summary.totalActiveRooms}`,
+          `${summary.occupiedRooms} of ${summary.totalActiveRooms} ${plural}`,
+          `${summary.occupiedRooms} kati ya ${plural} ${summary.totalActiveRooms}`,
         ),
         href: "/rooms",
         icon: <HotelRoundedIcon />,
-        label: t("Occupancy", "Matumizi ya vyumba"),
+        label: t("Occupancy", `Matumizi ya ${plural}`),
         tone: "info",
         value: `${occupancy}%`,
       },
@@ -121,7 +127,7 @@ export function DashboardMetricGrid({
         caption: t("Cleaning or service follow-up", "Ufuatiliaji wa usafi au matengenezo"),
         href: "/rooms",
         icon: <CleaningServicesRoundedIcon />,
-        label: t("Rooms needing action", "Vyumba vinavyohitaji hatua"),
+        label: t(`${plural} needing action`, `${plural} zinazohitaji hatua`),
         tone: summary.attentionRooms ? "warning" : "success",
         value: summary.attentionRooms,
       },
@@ -132,12 +138,12 @@ export function DashboardMetricGrid({
       departureMetric(dashboard, t),
       {
         caption: t(
-          `Available from ${summary.totalActiveRooms} active rooms`,
-          `Vinapatikana kati ya vyumba ${summary.totalActiveRooms} hai`,
+          `Available from ${summary.totalActiveRooms} active ${plural}`,
+          `Zinapatikana kati ya ${plural} ${summary.totalActiveRooms} zinazotumika`,
         ),
         href: "/rooms?status=ready",
         icon: <BedRoundedIcon />,
-        label: t("Rooms ready", "Vyumba tayari"),
+        label: t(`${plural} ready`, `${plural} tayari`),
         tone: summary.readyRooms ? "success" : "warning",
         value: summary.readyRooms,
       },
@@ -153,14 +159,14 @@ export function DashboardMetricGrid({
   } else {
     metrics = [
       {
-        caption: t("Active room inventory", "Orodha ya vyumba hai"),
+        caption: t(`Active ${singular} inventory`, `Orodha ya ${plural} zinazotumika`),
         href: "/rooms",
         icon: <BedRoundedIcon />,
-        label: t("Active rooms", "Vyumba hai"),
+        label: t(`Active ${plural}`, `${plural} zinazotumika`),
         value: summary.totalActiveRooms,
       },
       {
-        caption: t("Current occupied inventory", "Vyumba vilivyokaliwa sasa"),
+        caption: t("Current occupied inventory", `${plural} zilizokaliwa sasa`),
         icon: <HotelRoundedIcon />,
         label: t("Occupied", "Vimekaliwa"),
         tone: "info",

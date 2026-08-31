@@ -32,6 +32,7 @@ import type { CalendarBooking } from "@/features/calendar/models/calendar";
 import { getPropertyCalendar } from "@/features/calendar/services/calendar-service";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/components/providers/language-provider";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 const DAY = 86_400_000;
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
@@ -126,6 +127,15 @@ export function CalendarScreen() {
     : null;
   const propertyIsChanging = Boolean(calendarState && calendarState.propertyId !== propertyId);
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
+  const propertyDefinition = getPropertyTypeDefinition(session?.property?.type);
+  const inventorySingular = t(
+    propertyDefinition.inventorySingular[0],
+    propertyDefinition.inventorySingular[1],
+  );
+  const inventoryPlural = t(
+    propertyDefinition.inventoryPlural[0],
+    propertyDefinition.inventoryPlural[1],
+  );
   const canView = capabilities.canViewCalendar;
   const canCreateBooking = capabilities.canCreateBooking;
   const invalidRange = !from || !to || to < from;
@@ -277,7 +287,10 @@ export function CalendarScreen() {
       <Stack spacing={{ xs: 2.5, sm: 3 }}>
         <PageHeader
           title={t("Calendar", "Kalenda")}
-          description={t("See room availability, arrivals and in-house stays by date.", "Angalia upatikanaji wa vyumba, wanaowasili na waliopo kwa tarehe.")}
+          description={t(
+            `See ${inventoryPlural} availability, arrivals and current stays by date.`,
+            `Angalia upatikanaji wa ${inventoryPlural}, wanaowasili na waliopo kwa tarehe.`,
+          )}
           action={canCreateBooking ? (
             <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained">
               {t("New booking", "Uhifadhi mpya")}
@@ -317,12 +330,12 @@ export function CalendarScreen() {
           ) : !calendar?.rooms.length ? (
             <EmptyState
               actionHref={capabilities.canManageRooms ? "/rooms/new" : undefined}
-              actionLabel={capabilities.canManageRooms ? t("Add a room", "Ongeza chumba") : undefined}
+              actionLabel={capabilities.canManageRooms ? t(`Add ${inventorySingular}`, `Ongeza ${inventorySingular}`) : undefined}
               description={capabilities.canManageRooms
-                ? t("Add rooms before building your availability calendar.", "Ongeza vyumba kabla ya kutengeneza kalenda ya upatikanaji.")
-                : t("A manager needs to add rooms before the availability calendar can be used.", "Meneja anahitaji kuongeza vyumba kabla ya kalenda ya upatikanaji kutumika.")}
+                ? t(`Add your first ${inventorySingular} to start using the availability calendar.`, `Ongeza ${inventorySingular} ya kwanza ili uanze kutumia kalenda ya upatikanaji.`)
+                : t(`A manager needs to add ${inventoryPlural} before the availability calendar can be used.`, `Meneja anahitaji kuongeza ${inventoryPlural} kabla ya kalenda ya upatikanaji kutumika.`)}
               icon={<HotelRoundedIcon />}
-              title={t("No rooms yet", "Hakuna vyumba bado")}
+              title={t(`No ${inventoryPlural} yet`, `Hakuna ${inventoryPlural} bado`)}
             />
           ) : (
             <>
@@ -330,7 +343,7 @@ export function CalendarScreen() {
                 <Box sx={{ overflowX: "auto" }}>
                 <Box sx={{ display: "grid", gridTemplateColumns: `180px repeat(${days.length}, minmax(92px, 1fr))`, minWidth: 180 + days.length * 92 }}>
                   <Box sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "divider", left: 0, p: 1.5, position: "sticky", zIndex: 3 }}>
-                    <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700 }}>{t("Room", "Chumba")}</Typography>
+                    <Typography color="text.secondary" variant="caption" sx={{ fontWeight: 700, textTransform: "capitalize" }}>{inventorySingular}</Typography>
                   </Box>
                   {days.map((day) => {
                     const date = parseDate(day);
@@ -400,11 +413,11 @@ export function CalendarScreen() {
                     count={collectionCount}
                     labelDisplayedRows={({ from: first, to: last, count }) =>
                       isDesktopLayout
-                        ? t(`${first}–${last} of ${count} rooms`, `${first}–${last} kati ya vyumba ${count}`)
+                        ? t(`${first}–${last} of ${count} ${inventoryPlural}`, `${first}–${last} kati ya ${inventoryPlural} ${count}`)
                         : t(`${first}–${last} of ${count} stays`, `${first}–${last} kati ya ukaaji ${count}`)
                     }
                     labelRowsPerPage={isDesktopLayout
-                      ? t("Rooms per page", "Vyumba kwa ukurasa")
+                      ? t(`${inventoryPlural} per page`, `${inventoryPlural} kwa ukurasa`)
                       : t("Stays per page", "Ukaaji kwa ukurasa")}
                     onPageChange={(_, nextPage) => setPage(nextPage)}
                     onRowsPerPageChange={(event) => {

@@ -1,4 +1,5 @@
 import type { Json } from "@/types/database.types";
+import type { InventoryType, PropertyType } from "@/features/property/models/property";
 
 export type HousekeepingStatus =
   | "ready"
@@ -17,8 +18,11 @@ export type Room = {
   propertyId: string;
   name: string;
   roomType: string;
+  inventoryType: InventoryType;
   capacity: number;
   bedCount: number;
+  bedroomCount: number;
+  bathroomCount: number;
   pricePerNight: number;
   amenities: string[];
   images: string[];
@@ -61,7 +65,14 @@ export type RoomBoardSummary = {
 };
 
 export type RoomBoard = {
-  property: { id: string; timezone: string; businessDate: string };
+  property: {
+    id: string;
+    timezone: string;
+    businessDate: string;
+    propertyType: PropertyType;
+    inventoryType: InventoryType;
+    expectedInventoryCount: number;
+  };
   capabilities: { manageRooms: boolean; createBooking: boolean };
   summary: RoomBoardSummary;
   rooms: RoomBoardItem[];
@@ -119,6 +130,23 @@ function operationalStatus(input: unknown, room: Room): RoomOperationalStatus {
   return room.isActive ? room.housekeepingStatus : "inactive";
 }
 
+function inventoryType(input: unknown): InventoryType {
+  const normalized = String(input ?? "").toLowerCase();
+  if (normalized === "apartment" || normalized === "house") return normalized;
+  return "room";
+}
+
+function propertyType(input: unknown): PropertyType {
+  const normalized = String(input ?? "").toLowerCase().replaceAll("-", "_");
+  if (
+    normalized === "lodge" || normalized === "guesthouse" ||
+    normalized === "apartment" || normalized === "house" ||
+    normalized === "resort" || normalized === "hostel" ||
+    normalized === "villa" || normalized === "bed_and_breakfast"
+  ) return normalized;
+  return "hotel";
+}
+
 function strings(input: unknown): string[] {
   if (!Array.isArray(input)) return [];
   return input
@@ -133,8 +161,11 @@ export function parseRoom(row: Record<string, Json | undefined> | UnknownRecord)
     propertyId: stringValue(source, "property_id", "propertyId"),
     name: stringValue(source, "name", "name", "Room"),
     roomType: stringValue(source, "room_type", "roomType", "master"),
+    inventoryType: inventoryType(value(source, "inventory_type", "inventoryType")),
     capacity: numberValue(source, "capacity", "capacity", 1),
     bedCount: numberValue(source, "bed_count", "bedCount", 1),
+    bedroomCount: numberValue(source, "bedroom_count", "bedroomCount", 1),
+    bathroomCount: numberValue(source, "bathroom_count", "bathroomCount", 1),
     pricePerNight: numberValue(source, "price_per_night", "pricePerNight", numberValue(source, "base_price", "basePrice")),
     amenities: strings(value(source, "amenities")),
     images: strings(value(source, "room_images", "roomImages") ?? value(source, "images")),
@@ -201,6 +232,9 @@ function parseProperty(input: unknown, fallbackId = ""): RoomBoard["property"] {
     id: stringValue(row, "id", "id", fallbackId),
     timezone: stringValue(row, "timezone", "timezone", "Africa/Dar_es_Salaam"),
     businessDate: stringValue(row, "business_date", "businessDate"),
+    propertyType: propertyType(value(row, "property_type", "propertyType")),
+    inventoryType: inventoryType(value(row, "inventory_type", "inventoryType")),
+    expectedInventoryCount: numberValue(row, "expected_inventory_count", "expectedInventoryCount", 1),
   };
 }
 
@@ -253,6 +287,7 @@ export function parseRoomWorkspace(input: unknown, propertyId = ""): RoomWorkspa
 
 export const roomAmenities = [
   "WiFi", "TV", "Air Conditioning", "Hot Water", "Balcony", "Mini Bar",
-  "Workspace / Desk", "Kitchen Access", "Breakfast Included", "Wardrobe",
-  "Room Service", "Safe Box", "Towels", "Toiletries",
+  "Workspace / Desk", "Kitchen Access", "Full Kitchen", "Living Room",
+  "Washing Machine", "Private Entrance", "Dining Area", "Breakfast Included",
+  "Wardrobe", "Room Service", "Safe Box", "Towels", "Toiletries",
 ];

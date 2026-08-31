@@ -1,4 +1,5 @@
 import type { Json } from "@/types/database.types";
+import type { InventoryType } from "@/features/property/models/property";
 import { parseDatabaseDate } from "@/lib/date-time";
 
 export type BookingStatus =
@@ -129,8 +130,11 @@ export type AvailableRoom = {
   id: string;
   name: string;
   roomType: string;
+  inventoryType: InventoryType;
   capacity: number;
   bedCount: number;
+  bedroomCount: number;
+  bathroomCount: number;
   pricePerNight: number;
   totalPrice: number;
   nights: number;
@@ -346,8 +350,14 @@ export function parseAvailableRoom(row: Row): AvailableRoom {
     id: text(row.room_id ?? row.id),
     name: text(row.room_name ?? row.name),
     roomType: text(row.room_type),
+    inventoryType:
+      text(row.inventory_type) === "apartment" || text(row.inventory_type) === "house"
+        ? text(row.inventory_type) as InventoryType
+        : "room",
     capacity: number(row.capacity),
     bedCount: number(row.bed_count),
+    bedroomCount: number(row.bedroom_count),
+    bathroomCount: number(row.bathroom_count),
     pricePerNight: number(row.price_per_night),
     totalPrice: number(row.total_price),
     nights: number(row.nights),

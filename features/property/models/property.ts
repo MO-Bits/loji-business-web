@@ -1,4 +1,15 @@
-export type PropertyType = "hotel" | "lodge" | "apartment" | "guesthouse";
+export type PropertyType =
+  | "hotel"
+  | "lodge"
+  | "guesthouse"
+  | "apartment"
+  | "house"
+  | "resort"
+  | "hostel"
+  | "villa"
+  | "bed_and_breakfast";
+
+export type InventoryType = "room" | "apartment" | "house";
 
 export type PropertyAddress = {
   placeId: string;

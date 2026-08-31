@@ -1,18 +1,22 @@
 "use client";
 
 import AddPhotoAlternateRoundedIcon from "@mui/icons-material/AddPhotoAlternateRounded";
+import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import HomeWorkRoundedIcon from "@mui/icons-material/HomeWorkRounded";
 import {
   Alert,
   Box,
   Button,
+  ButtonBase,
   Chip,
   CircularProgress,
-  Divider,
   IconButton,
-  MenuItem,
+  InputAdornment,
+  LinearProgress,
   Stack,
   TextField,
   Typography,
@@ -25,50 +29,112 @@ import { OnboardingFrame } from "@/components/auth/onboarding-frame";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { usePropertyController } from "@/features/property/hooks/use-property-controller";
-import type { PropertyType } from "@/features/property/models/property";
+import type { InventoryType, PropertyType } from "@/features/property/models/property";
+import {
+  getPropertyTypeDefinition,
+  propertyTypeDefinitions,
+} from "@/features/property/property-type";
 import {
   MAX_PROPERTY_IMAGE_BYTES,
   MAX_PROPERTY_IMAGES,
   PROPERTY_IMAGE_TYPES,
 } from "@/features/property/services/property-service";
 
+const DRAFT_KEY = "loji-property-registration:v2";
+
 const amenities = [
   { label: ["Wi-Fi", "Wi-Fi"], value: "WiFi" },
   { label: ["Parking", "Maegesho"], value: "Parking" },
+  { label: ["Air conditioning", "Kiyoyozi"], value: "Air Conditioning" },
+  { label: ["Hot water", "Maji ya moto"], value: "Hot Water" },
+  { label: ["Full kitchen", "Jiko kamili"], value: "Full Kitchen" },
+  { label: ["Washing machine", "Mashine ya kufulia"], value: "Washing Machine" },
+  { label: ["Private entrance", "Mlango binafsi"], value: "Private Entrance" },
   { label: ["Swimming pool", "Bwawa la kuogelea"], value: "Swimming Pool" },
   { label: ["Restaurant", "Mgahawa"], value: "Restaurant" },
-  { label: ["Bar", "Baa"], value: "Bar" },
-  { label: ["Air conditioning", "Kiyoyozi"], value: "Air Conditioning" },
   { label: ["Breakfast", "Kifungua kinywa"], value: "Breakfast" },
   { label: ["24/7 reception", "Mapokezi saa 24"], value: "24/7 Reception" },
   { label: ["Laundry", "Kufua"], value: "Laundry" },
   { label: ["Security", "Usalama"], value: "Security" },
-  { label: ["Gym", "Ukumbi wa mazoezi"], value: "Gym" },
-  { label: ["Conference room", "Ukumbi wa mikutano"], value: "Conference Room" },
+  { label: ["Backup power", "Umeme wa akiba"], value: "Backup Power" },
 ] as const;
 
-const propertyTypes: {
-  label: [english: string, swahili: string];
-  value: PropertyType;
-}[] = [
-  { label: ["Hotel", "Hoteli"], value: "hotel" },
-  { label: ["Lodge", "Loji"], value: "lodge" },
-  { label: ["Apartment", "Fleti"], value: "apartment" },
-  { label: ["Guesthouse", "Nyumba ya wageni"], value: "guesthouse" },
-];
+type RegistrationDraft = {
+  type: PropertyType;
+  name: string;
+  phone: string;
+  email: string;
+  expectedInventoryCount: number;
+  defaultBedroomCount: number;
+  defaultBathroomCount: number;
+  amenities: string[];
+};
+
+const initialDraft: RegistrationDraft = {
+  type: "hotel",
+  name: "",
+  phone: "",
+  email: "",
+  expectedInventoryCount: 1,
+  defaultBedroomCount: 2,
+  defaultBathroomCount: 1,
+  amenities: [],
+};
 
 export function PropertyBasicForm() {
   const router = useRouter();
   const controller = usePropertyController();
   const feedback = useAppFeedback();
   const { t } = useLanguage();
-  const [type, setType] = useState<PropertyType>("hotel");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [activeStep, setActiveStep] = useState(0);
+  const [draft, setDraft] = useState<RegistrationDraft>(initialDraft);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
+  const definition = getPropertyTypeDefinition(draft.type);
+
+  const stepLabels = [
+    t("Property type", "Aina ya biashara"),
+    t("Property name", "Jina la biashara"),
+    t("Contact", "Mawasiliano"),
+    definition.inventoryType === "house"
+      ? t("Home layout", "Mpangilio wa nyumba")
+      : t("Bookable spaces", "Sehemu za kuhifadhi"),
+    t("Amenities", "Huduma"),
+    t("Photos", "Picha"),
+    t("Location", "Eneo"),
+  ];
+
+  useEffect(() => {
+    let stored: Partial<RegistrationDraft> | null = null;
+    try {
+      stored = JSON.parse(window.localStorage.getItem(DRAFT_KEY) ?? "null") as Partial<RegistrationDraft> | null;
+    } catch {
+      // A malformed draft should not block a fresh registration.
+    }
+    const timer = window.setTimeout(() => {
+      if (stored?.type && propertyTypeDefinitions.some((item) => item.value === stored?.type)) {
+        setDraft({
+          ...initialDraft,
+          ...stored,
+          amenities: Array.isArray(stored.amenities)
+            ? stored.amenities.filter((item): item is string => typeof item === "string")
+            : [],
+        });
+      }
+      setDraftLoaded(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+    try {
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // Browser storage is a convenience; the form remains usable without it.
+    }
+  }, [draft, draftLoaded]);
 
   const previews = useMemo(
     () => files.map((file) => ({ file, url: URL.createObjectURL(file) })),
@@ -80,18 +146,35 @@ export function PropertyBasicForm() {
     [previews],
   );
 
+  const setField = <K extends keyof RegistrationDraft>(
+    key: K,
+    value: RegistrationDraft[K],
+  ) => {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setLocalError(null);
+  };
+
+  const chooseType = (type: PropertyType) => {
+    const nextDefinition = getPropertyTypeDefinition(type);
+    setDraft((current) => ({
+      ...current,
+      type,
+      expectedInventoryCount:
+        nextDefinition.inventoryType === "house"
+          ? 1
+          : Math.max(1, current.expectedInventoryCount),
+    }));
+    setLocalError(null);
+  };
+
   const pickFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const picked = Array.from(event.target.files ?? []);
     event.target.value = "";
     setLocalError(null);
-
     if (files.length + picked.length > MAX_PROPERTY_IMAGES) {
-      setLocalError(
-        t("You can upload up to 3 photos.", "Unaweza kupakia hadi picha 3."),
-      );
+      setLocalError(t("You can add up to 3 photos.", "Unaweza kuongeza hadi picha 3."));
       return;
     }
-
     const invalidType = picked.find(
       (file) =>
         !PROPERTY_IMAGE_TYPES.includes(
@@ -107,7 +190,6 @@ export function PropertyBasicForm() {
       );
       return;
     }
-
     const tooLarge = picked.find((file) => file.size > MAX_PROPERTY_IMAGE_BYTES);
     if (tooLarge) {
       setLocalError(
@@ -118,68 +200,138 @@ export function PropertyBasicForm() {
       );
       return;
     }
-
     setFiles((current) => [...current, ...picked]);
+  };
+
+  const validateCurrentStep = () => {
+    if (activeStep === 1 && draft.name.trim().length < 2) {
+      return t(
+        "Enter a name with at least 2 characters.",
+        "Weka jina lenye angalau herufi 2.",
+      );
+    }
+    if (activeStep === 2 && draft.phone.replace(/\D/g, "").length < 7) {
+      return t(
+        "Enter a phone number guests or staff can use.",
+        "Weka namba ya simu ambayo wageni au timu wanaweza kutumia.",
+      );
+    }
+    if (
+      activeStep === 2 &&
+      draft.email.trim() &&
+      !/^\S+@\S+\.\S+$/.test(draft.email.trim())
+    ) {
+      return t(
+        "Enter a valid email address, or leave it blank.",
+        "Weka barua pepe sahihi, au acha nafasi wazi.",
+      );
+    }
+    if (
+      activeStep === 3 &&
+      definition.inventoryType !== "house" &&
+      (!Number.isInteger(draft.expectedInventoryCount) ||
+        draft.expectedInventoryCount < 1 ||
+        draft.expectedInventoryCount > 1000)
+    ) {
+      return t("Enter a number between 1 and 1,000.", "Weka namba kati ya 1 na 1,000.");
+    }
+    if (
+      activeStep === 3 &&
+      definition.inventoryType === "house" &&
+      (!Number.isInteger(draft.defaultBedroomCount) ||
+        draft.defaultBedroomCount < 0 ||
+        draft.defaultBedroomCount > 20 ||
+        !Number.isFinite(draft.defaultBathroomCount) ||
+        draft.defaultBathroomCount < 0.5 ||
+        draft.defaultBathroomCount > 20)
+    ) {
+      return t(
+        "Check the bedroom and bathroom counts.",
+        "Kagua idadi ya vyumba vya kulala na bafu.",
+      );
+    }
+    return null;
   };
 
   const submit = async () => {
     setLocalError(null);
     controller.clearError();
-
-    if (name.trim().length < 2) {
-      setLocalError(
-        t(
-          "Enter a property name with at least 2 characters.",
-          "Weka jina la biashara lenye angalau herufi 2.",
-        ),
-      );
-      return;
-    }
-    if (phone.replace(/\D/g, "").length < 7) {
-      setLocalError(
-        t("Enter a valid phone number.", "Weka namba sahihi ya simu."),
-      );
-      return;
-    }
-    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) {
-      setLocalError(t("Enter a valid email address.", "Weka barua pepe sahihi."));
-      return;
-    }
-    if (!selectedAmenities.length) {
-      setLocalError(
-        t("Select at least one amenity.", "Chagua angalau huduma moja."),
-      );
-      return;
-    }
-    if (!files.length) {
-      setLocalError(
-        t("Add at least one property photo.", "Ongeza angalau picha moja ya biashara."),
-      );
-      return;
-    }
-
     try {
       await controller.createProperty(
-        { amenities: selectedAmenities, email, name, phone, type },
+        {
+          amenities: draft.amenities,
+          email: draft.email,
+          name: draft.name,
+          phone: draft.phone,
+          type: draft.type,
+          expectedInventoryCount:
+            definition.inventoryType === "house"
+              ? 1
+              : draft.expectedInventoryCount,
+          defaultBedroomCount:
+            definition.inventoryType === "house"
+              ? draft.defaultBedroomCount
+              : null,
+          defaultBathroomCount:
+            definition.inventoryType === "house"
+              ? draft.defaultBathroomCount
+              : null,
+        },
         files,
       );
+      try {
+        window.localStorage.removeItem(DRAFT_KEY);
+      } catch {
+        // No cleanup is required when storage is unavailable.
+      }
       feedback.success(
-        t("Property details saved.", "Taarifa za biashara zimehifadhiwa."),
+        t("Your property profile is ready.", "Wasifu wa biashara yako uko tayari."),
       );
-      router.replace("/");
+      router.replace("/onboarding/property/address");
+      router.refresh();
     } catch {
       // The controller exposes a retry-safe error below.
     }
   };
 
+  const continueForward = async () => {
+    const message = validateCurrentStep();
+    if (message) {
+      setLocalError(message);
+      return;
+    }
+    if (activeStep < 5) {
+      setActiveStep((step) => step + 1);
+      setLocalError(null);
+      return;
+    }
+    await submit();
+  };
+
+  const goBack = () => {
+    setLocalError(null);
+    controller.clearError();
+    if (activeStep > 0) setActiveStep((step) => step - 1);
+    else router.back();
+  };
+
+  const screen = screenContent(
+    activeStep,
+    definition.inventoryType,
+    definition.inventoryPlural,
+    t,
+  );
   const progressLabel =
     controller.phase === "creating"
       ? t("Creating your workspace…", "Inatengeneza sehemu yako ya kazi…")
       : controller.phase === "uploading"
-        ? t("Uploading property photos…", "Inapakia picha za biashara…")
+        ? t("Uploading your photos…", "Inapakia picha zako…")
         : controller.phase === "saving"
-          ? t("Saving the photo gallery…", "Inahifadhi mkusanyiko wa picha…")
-          : t("Save property and continue", "Hifadhi biashara na endelea");
+          ? t("Finishing your profile…", "Inakamilisha wasifu wako…")
+          : t(
+              "Save and continue to location",
+              "Hifadhi na uende kwenye eneo",
+            );
 
   return (
     <OnboardingFrame
@@ -187,152 +339,278 @@ export function PropertyBasicForm() {
         <Button
           color="inherit"
           disabled={controller.loading}
-          onClick={() => router.back()}
+          onClick={goBack}
           startIcon={<ArrowBackRoundedIcon />}
         >
           {t("Back", "Rudi")}
         </Button>
       }
-      description={t(
-        "Add the core details your team will use across rooms, bookings, finance and reports.",
-        "Ongeza taarifa kuu ambazo timu yako itatumia kwenye vyumba, uhifadhi, fedha na ripoti.",
+      description={screen.description}
+      eyebrow={t(
+        "Guided property setup",
+        "Usanidi wa biashara unaoongozwa",
       )}
-      eyebrow={t("Property setup", "Usanidi wa biashara")}
-      icon={<HotelRoundedIcon />}
-      panelDescription={t("Step 2 of 3", "Hatua ya 2 kati ya 3")}
-      panelTitle={t("Property profile", "Wasifu wa biashara")}
-      step={2}
-      steps={[
-        t("Personal profile", "Wasifu binafsi"),
-        t("Property details", "Taarifa za biashara"),
-        t("Location & finish", "Eneo na kumaliza"),
-      ]}
-      title={t("Describe your property.", "Eleza biashara yako.")}
+      icon={
+        activeStep === 0 ? <HomeWorkRoundedIcon /> : <ApartmentRoundedIcon />
+      }
+      panelDescription={t(
+        `Question ${activeStep + 1} of 6`,
+        `Swali la ${activeStep + 1} kati ya 6`,
+      )}
+      panelTitle={screen.question}
+      step={activeStep + 1}
+      steps={stepLabels}
+      title={screen.title}
       wide
     >
-      <Box
-        component="form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void submit();
-        }}
-      >
-        <Stack divider={<Divider flexItem />} spacing={3}>
-          <FormSection
-            description={t(
-              "Information used to identify and contact this property.",
-              "Taarifa zinazotumika kutambua na kuwasiliana na biashara hii.",
-            )}
-            title={t("Business details", "Taarifa za biashara")}
-          >
+      <Stack spacing={{ xs: 2.25, sm: 3 }}>
+        <LinearProgress
+          aria-label={t(
+            "Property registration progress",
+            "Maendeleo ya usajili wa biashara",
+          )}
+          value={((activeStep + 1) / 6) * 100}
+          variant="determinate"
+          sx={{ borderRadius: 99, height: 6 }}
+        />
+
+        {activeStep === 0 ? (
+          <PropertyTypeChoices selected={draft.type} onChange={chooseType} />
+        ) : null}
+
+        {activeStep === 1 ? (
+          <Stack spacing={1.25}>
+            <TextField
+              autoComplete="organization"
+              autoFocus
+              fullWidth
+              label={t("Property or business name", "Jina la biashara")}
+              onChange={(event) =>
+                setField("name", event.target.value.slice(0, 120))
+              }
+              placeholder={propertyNamePlaceholder(draft.type, t)}
+              required
+              slotProps={{ htmlInput: { maxLength: 120 } }}
+              value={draft.name}
+            />
+            <FriendlyNote>
+              {t(
+                "Use the name your guests already know. You can change it later.",
+                "Tumia jina ambalo wageni wako wanalijua. Unaweza kulibadili baadaye.",
+              )}
+            </FriendlyNote>
+          </Stack>
+        ) : null}
+
+        {activeStep === 2 ? (
+          <Stack spacing={2}>
+            <TextField
+              autoComplete="tel"
+              autoFocus
+              fullWidth
+              label={t("Main phone number", "Namba kuu ya simu")}
+              onChange={(event) =>
+                setField(
+                  "phone",
+                  event.target.value
+                    .replace(/[^+\d\s()-]/g, "")
+                    .slice(0, 32),
+                )
+              }
+              placeholder="+255 7xx xxx xxx"
+              required
+              slotProps={{
+                htmlInput: { inputMode: "tel", maxLength: 32 },
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">TZ</InputAdornment>
+                  ),
+                },
+              }}
+              value={draft.phone}
+            />
+            <TextField
+              autoComplete="email"
+              fullWidth
+              helperText={t(
+                "Optional — leave blank if the business does not use email.",
+                "Si lazima — acha wazi kama biashara haitumii barua pepe.",
+              )}
+              label={t("Business email", "Barua pepe ya biashara")}
+              onChange={(event) =>
+                setField("email", event.target.value.slice(0, 160))
+              }
+              slotProps={{ htmlInput: { maxLength: 160 } }}
+              type="email"
+              value={draft.email}
+            />
+          </Stack>
+        ) : null}
+
+        {activeStep === 3 ? (
+          definition.inventoryType === "house" ? (
             <Box
               sx={{
                 display: "grid",
                 gap: 2,
                 gridTemplateColumns: {
-                  xs: "minmax(0, 1fr)",
-                  sm: "repeat(2, minmax(0, 1fr))",
+                  xs: "1fr",
+                  sm: "repeat(2,minmax(0,1fr))",
                 },
               }}
             >
               <TextField
-                disabled={controller.loading}
-                fullWidth
-                label={t("Property type", "Aina ya biashara")}
-                onChange={(event) => setType(event.target.value as PropertyType)}
-                select
-                value={type}
-              >
-                {propertyTypes.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {t(item.label[0], item.label[1])}
-                  </MenuItem>
-                ))}
-              </TextField>
-
-              <TextField
-                autoComplete="organization"
-                disabled={controller.loading}
-                fullWidth
-                label={t("Property name", "Jina la biashara")}
-                onChange={(event) => setName(event.target.value.slice(0, 120))}
-                required
-                slotProps={{ htmlInput: { maxLength: 120 } }}
-                value={name}
-              />
-
-              <TextField
-                autoComplete="tel"
-                disabled={controller.loading}
-                fullWidth
-                label={t("Phone number", "Namba ya simu")}
+                autoFocus
+                helperText={t(
+                  "Use 0 for a studio-style home.",
+                  "Tumia 0 kwa nyumba ya aina ya studio.",
+                )}
+                label={t("Bedrooms", "Vyumba vya kulala")}
                 onChange={(event) =>
-                  setPhone(event.target.value.replace(/[^+\d\s()-]/g, "").slice(0, 32))
+                  setField(
+                    "defaultBedroomCount",
+                    numericValue(event.target.value, 0),
+                  )
                 }
-                required
-                slotProps={{ htmlInput: { inputMode: "tel", maxLength: 32 } }}
-                value={phone}
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "numeric",
+                    min: 0,
+                    max: 20,
+                    step: 1,
+                  },
+                }}
+                type="number"
+                value={draft.defaultBedroomCount}
               />
-
               <TextField
-                autoComplete="email"
-                disabled={controller.loading}
-                fullWidth
-                label={t("Email (optional)", "Barua pepe (si lazima)")}
-                onChange={(event) => setEmail(event.target.value.slice(0, 160))}
-                slotProps={{ htmlInput: { maxLength: 160 } }}
-                type="email"
-                value={email}
+                helperText={t(
+                  "Count all private bathrooms.",
+                  "Hesabu bafu zote binafsi.",
+                )}
+                label={t("Bathrooms", "Bafu")}
+                onChange={(event) =>
+                  setField(
+                    "defaultBathroomCount",
+                    numericValue(event.target.value, 1),
+                  )
+                }
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "decimal",
+                    min: 0.5,
+                    max: 20,
+                    step: 0.5,
+                  },
+                }}
+                type="number"
+                value={draft.defaultBathroomCount}
               />
+              <FriendlyNote sx={{ gridColumn: { sm: "1/-1" } }}>
+                {t(
+                  "Guests will reserve the whole home. Loji will keep one bookable home instead of creating hotel rooms.",
+                  "Wageni watahifadhi nyumba nzima. Loji itasimamia nyumba moja badala ya kutengeneza vyumba vya hoteli.",
+                )}
+              </FriendlyNote>
             </Box>
-          </FormSection>
+          ) : (
+            <Stack spacing={1.5}>
+              <TextField
+                autoFocus
+                fullWidth
+                label={
+                  definition.inventoryType === "apartment"
+                    ? t(
+                        "How many apartments can be booked separately?",
+                        "Fleti ngapi zinaweza kuhifadhiwa tofauti?",
+                      )
+                    : t(
+                        "How many rooms can guests book?",
+                        "Wageni wanaweza kuhifadhi vyumba vingapi?",
+                      )
+                }
+                onChange={(event) =>
+                  setField(
+                    "expectedInventoryCount",
+                    numericValue(event.target.value, 1),
+                  )
+                }
+                slotProps={{
+                  htmlInput: {
+                    inputMode: "numeric",
+                    min: 1,
+                    max: 1000,
+                    step: 1,
+                  },
+                }}
+                type="number"
+                value={draft.expectedInventoryCount}
+              />
+              <FriendlyNote>
+                {definition.inventoryType === "apartment"
+                  ? t(
+                      "Each apartment will get its own bedrooms, bathrooms, capacity and nightly price later.",
+                      "Kila fleti itawekewa vyumba vya kulala, bafu, uwezo na bei yake baadaye.",
+                    )
+                  : t(
+                      "This helps Loji show setup progress. You will add each room’s rate and capacity after registration.",
+                      "Hii husaidia Loji kuonyesha maendeleo ya usanidi. Utaongeza bei na uwezo wa kila chumba baada ya usajili.",
+                    )}
+              </FriendlyNote>
+            </Stack>
+          )
+        ) : null}
 
-          <FormSection
-            description={t(
-              "Select every facility currently available to guests.",
-              "Chagua kila huduma inayopatikana kwa wageni sasa.",
-            )}
-            title={t("Amenities", "Huduma")}
-          >
-            <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+        {activeStep === 4 ? (
+          <Stack spacing={1.5}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {amenities.map((item) => {
-                const selected = selectedAmenities.includes(item.value);
+                const selected = draft.amenities.includes(item.value);
                 return (
                   <Chip
                     aria-pressed={selected}
                     clickable
                     color={selected ? "primary" : "default"}
-                    disabled={controller.loading}
                     key={item.value}
                     label={t(item.label[0], item.label[1])}
                     onClick={() =>
-                      setSelectedAmenities((current) =>
+                      setField(
+                        "amenities",
                         selected
-                          ? current.filter((value) => value !== item.value)
-                          : [...current, item.value],
+                          ? draft.amenities.filter(
+                              (value) => value !== item.value,
+                            )
+                          : [...draft.amenities, item.value],
                       )
                     }
                     variant={selected ? "filled" : "outlined"}
                   />
                 );
               })}
-            </Stack>
-          </FormSection>
+            </Box>
+            <FriendlyNote>
+              {draft.amenities.length
+                ? t(
+                    `${draft.amenities.length} selected.`,
+                    `Huduma ${draft.amenities.length} zimechaguliwa.`,
+                  )
+                : t(
+                    "Nothing selected yet. You may skip this and add amenities later.",
+                    "Bado hujachagua. Unaweza kuruka na kuongeza huduma baadaye.",
+                  )}
+            </FriendlyNote>
+          </Stack>
+        ) : null}
 
-          <FormSection
-            description={t(
-              "Add 1–3 JPG, PNG or WebP photos, up to 5 MB each. The first becomes the cover.",
-              "Ongeza picha 1–3 za JPG, PNG au WebP, hadi MB 5 kila moja. Ya kwanza itakuwa jalada.",
-            )}
-            title={t("Property photos", "Picha za biashara")}
-          >
+        {activeStep === 5 ? (
+          <Stack spacing={1.5}>
             <Box
               sx={{
                 display: "grid",
-                gap: 1.5,
+                gap: 1.25,
                 gridTemplateColumns: {
-                  xs: "minmax(0, 1fr)",
-                  sm: "repeat(3, minmax(0, 1fr))",
+                  xs: "1fr",
+                  sm: "repeat(3,minmax(0,1fr))",
                 },
               }}
             >
@@ -340,7 +618,7 @@ export function PropertyBasicForm() {
                 <Box
                   key={url}
                   sx={{
-                    aspectRatio: "4 / 3",
+                    aspectRatio: "4/3",
                     bgcolor: "action.hover",
                     borderRadius: 2,
                     overflow: "hidden",
@@ -349,11 +627,11 @@ export function PropertyBasicForm() {
                 >
                   <Image
                     alt={t(
-                      `Property photo ${index + 1}: ${file.name}`,
-                      `Picha ya biashara ${index + 1}: ${file.name}`,
+                      `Property photo ${index + 1}`,
+                      `Picha ya biashara ${index + 1}`,
                     )}
                     fill
-                    sizes="(max-width: 599px) calc(100vw - 64px), 220px"
+                    sizes="(max-width: 599px) 100vw, 220px"
                     src={url}
                     style={{ objectFit: "cover" }}
                     unoptimized
@@ -367,16 +645,18 @@ export function PropertyBasicForm() {
                     />
                   ) : null}
                   <IconButton
-                    aria-label={t("Remove photo", "Ondoa picha")}
-                    disabled={controller.loading}
+                    aria-label={t(
+                      `Remove ${file.name}`,
+                      `Ondoa ${file.name}`,
+                    )}
                     onClick={() =>
                       setFiles((current) =>
-                        current.filter((_, fileIndex) => fileIndex !== index),
+                        current.filter((_, item) => item !== index),
                       )
                     }
                     size="small"
                     sx={{
-                      bgcolor: "rgba(0,0,0,.66)",
+                      bgcolor: "rgba(0,0,0,.68)",
                       color: "white",
                       position: "absolute",
                       right: 8,
@@ -384,24 +664,24 @@ export function PropertyBasicForm() {
                       "&:hover": { bgcolor: "rgba(0,0,0,.82)" },
                     }}
                   >
-                    <CloseRoundedIcon />
+                    <CloseRoundedIcon fontSize="small" />
                   </IconButton>
                 </Box>
               ))}
-
               {files.length < MAX_PROPERTY_IMAGES ? (
                 <Button
                   component="label"
-                  disabled={controller.loading}
                   startIcon={<AddPhotoAlternateRoundedIcon />}
                   sx={{
-                    aspectRatio: "4 / 3",
+                    aspectRatio: "4/3",
                     borderStyle: "dashed",
-                    minHeight: 128,
+                    minHeight: 136,
                   }}
                   variant="outlined"
                 >
-                  {t("Add photos", "Ongeza picha")}
+                  {files.length
+                    ? t("Add another", "Ongeza nyingine")
+                    : t("Choose photos", "Chagua picha")}
                   <input
                     accept={PROPERTY_IMAGE_TYPES.join(",")}
                     hidden
@@ -412,59 +692,314 @@ export function PropertyBasicForm() {
                 </Button>
               ) : null}
             </Box>
-          </FormSection>
-
-          <Stack spacing={1.5} sx={{ pt: 0.5 }}>
-            {localError || controller.error ? (
-              <Alert severity="error">{localError || controller.error}</Alert>
-            ) : null}
-            {controller.loading ? (
-              <Alert icon={<CircularProgress size={18} />} severity="info">
-                {progressLabel}
-              </Alert>
-            ) : null}
-            <Button
-              disabled={controller.loading}
-              fullWidth
-              size="large"
-              type="submit"
-              variant="contained"
-            >
-              {controller.loading ? progressLabel : t("Save and continue", "Hifadhi na endelea")}
-            </Button>
-            <Typography color="text.secondary" sx={{ textAlign: "center" }} variant="caption">
+            <FriendlyNote>
               {t(
-                "If an upload is interrupted, retrying continues with the same property.",
-                "Upakiaji ukikatika, kujaribu tena kutaendelea na biashara hiyo hiyo.",
+                "Photos are optional now. Add up to 3 clear exterior or common-area photos; room or apartment photos are added separately.",
+                "Picha si lazima sasa. Ongeza hadi picha 3 zilizo wazi za nje au maeneo ya pamoja; picha za chumba au fleti huongezwa tofauti.",
               )}
-            </Typography>
+            </FriendlyNote>
           </Stack>
+        ) : null}
+
+        {localError || controller.error ? (
+          <Alert severity="error">{localError || controller.error}</Alert>
+        ) : null}
+        {controller.loading ? (
+          <Alert icon={<CircularProgress size={18} />} severity="info">
+            {progressLabel}
+          </Alert>
+        ) : null}
+
+        <Stack
+          direction={{ xs: "column-reverse", sm: "row" }}
+          spacing={1.25}
+          sx={{
+            alignItems: { sm: "center" },
+            justifyContent: "space-between",
+            pt: 0.5,
+          }}
+        >
+          <Typography color="text.secondary" variant="caption">
+            {t(
+              `Step ${activeStep + 1} of 6`,
+              `Hatua ya ${activeStep + 1} kati ya 6`,
+            )}
+          </Typography>
+          <Button
+            disabled={controller.loading}
+            endIcon={
+              activeStep === 5 ? (
+                <CheckCircleRoundedIcon />
+              ) : (
+                <ArrowForwardRoundedIcon />
+              )
+            }
+            onClick={() => void continueForward()}
+            size="large"
+            sx={{ minWidth: { sm: 190 } }}
+            variant="contained"
+          >
+            {controller.loading
+              ? progressLabel
+              : activeStep === 5
+                ? t("Save and set location", "Hifadhi na weka eneo")
+                : t("Continue", "Endelea")}
+          </Button>
         </Stack>
-      </Box>
+      </Stack>
     </OnboardingFrame>
   );
 }
 
-function FormSection({
+function PropertyTypeChoices({
+  onChange,
+  selected,
+}: {
+  onChange: (value: PropertyType) => void;
+  selected: PropertyType;
+}) {
+  const { t } = useLanguage();
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gap: 1.25,
+        gridTemplateColumns: {
+          xs: "1fr",
+          sm: "repeat(2,minmax(0,1fr))",
+        },
+      }}
+    >
+      {propertyTypeDefinitions.map((item) => {
+        const active = item.value === selected;
+        return (
+          <ButtonBase
+            aria-pressed={active}
+            key={item.value}
+            onClick={() => onChange(item.value)}
+            sx={{
+              alignItems: "flex-start",
+              border: "1px solid",
+              borderColor: active ? "primary.main" : "divider",
+              borderRadius: 2.5,
+              bgcolor: active
+                ? "color-mix(in srgb, var(--mui-palette-primary-main) 7%, transparent)"
+                : "background.paper",
+              gap: 1.5,
+              justifyContent: "flex-start",
+              minHeight: 112,
+              p: 2,
+              textAlign: "left",
+              transition:
+                "border-color 150ms ease, background-color 150ms ease, transform 150ms ease",
+              width: "100%",
+              "&:hover": {
+                borderColor: "primary.main",
+                transform: "translateY(-1px)",
+              },
+              "&:focus-visible": {
+                outline: "3px solid",
+                outlineColor: "primary.light",
+                outlineOffset: 2,
+              },
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: active ? "primary.main" : "action.hover",
+                borderRadius: 1.75,
+                color: active ? "primary.contrastText" : "text.secondary",
+                display: "grid",
+                flexShrink: 0,
+                height: 40,
+                placeItems: "center",
+                width: 40,
+              }}
+            >
+              {item.inventoryType === "house" ? (
+                <HomeWorkRoundedIcon fontSize="small" />
+              ) : (
+                <ApartmentRoundedIcon fontSize="small" />
+              )}
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ alignItems: "center", justifyContent: "space-between" }}
+              >
+                <Typography sx={{ fontWeight: 700 }}>
+                  {t(item.label[0], item.label[1])}
+                </Typography>
+                {active ? (
+                  <CheckCircleRoundedIcon color="primary" fontSize="small" />
+                ) : null}
+              </Stack>
+              <Typography
+                color="text.secondary"
+                sx={{ lineHeight: 1.55, mt: 0.45 }}
+                variant="body2"
+              >
+                {t(item.shortDescription[0], item.shortDescription[1])}
+              </Typography>
+            </Box>
+          </ButtonBase>
+        );
+      })}
+    </Box>
+  );
+}
+
+function FriendlyNote({
   children,
-  description,
-  title,
+  sx,
 }: {
   children: ReactNode;
-  description: ReactNode;
-  title: ReactNode;
+  sx?: object;
 }) {
   return (
-    <Stack spacing={2} sx={{ py: 0.5 }}>
-      <Box>
-        <Typography component="h3" variant="h5">
-          {title}
-        </Typography>
-        <Typography color="text.secondary" sx={{ mt: 0.35 }} variant="body2">
-          {description}
-        </Typography>
-      </Box>
-      {children}
-    </Stack>
+    <Box sx={{ bgcolor: "action.hover", borderRadius: 2, px: 1.75, py: 1.35, ...sx }}>
+      <Typography color="text.secondary" sx={{ lineHeight: 1.55 }} variant="body2">
+        {children}
+      </Typography>
+    </Box>
   );
+}
+
+function numericValue(value: string, fallback: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function propertyNamePlaceholder(
+  type: PropertyType,
+  t: (english: string, swahili: string) => string,
+) {
+  if (type === "apartment") {
+    return t("e.g. Bahari Apartments", "mf. Bahari Apartments");
+  }
+  if (type === "house" || type === "villa") {
+    return t(
+      "e.g. Mikocheni Family Home",
+      "mf. Nyumba ya Familia Mikocheni",
+    );
+  }
+  if (type === "guesthouse") {
+    return t("e.g. Amani Guesthouse", "mf. Amani Guesthouse");
+  }
+  return t("e.g. Bahari Hotel", "mf. Bahari Hotel");
+}
+
+function screenContent(
+  step: number,
+  inventoryType: InventoryType,
+  plural: readonly [string, string],
+  t: (english: string, swahili: string) => string,
+) {
+  const screens = [
+    {
+      title: t(
+        "Start with what you manage.",
+        "Anza na unachosimamia.",
+      ),
+      question: t(
+        "Which option best describes your property?",
+        "Ni chaguo gani linaeleza biashara yako vizuri?",
+      ),
+      description: t(
+        "Your answer changes the words, fields and operating flow Loji shows your team.",
+        "Jibu lako litabadilisha maneno, sehemu za kujaza na mtiririko ambao Loji itaonyesha timu yako.",
+      ),
+    },
+    {
+      title: t(
+        "Give your workspace a familiar name.",
+        "Ipe sehemu yako ya kazi jina linalofahamika.",
+      ),
+      question: t(
+        "What should we call this property?",
+        "Tuiite biashara hii jina gani?",
+      ),
+      description: t(
+        "This name appears on the dashboard, bookings and staff workspace.",
+        "Jina hili litaonekana kwenye dashibodi, uhifadhi na eneo la kazi la timu.",
+      ),
+    },
+    {
+      title: t(
+        "How can people reach the business?",
+        "Watu watawasiliana na biashara vipi?",
+      ),
+      question: t(
+        "Add the main contact details.",
+        "Ongeza mawasiliano makuu.",
+      ),
+      description: t(
+        "Use a phone number your front desk, manager or owner actively monitors.",
+        "Tumia namba ya simu inayofuatiliwa na mapokezi, meneja au mmiliki.",
+      ),
+    },
+    {
+      title:
+        inventoryType === "house"
+          ? t("Tell us about the whole home.", "Tueleze kuhusu nyumba nzima.")
+          : t(
+              `Help us size your ${plural[0]}.`,
+              `Tusaidie kuelewa idadi ya ${plural[1]}.`,
+            ),
+      question:
+        inventoryType === "house"
+          ? t("How is the home laid out?", "Nyumba imepangwaje?")
+          : inventoryType === "apartment"
+            ? t(
+                "How many units are booked separately?",
+                "Units ngapi huhifadhiwa tofauti?",
+              )
+            : t(
+                "How many guest rooms do you manage?",
+                "Unasimamia vyumba vingapi vya wageni?",
+              ),
+      description:
+        inventoryType === "apartment"
+          ? t(
+              "A 2-bedroom and a 3-bedroom apartment are separate bookable units, each with its own rate and availability.",
+              "Fleti ya vyumba 2 na ya vyumba 3 ni units tofauti; kila moja ina bei na upatikanaji wake.",
+            )
+          : inventoryType === "house"
+            ? t(
+                "Loji will treat this as one entire-home booking, with bedrooms and bathrooms inside it.",
+                "Loji itaitambua kama nyumba moja nzima ya kuhifadhi, yenye vyumba vya kulala na bafu ndani yake.",
+              )
+            : t(
+                "You will add each room’s name, capacity and price after this short registration.",
+                "Utaongeza jina, uwezo na bei ya kila chumba baada ya usajili huu mfupi.",
+              ),
+    },
+    {
+      title: t("What can guests expect?", "Wageni watapata huduma gani?"),
+      question: t(
+        "Choose the amenities available across the property.",
+        "Chagua huduma zinazopatikana kwenye biashara.",
+      ),
+      description: t(
+        "Select what is available today. This step is optional and easy to update later.",
+        "Chagua vinavyopatikana sasa. Hatua hii si lazima na ni rahisi kubadili baadaye.",
+      ),
+    },
+    {
+      title: t(
+        "Make the property easy to recognise.",
+        "Fanya biashara iwe rahisi kutambulika.",
+      ),
+      question: t(
+        "Would you like to add a few property photos?",
+        "Ungependa kuongeza picha chache za biashara?",
+      ),
+      description: t(
+        "You may skip photos now. The next and final step is confirming the property location.",
+        "Unaweza kuruka picha sasa. Hatua inayofuata na ya mwisho ni kuthibitisha eneo la biashara.",
+      ),
+    },
+  ];
+  return screens[step] ?? screens[0];
 }

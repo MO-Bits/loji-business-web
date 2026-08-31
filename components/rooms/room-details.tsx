@@ -37,6 +37,7 @@ import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { formatLocalDate, formatLocalDateTime } from "@/lib/date-time";
 import { createClient } from "@/lib/supabase/client";
 import { housekeepingOptions, RoomStatusPill } from "./room-status";
+import { getInventoryDefinition } from "@/features/property/property-type";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -129,6 +130,9 @@ export function RoomDetails({ roomId }: { roomId: string }) {
   }
 
   const room = workspace.room;
+  const definition = getInventoryDefinition(room.inventoryType);
+  const singular = t(definition.inventorySingular[0], definition.inventorySingular[1]);
+  const plural = t(definition.inventoryPlural[0], definition.inventoryPlural[1]);
   // Once the workspace has loaded, the server projection is authoritative.
   // A stale client session must never re-enable an action the RPC denied.
   const canManage = workspace.capabilities.manageRooms;
@@ -157,33 +161,33 @@ export function RoomDetails({ roomId }: { roomId: string }) {
     <WorkspacePage>
       <Stack spacing={{ xs: 2.25, sm: 3 }}>
         <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
-          <IconButton aria-label={t("Back to rooms", "Rudi kwenye vyumba")} onClick={() => router.push("/rooms")} sx={{ border: 1, borderColor: "divider", mt: 0.2 }}><ArrowBackRoundedIcon fontSize="small" /></IconButton>
+          <IconButton aria-label={t(`Back to ${plural}`, `Rudi kwenye ${plural}`)} onClick={() => router.push("/rooms")} sx={{ border: 1, borderColor: "divider", mt: 0.2 }}><ArrowBackRoundedIcon fontSize="small" /></IconButton>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <PageHeader
-              eyebrow={t("Room workspace", "Eneo la chumba")}
+              eyebrow={t(definition.inventoryBoard[0], definition.inventoryBoard[1])}
               title={room.name}
               description={t(
-                `${room.roomType} · ${room.capacity} guests · ${room.bedCount} ${room.bedCount === 1 ? "bed" : "beds"}`,
-                `${room.roomType} · wageni ${room.capacity} · vitanda ${room.bedCount}`,
+                `${room.roomType} · ${room.capacity} guests · ${room.bedCount} ${room.bedCount === 1 ? "bed" : "beds"}${room.inventoryType !== "room" ? ` · ${room.bedroomCount} bedrooms · ${room.bathroomCount} bathrooms` : ""}`,
+                `${room.roomType} · wageni ${room.capacity} · vitanda ${room.bedCount}${room.inventoryType !== "room" ? ` · vyumba vya kulala ${room.bedroomCount} · bafu ${room.bathroomCount}` : ""}`,
               )}
               action={(
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                   {canCreateBooking && room.isActive ? <Button component={Link} href={`/bookings/new?room=${room.id}`} startIcon={<CalendarMonthRoundedIcon />} variant="contained">{t("New booking", "Uhifadhi mpya")}</Button> : null}
-                  {canManage ? <Button component={Link} href={`/rooms/${room.id}/edit`} startIcon={<EditRoundedIcon />} variant="outlined">{t("Edit room", "Hariri chumba")}</Button> : null}
+                  {canManage ? <Button component={Link} href={`/rooms/${room.id}/edit`} startIcon={<EditRoundedIcon />} variant="outlined">{t(`Edit ${singular}`, `Hariri ${singular}`)}</Button> : null}
                 </Stack>
               )}
             />
           </Box>
         </Stack>
 
-        <RoomGallery activeImage={activeImage} images={room.images} name={room.name} onSelect={setActiveImage} />
+        <RoomGallery activeImage={activeImage} images={room.images} name={room.name} onSelect={setActiveImage} singular={singular} />
 
         <Box sx={{ alignItems: "start", display: "grid", gap: { xs: 2, lg: 3 }, gridTemplateColumns: { xs: "minmax(0,1fr)", lg: "minmax(0,1.45fr) minmax(300px,.75fr)" } }}>
           <Stack spacing={{ xs: 2, sm: 2.5 }}>
             <Surface>
               <SectionHeading
                 eyebrow={t("Live operations", "Uendeshaji wa sasa")}
-                title={t("Today in this room", "Leo katika chumba hiki")}
+                title={t(`Today in this ${singular}`, `Leo katika ${singular} hii`)}
                 description={t(`Property business date: ${formatLocalDate(workspace.property.businessDate)}`, `Tarehe ya biashara: ${formatLocalDate(workspace.property.businessDate)}`)}
                 action={<RoomStatusPill status={room.operationalStatus} t={t} />}
               />
@@ -194,7 +198,7 @@ export function RoomDetails({ roomId }: { roomId: string }) {
             </Surface>
 
             <Surface>
-              <SectionHeading eyebrow={t("Reservation pipeline", "Mpangilio wa uhifadhi")} title={t("Upcoming stays", "Ukaaji ujao")} description={t("The next confirmed stays assigned to this room.", "Ukaaji ujao uliothibitishwa na kupangiwa chumba hiki.")} />
+              <SectionHeading eyebrow={t("Reservation pipeline", "Mpangilio wa uhifadhi")} title={t("Upcoming stays", "Ukaaji ujao")} description={t(`The next confirmed stays assigned to this ${singular}.`, `Ukaaji ujao uliothibitishwa na kupangiwa ${singular} hii.`)} />
               <Stack divider={<Divider flexItem />} sx={{ mt: 1.5 }}>
                 {workspace.upcomingStays.length ? workspace.upcomingStays.map((stay) => <UpcomingStay key={stay.id} stay={stay} />) : (
                   <EmptyState description={t("Future bookings assigned here will appear in date order.", "Uhifadhi ujao uliopangiwa hapa utaonekana kwa mpangilio wa tarehe.")} icon={<CalendarMonthRoundedIcon />} title={t("No upcoming stays", "Hakuna ukaaji ujao")} />
@@ -218,13 +222,13 @@ export function RoomDetails({ roomId }: { roomId: string }) {
               <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
                 <Box>
                   <Typography color="text.secondary" variant="overline">{t("Housekeeping", "Usafi")}</Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>{t("Room readiness", "Utayari wa chumba")}</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>{t(`${singular} readiness`, `Utayari wa ${singular}`)}</Typography>
                 </Box>
                 <CleaningServicesRoundedIcon color="primary" />
               </Stack>
               <Box sx={{ bgcolor: "action.hover", borderRadius: 2.5, mt: 2, p: 2 }}>
                 <RoomStatusPill status={room.operationalStatus} t={t} />
-                <Typography color="text.secondary" sx={{ lineHeight: 1.55, mt: 1 }} variant="body2">{housekeepingDescription(room.housekeepingStatus, t)}</Typography>
+                <Typography color="text.secondary" sx={{ lineHeight: 1.55, mt: 1 }} variant="body2">{housekeepingDescription(room.housekeepingStatus, singular, t)}</Typography>
                 {room.housekeepingNotes ? <Typography sx={{ mt: 1.25, overflowWrap: "anywhere" }} variant="body2">“{room.housekeepingNotes}”</Typography> : null}
                 {room.housekeepingUpdatedAt ? <Typography color="text.secondary" sx={{ display: "block", mt: 1.25 }} variant="caption">{t("Updated", "Imesasishwa")} {formatLocalDateTime(room.housekeepingUpdatedAt)}</Typography> : null}
               </Box>
@@ -232,17 +236,19 @@ export function RoomDetails({ roomId }: { roomId: string }) {
             </Surface>
 
             <Surface>
-              <SectionHeading title={t("Room configuration", "Mpangilio wa chumba")} />
+              <SectionHeading title={t(`${singular} configuration`, `Mpangilio wa ${singular}`)} />
               <Stack divider={<Divider flexItem />} sx={{ mt: 1.25 }}>
-                <InfoRow icon={<SellRoundedIcon />} label={t("Room type", "Aina ya chumba")} value={room.roomType} />
+                <InfoRow icon={<SellRoundedIcon />} label={t(`${singular} type`, `Aina ya ${singular}`)} value={room.roomType} />
                 <InfoRow icon={<GroupRoundedIcon />} label={t("Guest capacity", "Uwezo wa wageni")} value={`${room.capacity}`} />
                 <InfoRow icon={<BedRoundedIcon />} label={t("Beds", "Vitanda")} value={`${room.bedCount}`} />
+                {room.inventoryType !== "room" ? <InfoRow icon={<BedRoundedIcon />} label={t("Bedrooms", "Vyumba vya kulala")} value={`${room.bedroomCount}`} /> : null}
+                {room.inventoryType !== "room" ? <InfoRow icon={<CheckCircleRoundedIcon />} label={t("Bathrooms", "Bafu")} value={`${room.bathroomCount}`} /> : null}
                 <InfoRow icon={<PaymentsRoundedIcon />} label={t("Nightly rate", "Bei kwa usiku")} value={money.format(room.pricePerNight)} />
                 <InfoRow icon={<CheckCircleRoundedIcon />} label={t("Inventory", "Orodha")} value={room.isActive ? t("Active", "Kinatumika") : t("Inactive", "Kimezimwa")} />
               </Stack>
             </Surface>
 
-            <Button onClick={() => void refresh()} startIcon={<RefreshRoundedIcon />} variant="text">{t("Refresh room data", "Pakua upya taarifa za chumba")}</Button>
+            <Button onClick={() => void refresh()} startIcon={<RefreshRoundedIcon />} variant="text">{t(`Refresh ${singular} data`, `Pakua upya taarifa za ${singular}`)}</Button>
           </Stack>
         </Box>
       </Stack>
@@ -250,11 +256,11 @@ export function RoomDetails({ roomId }: { roomId: string }) {
   );
 }
 
-function RoomGallery({ activeImage, images, name, onSelect }: { activeImage: number; images: string[]; name: string; onSelect: (index: number) => void }) {
+function RoomGallery({ activeImage, images, name, onSelect, singular }: { activeImage: number; images: string[]; name: string; onSelect: (index: number) => void; singular: string }) {
   const { t } = useLanguage();
   if (!images.length) return (
     <Surface sx={{ bgcolor: "action.hover", display: "grid", minHeight: { xs: 240, sm: 360 }, placeItems: "center" }}>
-      <Stack spacing={1} sx={{ alignItems: "center", color: "text.secondary" }}><ImageRoundedIcon sx={{ fontSize: 42 }} /><Typography variant="body2">{t("No room photos yet", "Hakuna picha za chumba bado")}</Typography></Stack>
+      <Stack spacing={1} sx={{ alignItems: "center", color: "text.secondary" }}><ImageRoundedIcon sx={{ fontSize: 42 }} /><Typography variant="body2">{t(`No ${singular} photos yet`, `Hakuna picha za ${singular} bado`)}</Typography></Stack>
     </Surface>
   );
   const selected = Math.min(activeImage, images.length - 1);
@@ -307,9 +313,9 @@ function HousekeepingAction({ disabled, onChange, status }: { disabled: boolean;
   return <><Button disabled={disabled} fullWidth onClick={(event) => setAnchor(event.currentTarget)} sx={{ mt: 1.5 }} variant="outlined">{disabled ? t("Updating…", "Inabadilisha…") : t("Update housekeeping", "Badili hali ya usafi")}</Button><Menu anchorEl={anchor} onClose={() => setAnchor(null)} open={Boolean(anchor)}>{housekeepingOptions.map((option) => <MenuItem disabled={option.value === status} key={option.value} onClick={() => { setAnchor(null); void onChange(option.value); }}>{t(option.label, option.swahili)}</MenuItem>)}</Menu></>;
 }
 
-function housekeepingDescription(status: HousekeepingStatus, t: (english: string, swahili: string) => string): string {
-  if (status === "ready") return t("Housekeeping has cleared this room for the next guest.", "Usafi umethibitisha chumba hiki kwa mgeni anayefuata.");
-  if (status === "needs_cleaning") return t("This room is waiting to enter the cleaning queue.", "Chumba hiki kinasubiri kuingia kwenye foleni ya usafi.");
-  if (status === "cleaning") return t("Housekeeping is currently preparing this room.", "Wahudumu wa usafi wanaandaa chumba hiki sasa.");
-  return t("The room is blocked from sale until service is restored.", "Chumba kimezuiwa kuuzwa hadi kitakapotengenezwa.");
+function housekeepingDescription(status: HousekeepingStatus, singular: string, t: (english: string, swahili: string) => string): string {
+  if (status === "ready") return t(`Housekeeping has cleared this ${singular} for the next guest.`, `Usafi umethibitisha ${singular} hii kwa mgeni anayefuata.`);
+  if (status === "needs_cleaning") return t(`This ${singular} is waiting to enter the cleaning queue.`, `${singular} hii inasubiri kuingia kwenye foleni ya usafi.`);
+  if (status === "cleaning") return t(`Housekeeping is currently preparing this ${singular}.`, `Wahudumu wa usafi wanaandaa ${singular} hii sasa.`);
+  return t(`The ${singular} is blocked from sale until service is restored.`, `${singular} imezuiwa kuuzwa hadi itakapotengenezwa.`);
 }

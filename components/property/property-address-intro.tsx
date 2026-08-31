@@ -62,15 +62,19 @@ export function PropertyAddressIntro() {
       eyebrow={t("Property location", "Eneo la biashara")}
       icon={<MapRoundedIcon />}
       panelDescription={t(
-        "The map will suggest an address from your selected pin",
-        "Ramani itapendekeza anwani kutokana na pini uliyochagua",
+        "Final step — the map will suggest an address from your pin",
+        "Hatua ya mwisho — ramani itapendekeza anwani kutokana na pini",
       )}
       panelTitle={t("Set an accurate location", "Weka eneo sahihi")}
-      step={3}
+      step={7}
       steps={[
-        t("Personal profile", "Wasifu binafsi"),
-        t("Property details", "Taarifa za biashara"),
-        t("Location & finish", "Eneo na kumaliza"),
+        t("Property type", "Aina ya biashara"),
+        t("Property name", "Jina la biashara"),
+        t("Contact", "Mawasiliano"),
+        t("Bookable spaces", "Sehemu za kuhifadhi"),
+        t("Amenities", "Huduma"),
+        t("Photos", "Picha"),
+        t("Location", "Eneo"),
       ]}
       title={t("Where is your property?", "Biashara yako iko wapi?")}
     >

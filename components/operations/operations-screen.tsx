@@ -50,6 +50,7 @@ import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import { formatLocalDate } from "@/lib/date-time";
 import { createClient } from "@/lib/supabase/client";
 import { housekeepingOptions, RoomStatusPill } from "@/components/rooms/room-status";
+import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 type Lane = "arrivals" | "departures" | "housekeeping";
 type HousekeepingFilter = "attention" | "all" | HousekeepingStatus;
@@ -73,6 +74,15 @@ export function OperationsScreen() {
   const error = errorState && errorState.propertyId === propertyId ? errorState.message : null;
   const dataLoading = loading || Boolean(boardState && boardState.property.id !== propertyId);
   const localCapabilities = getWorkspaceCapabilities(session?.activeRole);
+  const propertyDefinition = getPropertyTypeDefinition(session?.property?.type);
+  const inventorySingular = t(
+    propertyDefinition.inventorySingular[0],
+    propertyDefinition.inventorySingular[1],
+  );
+  const inventoryPlural = t(
+    propertyDefinition.inventoryPlural[0],
+    propertyDefinition.inventoryPlural[1],
+  );
 
   useEffect(() => {
     activePropertyId.current = propertyId;
@@ -167,7 +177,7 @@ export function OperationsScreen() {
       }
     } catch (cause) {
       if (activePropertyId.current === actionPropertyId) {
-        feedback.error(cause instanceof Error ? cause.message : t("Unable to update room.", "Imeshindikana kubadili chumba."));
+        feedback.error(cause instanceof Error ? cause.message : t(`Unable to update ${inventorySingular}.`, `Imeshindikana kubadili ${inventorySingular}.`));
       }
     } finally {
       if (activePropertyId.current === actionPropertyId) setPendingId(null);
@@ -203,7 +213,7 @@ export function OperationsScreen() {
           eyebrow={t("Daily control center", "Kituo cha udhibiti wa siku")}
           title={t("Operations", "Uendeshaji")}
           description={board?.property.businessDate
-            ? t(`Arrivals, departures, and room readiness for ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`, `Wanaowasili, wanaotoka na utayari wa vyumba kwa ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`)
+            ? t(`Arrivals, departures, and ${inventoryPlural} readiness for ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`, `Wanaowasili, wanaotoka na utayari wa ${inventoryPlural} kwa ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`)
             : t("Run the front desk and housekeeping handoff from one live board.", "Endesha mapokezi na usafi kutoka kwenye ubao mmoja.")}
           action={canCreateBooking ? <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained">{t("New booking", "Uhifadhi mpya")}</Button> : undefined}
         />
@@ -211,8 +221,8 @@ export function OperationsScreen() {
         <Box sx={{ display: "grid", gap: { xs: 1.25, sm: 1.5 }, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", lg: "repeat(4,minmax(0,1fr))" } }}>
           <MetricCell caption={summary?.overdueArrivals ? t(`${summary.overdueArrivals} overdue`, `${summary.overdueArrivals} wamechelewa`) : t("Expected today", "Wanatarajiwa leo")} icon={<FlightLandRoundedIcon />} label={t("Arrivals due", "Wanaowasili")} tone={summary?.overdueArrivals ? "warning" : "info"} value={summary?.arrivalsDue ?? 0} />
           <MetricCell caption={summary?.overdueDepartures ? t(`${summary.overdueDepartures} overdue`, `${summary.overdueDepartures} wamechelewa`) : t("Expected today", "Wanatarajiwa leo")} icon={<FlightTakeoffRoundedIcon />} label={t("Departures due", "Wanaotoka")} tone={summary?.overdueDepartures ? "warning" : "neutral"} value={summary?.departuresDue ?? 0} />
-          <MetricCell caption={t("Guests currently checked in", "Wageni waliopo sasa")} icon={<HotelRoundedIcon />} label={t("In house", "Waliopo hotelini")} tone="info" value={summary?.inHouse ?? 0} />
-          <MetricCell caption={t(`${summary?.readyRooms ?? 0} rooms ready`, `Vyumba ${summary?.readyRooms ?? 0} tayari`)} icon={<CleaningServicesRoundedIcon />} label={t("Room attention", "Uangalizi wa vyumba")} tone={attention ? "warning" : "success"} value={attention} />
+          <MetricCell caption={t("Guests currently checked in", "Wageni waliopo sasa")} icon={<HotelRoundedIcon />} label={t("In house", "Wageni waliopo")} tone="info" value={summary?.inHouse ?? 0} />
+          <MetricCell caption={t(`${summary?.readyRooms ?? 0} ${inventoryPlural} ready`, `${inventoryPlural} ${summary?.readyRooms ?? 0} tayari`)} icon={<CleaningServicesRoundedIcon />} label={t(`${inventorySingular} attention`, `Uangalizi wa ${inventorySingular}`)} tone={attention ? "warning" : "success"} value={attention} />
         </Box>
 
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}>
@@ -261,6 +271,8 @@ export function OperationsScreen() {
                 pendingId={pendingId}
                 rooms={housekeeping}
                 total={board?.housekeeping.length ?? 0}
+                inventorySingular={inventorySingular}
+                inventoryPlural={inventoryPlural}
               />
             </Box>
           </Box>
@@ -270,7 +282,7 @@ export function OperationsScreen() {
       <Dialog fullWidth maxWidth="xs" onClose={() => setCheckInTarget(null)} open={Boolean(checkInTarget && board)}>
         <DialogTitle>{t("Confirm guest check-in", "Thibitisha kuingia kwa mgeni")}</DialogTitle>
         <DialogContent>
-          <Typography color="text.secondary" variant="body2">{t(`Check in ${checkInTarget?.guestName ?? "this guest"} to ${checkInTarget?.roomName ?? "the assigned room"}? This will move the booking into the in-house list.`, `Mwingize ${checkInTarget?.guestName ?? "mgeni huyu"} kwenye ${checkInTarget?.roomName ?? "chumba alichopangiwa"}? Uhifadhi utahamia kwenye orodha ya waliopo.`)}</Typography>
+          <Typography color="text.secondary" variant="body2">{t(`Check in ${checkInTarget?.guestName ?? "this guest"} to ${checkInTarget?.roomName ?? `the assigned ${inventorySingular}`}? This will move the booking into the current-stays list.`, `Mwingize ${checkInTarget?.guestName ?? "mgeni huyu"} kwenye ${checkInTarget?.roomName ?? inventorySingular} aliyopangiwa? Uhifadhi utahamia kwenye orodha ya waliopo.`)}</Typography>
         </DialogContent>
         <DialogActions><Button onClick={() => setCheckInTarget(null)}>{t("Cancel", "Ghairi")}</Button><Button onClick={() => void confirmCheckIn()} variant="contained">{t("Confirm check-in", "Thibitisha kuingia")}</Button></DialogActions>
       </Dialog>
@@ -304,11 +316,11 @@ function BookingLane({ action, bookings, emptyDescription, emptyTitle, icon, tit
   );
 }
 
-function HousekeepingLane({ canManage, filter, onFilter, onUpdate, pendingId, rooms, total }: { canManage: boolean; filter: HousekeepingFilter; onFilter: (filter: HousekeepingFilter) => void; onUpdate: (room: RoomBoardItem, status: HousekeepingStatus) => Promise<void>; pendingId: string | null; rooms: RoomBoardItem[]; total: number }) {
+function HousekeepingLane({ canManage, filter, inventoryPlural, inventorySingular, onFilter, onUpdate, pendingId, rooms, total }: { canManage: boolean; filter: HousekeepingFilter; inventoryPlural: string; inventorySingular: string; onFilter: (filter: HousekeepingFilter) => void; onUpdate: (room: RoomBoardItem, status: HousekeepingStatus) => Promise<void>; pendingId: string | null; rooms: RoomBoardItem[]; total: number }) {
   const { t } = useLanguage();
   return (
     <Surface padding={false}>
-      <Box sx={{ p: 2 }}><SectionHeading action={<StatusPill label={`${total}`} tone="neutral" />} eyebrow={t("Room readiness", "Utayari wa vyumba")} title={t("Housekeeping", "Usafi")} /></Box>
+      <Box sx={{ p: 2 }}><SectionHeading action={<StatusPill label={`${total}`} tone="neutral" />} eyebrow={t(`${inventorySingular} readiness`, `Utayari wa ${inventoryPlural}`)} title={t("Housekeeping", "Usafi")} /></Box>
       <Divider />
       <Box sx={{ overflowX: "auto", p: 1.25 }}><ToggleButtonGroup exclusive onChange={(_, value: HousekeepingFilter | null) => value && onFilter(value)} size="small" sx={{ minWidth: "max-content" }} value={filter}><ToggleButton value="attention">{t("Attention", "Uangalizi")}</ToggleButton><ToggleButton value="needs_cleaning">{t("Dirty", "Vichafu")}</ToggleButton><ToggleButton value="cleaning">{t("Cleaning", "Usafi")}</ToggleButton><ToggleButton value="ready">{t("Ready", "Tayari")}</ToggleButton><ToggleButton value="all">{t("All", "Vyote")}</ToggleButton></ToggleButtonGroup></Box>
       <Divider />
@@ -318,7 +330,7 @@ function HousekeepingLane({ canManage, filter, onFilter, onUpdate, pendingId, ro
           <Box component={Link} href={`/rooms/${room.id}`} sx={{ color: "inherit", flex: 1, minWidth: 0, textDecoration: "none" }}><Typography noWrap variant="body2" sx={{ fontWeight: 700 }}>{room.name}</Typography><Box sx={{ mt: 0.35 }}><RoomStatusPill status={room.operationalStatus} t={t} /></Box>{room.nextStay ? <Typography color="text.secondary" noWrap sx={{ display: "block", mt: 0.5 }} variant="caption">{t("Next", "Anayefuata")}: {room.nextStay.guestName} · {formatLocalDate(room.nextStay.checkIn, { day: "numeric", month: "short" })}</Typography> : null}</Box>
           {canManage ? <HousekeepingMenu disabled={Boolean(pendingId)} onUpdate={onUpdate} room={room} /> : null}
         </Stack>
-      ))}</Stack> : <EmptyState description={t("Try another filter, or enjoy a fully ready room board.", "Jaribu kichujio kingine, au furahia vyumba vyote kuwa tayari.")} icon={<CheckCircleRoundedIcon />} title={t("No rooms in this queue", "Hakuna vyumba kwenye foleni hii")} />}
+      ))}</Stack> : <EmptyState description={t(`Try another filter, or enjoy a fully ready ${inventoryPlural} board.`, `Jaribu kichujio kingine, au furahia ${inventoryPlural} zote kuwa tayari.`)} icon={<CheckCircleRoundedIcon />} title={t(`No ${inventoryPlural} in this queue`, `Hakuna ${inventoryPlural} kwenye foleni hii`)} />}
     </Surface>
   );
 }

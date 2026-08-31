@@ -21,6 +21,9 @@ export type PropertyBasicInput = {
   phone: string;
   email: string;
   amenities: string[];
+  expectedInventoryCount: number;
+  defaultBedroomCount: number | null;
+  defaultBathroomCount: number | null;
 };
 
 function isUuid(value: unknown): value is string {
@@ -124,15 +127,18 @@ export async function createPropertyBasicInfo(
   requestKey: string,
 ) {
   const { data, error } = await supabase.rpc(
-    "create_property_basic_info" as never,
+    "save_property_onboarding_profile",
     {
       p_name: input.name.trim(),
       p_type: input.type,
       p_phone: input.phone.trim(),
       p_email: input.email.trim() || null,
       p_amenities: input.amenities,
+      p_expected_inventory_count: input.expectedInventoryCount,
+      p_default_bedroom_count: input.defaultBedroomCount,
+      p_default_bathroom_count: input.defaultBathroomCount,
       p_request_key: requestKey,
-    } as never,
+    },
   );
   if (error) throw new Error(error.message);
   if (!data) throw new Error("The property could not be created.");
