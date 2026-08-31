@@ -78,11 +78,19 @@ export type BookingListResult = {
 export type BookingPayment = {
   id: string;
   amount: number;
+  currency: string;
   method: string;
+  status: string;
+  entryType: "payment" | "refund" | "void";
   reference: string;
   notes: string;
   receivedBy: string;
   paidAt: Date;
+  reversesPaymentId: string;
+  reversalReason: string;
+  approvedBy: string;
+  canRefund: boolean;
+  canVoid: boolean;
 };
 
 export type BookingActivity = {
@@ -109,6 +117,7 @@ export type BookingWorkspace = {
   propertyId: string;
   businessDate: string;
   booking: Booking;
+  canViewSettlement: boolean;
   payments: BookingPayment[];
   activity: BookingActivity[];
   allowedActions: BookingAllowedActions;
@@ -270,14 +279,26 @@ export function parseBookingWorkspace(value: Json): BookingWorkspace | null {
     propertyId: text(property.id),
     businessDate: text(property.business_date ?? root.business_date),
     booking,
+    canViewSettlement:
+      boolean(capabilities.view_settlement) || booking.hasFinancials,
     payments: rows(root.payments).map((item) => ({
       id: text(item.id),
       amount: number(item.amount),
+      currency: text(item.currency) || "TZS",
       method: text(item.method ?? item.payment_method),
+      status: text(item.status ?? item.payment_status) || "completed",
+      entryType: (["refund", "void"].includes(text(item.entry_type))
+        ? text(item.entry_type)
+        : "payment") as BookingPayment["entryType"],
       reference: text(item.reference ?? item.transaction_reference),
       notes: text(item.notes),
       receivedBy: text(item.received_by_name ?? item.received_by),
       paidAt: date(item.paid_at ?? item.created_at),
+      reversesPaymentId: text(item.reverses_payment_id),
+      reversalReason: text(item.reversal_reason),
+      approvedBy: text(item.approved_by_name ?? item.approved_by),
+      canRefund: boolean(item.can_refund),
+      canVoid: boolean(item.can_void),
     })),
     activity: rows(root.activity ?? root.events).map((item, index) => {
       const actor = asRow(item.actor);

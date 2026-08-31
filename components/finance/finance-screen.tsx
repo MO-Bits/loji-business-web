@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import ArrowOutwardRoundedIcon from "@mui/icons-material/ArrowOutwardRounded";
+import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import QueryStatsRoundedIcon from "@mui/icons-material/QueryStatsRounded";
+import ReplayRoundedIcon from "@mui/icons-material/ReplayRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import SavingsRoundedIcon from "@mui/icons-material/SavingsRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
@@ -14,6 +15,9 @@ import {
   Alert,
   Box,
   Button,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   InputAdornment,
   MenuItem,
@@ -31,6 +35,7 @@ import {
   Typography,
 } from "@mui/material";
 import { PageHeader } from "@/components/shared/page-header";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import {
   EmptyState,
   LoadingRows,
@@ -41,10 +46,16 @@ import {
   WorkspacePage,
 } from "@/components/shared/workspace-ui";
 import { useLanguage } from "@/components/providers/language-provider";
+import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import type { PaymentLedgerItem } from "@/features/finance/models/finance";
-import { getOwnerFinanceDashboard, listPropertyPayments } from "@/features/finance/services/finance-service";
+import {
+  getPropertyFinanceDashboard,
+  listPropertyPayments,
+  reverseBookingPayment,
+  type PaymentReversalAction,
+} from "@/features/finance/services/finance-service";
 import { createClient } from "@/lib/supabase/client";
 
 const PAGE_SIZE = 25;
@@ -103,16 +114,18 @@ const csvCell = (value: string | number) => {
 const paymentTone = (status: string): "danger" | "neutral" | "success" | "warning" => {
   if (status === "completed") return "success";
   if (status === "pending") return "warning";
-  if (status === "failed" || status === "refunded") return "danger";
+  if (["failed", "refund", "refunded", "void", "voided"].includes(status)) return "danger";
   return "neutral";
 };
 
 export function FinanceScreen() {
   const { loading: sessionLoading, session } = useAppSession();
   const { language, t } = useLanguage();
+  const feedback = useAppFeedback();
   const supabase = useMemo(() => createClient(), []);
   const bootstrapDate = useMemo(() => iso(new Date()), []);
   const propertyId = session?.activePropertyId;
+  const activePropertyId = useRef(propertyId);
   const sessionBusinessDate = isDateKey(session?.property?.business_date)
     ? session.property.business_date
     : isDateKey(session?.property?.businessDate)
@@ -134,12 +147,22 @@ export function FinanceScreen() {
   const [page, setPage] = useState(1);
   const [financeState, setFinanceState] = useState<{
     propertyId: string;
-    dashboard: Awaited<ReturnType<typeof getOwnerFinanceDashboard>>;
+    dashboard: Awaited<ReturnType<typeof getPropertyFinanceDashboard>>;
     ledger: Awaited<ReturnType<typeof listPropertyPayments>>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
+  const [reversal, setReversal] = useState<{
+    propertyId: string;
+    item: PaymentLedgerItem;
+    action: PaymentReversalAction;
+    idempotencyKey: string;
+  } | null>(null);
+  const [reversalReason, setReversalReason] = useState("");
+  const [reversalError, setReversalError] = useState<string | null>(null);
+  const [reversing, setReversing] = useState(false);
   const requestId = useRef(0);
+  const reversalRequestId = useRef(0);
   const initializedBusinessContext = useRef<string | null>(null);
   const customizedPropertyId = useRef<string | null>(null);
   const dashboard = financeState && financeState.propertyId === propertyId
@@ -153,8 +176,15 @@ export function FinanceScreen() {
     : null;
   const propertyIsChanging = Boolean(financeState && financeState.propertyId !== propertyId);
   const dataLoading = loading || propertyIsChanging;
-  const canView = getWorkspaceCapabilities(session?.activeRole).canViewFinance;
+  const capabilities = getWorkspaceCapabilities(session?.activeRole);
+  const canView = capabilities.canViewFinance;
+  const canReverse = capabilities.canReversePayment;
+  const activeReversal = reversal?.propertyId === propertyId ? reversal : null;
   const invalidRange = rangeIsInvalid(from, to);
+
+  useEffect(() => {
+    activePropertyId.current = propertyId;
+  }, [propertyId]);
 
   const load = useCallback(async () => {
     if (!propertyId || !canView || invalidRange) {
@@ -171,7 +201,7 @@ export function FinanceScreen() {
     let awaitingAlignedReload = false;
     try {
       const [nextDashboard, nextLedger] = await Promise.all([
-        getOwnerFinanceDashboard(supabase, requestPropertyId, from, to),
+        getPropertyFinanceDashboard(supabase, requestPropertyId, from, to),
         listPropertyPayments(supabase, {
           propertyId: requestPropertyId,
           from,
@@ -233,12 +263,64 @@ export function FinanceScreen() {
     };
   }, [load, query]);
 
+  const openReversal = (
+    item: PaymentLedgerItem,
+    action: PaymentReversalAction,
+  ) => {
+    if (!propertyId || !canReverse || (action === "refund" ? !item.canRefund : !item.canVoid)) return;
+    reversalRequestId.current += 1;
+    setReversal({ propertyId, item, action, idempotencyKey: crypto.randomUUID() });
+    setReversalReason("");
+    setReversalError(null);
+    setReversing(false);
+  };
+
+  const closeReversal = () => {
+    if (reversing) return;
+    setReversal(null);
+    setReversalReason("");
+    setReversalError(null);
+  };
+
+  const submitReversal = async () => {
+    if (!propertyId || !activeReversal) return;
+    if (reversalReason.trim().length < 3) {
+      setReversalError(t("Add a clear reason before continuing.", "Weka sababu wazi kabla ya kuendelea."));
+      return;
+    }
+    const requestPropertyId = propertyId;
+    const currentRequest = ++reversalRequestId.current;
+    setReversing(true);
+    setReversalError(null);
+    try {
+      await reverseBookingPayment(supabase, {
+        propertyId: requestPropertyId,
+        paymentId: activeReversal.item.id,
+        action: activeReversal.action,
+        reason: reversalReason,
+        idempotencyKey: activeReversal.idempotencyKey,
+      });
+      if (currentRequest !== reversalRequestId.current || activePropertyId.current !== requestPropertyId) return;
+      feedback.success(activeReversal.action === "refund" ? "Payment refunded." : "Payment voided.");
+      setReversal(null);
+      setReversalReason("");
+      await load();
+    } catch (caught) {
+      if (currentRequest === reversalRequestId.current && activePropertyId.current === requestPropertyId) {
+        setReversalError(caught instanceof Error ? caught.message : "Unable to reverse payment.");
+      }
+    } finally {
+      if (currentRequest === reversalRequestId.current) setReversing(false);
+    }
+  };
+
   const exportLedger = () => {
     if (!ledger?.items.length) return;
     const rows = [
-      ["Payment ID", "Booking", "Guest", "Date", "Method", "Reference", "Status", "Amount", "Currency", "Received by"],
+      ["Entry ID", "Entry type", "Booking", "Guest", "Date", "Method", "Reference", "Status", "Amount", "Currency", "Received by", "Approved by", "Reversal reason"],
       ...ledger.items.map((item) => [
         item.id,
+        item.entryType,
         item.bookingNumber,
         item.guestName,
         item.paidAt,
@@ -248,6 +330,8 @@ export function FinanceScreen() {
         item.amount,
         item.currency,
         item.receiverName,
+        item.approverName,
+        item.reversalReason,
       ]),
     ];
     const csv = rows
@@ -266,7 +350,7 @@ export function FinanceScreen() {
   if (!sessionLoading && !canView) {
     return (
       <WorkspacePage>
-        <Alert severity="warning">{t("Finance is available to property owners only.", "Fedha zinapatikana kwa wamiliki wa biashara pekee.")}</Alert>
+        <Alert severity="warning">{t("Finance is available to property owners and managers.", "Fedha zinapatikana kwa wamiliki na mameneja wa biashara.")}</Alert>
       </WorkspacePage>
     );
   }
@@ -292,7 +376,7 @@ export function FinanceScreen() {
         <PageHeader
           title={t("Finance", "Fedha")}
           description={t("Track collections, balances and every recorded payment.", "Fuatilia makusanyo, salio na kila malipo yaliyorekodiwa.")}
-          action={<Button component={Link} href="/reports" startIcon={<QueryStatsRoundedIcon />} variant="outlined">{t("Reports", "Ripoti")}</Button>}
+          action={capabilities.canViewReports ? <Button component={Link} href="/reports" startIcon={<QueryStatsRoundedIcon />} variant="outlined">{t("Reports", "Ripoti")}</Button> : undefined}
         />
 
         <Surface sx={{ p: { xs: 1.5, sm: 2 } }}>
@@ -310,10 +394,10 @@ export function FinanceScreen() {
         {error ? <Alert action={<Button onClick={() => void load()}>{t("Retry", "Jaribu tena")}</Button>} severity="error">{error}</Alert> : null}
 
         <Box sx={{ display: "grid", gap: { xs: 1.5, sm: 2 }, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" } }}>
-          <MetricCell caption={t("Completed payments in period", "Malipo yaliyokamilika katika kipindi")} icon={<PaymentsRoundedIcon />} label={t("Collected", "Yaliyokusanywa")} tone="success" value={dataLoading && !dashboard ? "—" : money(summary?.collected ?? 0)} />
+          <MetricCell caption={t("Payments less refunds and voids", "Malipo baada ya marejesho na yaliyobatilishwa")} icon={<PaymentsRoundedIcon />} label={t("Net collected", "Jumla halisi")} tone="success" value={dataLoading && !dashboard ? "—" : money(summary?.collected ?? 0)} />
           <MetricCell caption={t("Open booking balances", "Salio la uhifadhi ambalo halijalipwa")} icon={<SavingsRoundedIcon />} label={t("Outstanding", "Yanayodaiwa")} tone="warning" value={dataLoading && !dashboard ? "—" : money(summary?.outstanding ?? 0)} />
           <MetricCell caption={t("Payment entries", "Miamala ya malipo")} icon={<ReceiptLongRoundedIcon />} label={t("Transactions", "Miamala")} tone="info" value={dataLoading && !dashboard ? "—" : summary?.transactions ?? 0} />
-          <MetricCell caption={t("Average room rate for stays", "Wastani wa bei ya chumba kwa ukaaji")} icon={<AccountBalanceWalletRoundedIcon />} label={t("Average daily rate", "Wastani wa bei kwa siku")} value={dataLoading && !dashboard ? "—" : money(summary?.averageDailyRate ?? 0)} />
+          <MetricCell caption={t("Refunds and voids in period", "Marejesho na yaliyobatilishwa katika kipindi")} icon={<ReplayRoundedIcon />} label={t("Reversed", "Yaliyorejeshwa")} tone="danger" value={dataLoading && !dashboard ? "—" : money((summary?.refunds ?? 0) + (summary?.voids ?? 0))} />
         </Box>
 
         <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.45fr) minmax(280px, .55fr)" } }}>
@@ -352,7 +436,7 @@ export function FinanceScreen() {
             <SectionHeading description={t("Completed payment mix", "Mgawanyo wa malipo yaliyokamilika")} title={t("Payment methods", "Njia za malipo")} />
             <Stack spacing={2} sx={{ mt: 3 }}>
               {dashboard?.methods.length ? dashboard.methods.map((item) => {
-                const share = summary?.collected ? Math.round((item.amount / summary.collected) * 100) : 0;
+                const share = summary?.grossCollected ? Math.round((item.amount / summary.grossCollected) * 100) : 0;
                 return (
                   <Box key={item.method}>
                     <Stack direction="row" sx={{ justifyContent: "space-between" }}>
@@ -382,9 +466,10 @@ export function FinanceScreen() {
               <Select displayEmpty value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} sx={{ minWidth: { sm: 160 } }}>
                 <MenuItem value="">{t("All statuses", "Hali zote")}</MenuItem>
                 <MenuItem value="completed">{t("Completed", "Yamekamilika")}</MenuItem>
-                <MenuItem value="pending">{t("Pending", "Yanasubiri")}</MenuItem>
                 <MenuItem value="refunded">{t("Refunded", "Yamerudishwa")}</MenuItem>
-                <MenuItem value="failed">{t("Failed", "Yameshindwa")}</MenuItem>
+                <MenuItem value="voided">{t("Voided", "Yaliyobatilishwa")}</MenuItem>
+                <MenuItem value="refund">{t("Refund entries", "Miamala ya marejesho")}</MenuItem>
+                <MenuItem value="void">{t("Void entries", "Miamala iliyobatilishwa")}</MenuItem>
               </Select>
             </Stack>
           </Box>
@@ -396,22 +481,46 @@ export function FinanceScreen() {
               <TableContainer sx={{ display: { xs: "none", md: "block" } }}>
                 <Table>
                   <TableHead><TableRow><TableCell>{t("Guest / booking", "Mgeni / uhifadhi")}</TableCell><TableCell>{t("Date", "Tarehe")}</TableCell><TableCell>{t("Method", "Njia")}</TableCell><TableCell>{t("Reference", "Kumbukumbu")}</TableCell><TableCell align="right">{t("Amount", "Kiasi")}</TableCell><TableCell /></TableRow></TableHead>
-                  <TableBody>{ledger.items.map((item) => <PaymentRow item={item} key={item.id} locale={locale} timeZone={propertyTimeZone} />)}</TableBody>
+                  <TableBody>{ledger.items.map((item) => <PaymentRow item={item} key={item.id} locale={locale} timeZone={propertyTimeZone} onReverse={openReversal} />)}</TableBody>
                 </Table>
               </TableContainer>
               <Stack divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />} sx={{ display: { xs: "flex", md: "none" } }}>
-                {ledger.items.map((item) => <PaymentCard item={item} key={item.id} locale={locale} timeZone={propertyTimeZone} />)}
+                {ledger.items.map((item) => <PaymentCard item={item} key={item.id} locale={locale} timeZone={propertyTimeZone} onReverse={openReversal} />)}
               </Stack>
               {ledger.total > PAGE_SIZE ? <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><Pagination count={Math.ceil(ledger.total / PAGE_SIZE)} onChange={(_, value) => setPage(value)} page={page} /></Box> : null}
             </>
           )}
         </Surface>
       </Stack>
+      <PaymentReversalModal
+        reversal={activeReversal}
+        reason={reversalReason}
+        error={reversalError}
+        working={reversing}
+        onClose={closeReversal}
+        onReason={setReversalReason}
+        onSubmit={() => void submitReversal()}
+      />
     </WorkspacePage>
   );
 }
 
-function PaymentRow({ item, locale, timeZone }: { item: PaymentLedgerItem; locale: string; timeZone: string }) {
+type ReversalHandler = (
+  item: PaymentLedgerItem,
+  action: PaymentReversalAction,
+) => void;
+
+function PaymentRow({
+  item,
+  locale,
+  timeZone,
+  onReverse,
+}: {
+  item: PaymentLedgerItem;
+  locale: string;
+  timeZone: string;
+  onReverse: ReversalHandler;
+}) {
   return (
     <TableRow hover>
       <TableCell><Typography sx={{ fontWeight: 700 }} variant="body2">{item.guestName}</Typography><Typography color="text.secondary" variant="caption">{item.bookingNumber}</Typography></TableCell>
@@ -422,27 +531,112 @@ function PaymentRow({ item, locale, timeZone }: { item: PaymentLedgerItem; local
           <StatusPill label={item.status.replaceAll("_", " ")} tone={paymentTone(item.status)} />
         </Stack>
       </TableCell>
-      <TableCell>{item.reference || "—"}</TableCell>
-      <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money(item.amount, item.currency)}</TableCell>
-      <TableCell align="right"><IconButton aria-label={`Open ${item.bookingNumber}`} component={Link} href={`/bookings/${item.bookingId}`}><ArrowOutwardRoundedIcon fontSize="small" /></IconButton></TableCell>
+      <TableCell><Typography variant="body2">{item.reference || "—"}</Typography>{item.reversalReason ? <Typography color="text.secondary" variant="caption">{item.reversalReason}</Typography> : null}</TableCell>
+      <TableCell align="right" sx={{ color: item.amount < 0 ? "error.main" : undefined, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money(item.amount, item.currency)}</TableCell>
+      <TableCell align="right">
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", justifyContent: "flex-end" }}>
+          {item.canVoid ? <Button color="error" onClick={() => onReverse(item, "void")} size="small">Void</Button> : null}
+          {item.canRefund ? <Button color="error" onClick={() => onReverse(item, "refund")} size="small">Refund</Button> : null}
+          <IconButton aria-label={`Open ${item.bookingNumber}`} component={Link} href={`/bookings/${item.bookingId}`}><ArrowOutwardRoundedIcon fontSize="small" /></IconButton>
+        </Stack>
+      </TableCell>
     </TableRow>
   );
 }
 
-function PaymentCard({ item, locale, timeZone }: { item: PaymentLedgerItem; locale: string; timeZone: string }) {
+function PaymentCard({
+  item,
+  locale,
+  timeZone,
+  onReverse,
+}: {
+  item: PaymentLedgerItem;
+  locale: string;
+  timeZone: string;
+  onReverse: ReversalHandler;
+}) {
   return (
-    <Box component={Link} href={`/bookings/${item.bookingId}`} sx={{ color: "inherit", p: 2, textDecoration: "none" }}>
+    <Box sx={{ p: 2 }}>
       <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
         <Box sx={{ minWidth: 0 }}>
-          <Typography noWrap sx={{ fontWeight: 700 }}>{item.guestName}</Typography>
+          <Typography component={Link} href={`/bookings/${item.bookingId}`} noWrap sx={{ color: "inherit", display: "block", fontWeight: 700, textDecoration: "none" }}>{item.guestName}</Typography>
           <Typography color="text.secondary" variant="body2">{item.bookingNumber} · {item.method.replaceAll("_", " ")}</Typography>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", mt: 0.5 }}>
             <StatusPill label={item.status.replaceAll("_", " ")} tone={paymentTone(item.status)} />
             <Typography color="text.secondary" variant="caption">{item.paidAt ? formatTimestamp(item.paidAt, locale, timeZone, { dateStyle: "medium" }) : ""}</Typography>
           </Stack>
         </Box>
-        <Typography sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money(item.amount, item.currency)}</Typography>
+        <Typography color={item.amount < 0 ? "error.main" : "text.primary"} sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money(item.amount, item.currency)}</Typography>
       </Stack>
+      {item.reversalReason ? <Typography color="text.secondary" variant="body2" sx={{ mt: 1 }}>{item.reversalReason}</Typography> : null}
+      {item.canRefund || item.canVoid ? <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+        {item.canVoid ? <Button color="error" fullWidth onClick={() => onReverse(item, "void")} startIcon={<BlockRoundedIcon />} variant="outlined">Void</Button> : null}
+        {item.canRefund ? <Button color="error" fullWidth onClick={() => onReverse(item, "refund")} startIcon={<ReplayRoundedIcon />} variant="outlined">Refund</Button> : null}
+      </Stack> : null}
     </Box>
+  );
+}
+
+function PaymentReversalModal({
+  reversal,
+  reason,
+  error,
+  working,
+  onClose,
+  onReason,
+  onSubmit,
+}: {
+  reversal: {
+    item: PaymentLedgerItem;
+    action: PaymentReversalAction;
+    idempotencyKey: string;
+  } | null;
+  reason: string;
+  error: string | null;
+  working: boolean;
+  onClose: () => void;
+  onReason: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  if (!reversal) return null;
+  const isVoid = reversal.action === "void";
+  return (
+    <ResponsiveModal maxWidth="xs" onClose={onClose} open>
+      <DialogTitle>{isVoid ? "Void this payment?" : "Refund this payment?"}</DialogTitle>
+      <DialogContent>
+        <Alert severity="warning">
+          This creates a linked {reversal.action} entry for the full amount. The original payment remains unchanged in the audit ledger.
+        </Alert>
+        <Box sx={{ bgcolor: "action.hover", borderRadius: 2, mt: 2, p: 1.5 }}>
+          <Stack direction="row" spacing={2} sx={{ justifyContent: "space-between" }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 700 }} variant="body2">{reversal.item.guestName}</Typography>
+              <Typography color="text.secondary" variant="caption">{reversal.item.bookingNumber}{reversal.item.reference ? ` · ${reversal.item.reference}` : ""}</Typography>
+            </Box>
+            <Typography color="error.main" sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums", fontWeight: 800 }}>{money(reversal.item.amount, reversal.item.currency)}</Typography>
+          </Stack>
+        </Box>
+        <TextField
+          autoFocus
+          disabled={working}
+          fullWidth
+          label="Reason"
+          minRows={3}
+          multiline
+          onChange={(event) => onReason(event.target.value)}
+          placeholder={isVoid ? "Example: Duplicate payment entered at front desk" : "Example: Guest cancellation approved by manager"}
+          required
+          value={reason}
+          sx={{ mt: 2 }}
+        />
+        {error ? <Alert severity="error" sx={{ mt: 1.5 }}>{error}</Alert> : null}
+      </DialogContent>
+      <DialogActions>
+        <Button disabled={working} onClick={onClose}>Keep payment</Button>
+        <Button color="error" disabled={working || reason.trim().length < 3} onClick={onSubmit} startIcon={isVoid ? <BlockRoundedIcon /> : <ReplayRoundedIcon />} variant="contained">
+          {working ? "Processing…" : isVoid ? "Void payment" : "Issue refund"}
+        </Button>
+      </DialogActions>
+    </ResponsiveModal>
   );
 }

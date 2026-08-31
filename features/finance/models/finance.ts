@@ -12,8 +12,10 @@ const number = (value: Json | undefined) => {
 
 export type FinanceSummary = {
   collected: number;
+  grossCollected: number;
   outstanding: number;
   refunds: number;
+  voids: number;
   transactions: number;
   occupancyRate: number;
   averageDailyRate: number;
@@ -49,9 +51,16 @@ export type PaymentLedgerItem = {
   currency: string;
   method: string;
   status: string;
+  entryType: "payment" | "refund" | "void";
   paidAt: string;
   receiverName: string;
   reference: string;
+  reversesPaymentId: string;
+  reversalId: string;
+  reversalReason: string;
+  approverName: string;
+  canRefund: boolean;
+  canVoid: boolean;
 };
 
 export type PaymentLedger = {
@@ -68,8 +77,10 @@ export function parseFinanceDashboard(value: Json): FinanceDashboard {
     timezone: text(property.timezone ?? root.timezone),
     summary: {
       collected: number(summary.collected ?? summary.total_collected),
+      grossCollected: number(summary.gross_collected ?? summary.collected),
       outstanding: number(summary.outstanding ?? summary.outstanding_balance),
       refunds: number(summary.refunds ?? summary.total_refunded),
+      voids: number(summary.voids ?? summary.total_voided),
       transactions: number(summary.transactions ?? summary.payment_count),
       occupancyRate: number(summary.occupancy_rate),
       averageDailyRate: number(summary.average_daily_rate ?? summary.adr),
@@ -106,9 +117,18 @@ export function parsePaymentLedger(value: Json): PaymentLedger {
           currency: text(item.currency) || "TZS",
           method: text(item.method ?? item.payment_method) || "Other",
           status: (text(item.status ?? item.payment_status) || "completed").toLowerCase(),
+          entryType: (["refund", "void"].includes(text(item.entry_type))
+            ? text(item.entry_type)
+            : "payment") as PaymentLedgerItem["entryType"],
           paidAt: text(item.paid_at ?? item.created_at),
           receiverName: text(item.receiver_name ?? item.received_by_name),
           reference: text(item.reference ?? item.transaction_reference ?? item.transaction_ref),
+          reversesPaymentId: text(item.reverses_payment_id),
+          reversalId: text(item.reversal_id),
+          reversalReason: text(item.reversal_reason),
+          approverName: text(item.approver_name ?? item.approved_by_name),
+          canRefund: item.can_refund === true,
+          canVoid: item.can_void === true,
         }))
       : [],
   };

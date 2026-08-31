@@ -137,6 +137,10 @@ type PaymentRow = {
   transaction_ref: string | null;
   idempotency_key: string | null;
   idempotency_fingerprint: string | null;
+  entry_type: string;
+  reverses_payment_id: string | null;
+  approved_by: string | null;
+  reversal_reason: string | null;
 };
 
 type UserProfileRow = {
@@ -361,6 +365,7 @@ export type Database = {
         Returns: Json;
       };
       get_booking_workspace: { Args: { p_property_id: string; p_booking_id: string }; Returns: Json };
+      get_booking_settlement: { Args: { p_property_id: string; p_booking_id: string }; Returns: Json };
       create_property_booking: {
         Args: { p_property_id: string; p_idempotency_key: string; p_room_id: string; p_guest: Json | null; p_existing_guest_id: string | null; p_check_in: string; p_check_out: string; p_adults?: number; p_children?: number; p_source?: string; p_special_requests?: string | null; p_initial_payment_amount?: number | null; p_initial_payment_method?: string | null; p_initial_payment_reference?: string | null };
         Returns: Json;
@@ -381,7 +386,10 @@ export type Database = {
       update_property_guest: { Args: { p_property_id: string; p_guest_id: string; p_guest: Json }; Returns: Json };
       get_property_calendar: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
       get_owner_finance_dashboard: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
+      get_property_finance_dashboard: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
       list_property_payments: { Args: { p_property_id: string; p_from?: string | null; p_to?: string | null; p_status?: string | null; p_search?: string | null; p_method?: string | null; p_limit?: number; p_offset?: number }; Returns: Json };
+      list_property_finance_entries: { Args: { p_property_id: string; p_from?: string | null; p_to?: string | null; p_status?: string | null; p_search?: string | null; p_method?: string | null; p_limit?: number; p_offset?: number }; Returns: Json };
+      reverse_booking_payment: { Args: { p_property_id: string; p_payment_id: string; p_action: string; p_reason: string; p_idempotency_key: string }; Returns: Json };
       get_property_reports: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
       list_property_activity: { Args: { p_property_id: string; p_event_type?: string | null; p_limit?: number; p_offset?: number }; Returns: Json };
       get_property_activity_feed: { Args: { p_property_id: string; p_entity_type?: string | null; p_limit?: number; p_offset?: number }; Returns: Json };

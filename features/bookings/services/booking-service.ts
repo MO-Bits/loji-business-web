@@ -63,11 +63,31 @@ export async function getBookingWorkspace(
   propertyId: string,
   bookingId: string,
 ): Promise<BookingWorkspace | null> {
-  const data = await callJsonRpc(client, "get_booking_workspace", {
+  const args = {
     p_property_id: propertyId,
     p_booking_id: bookingId,
+  };
+  const [workspaceData, settlementData] = await Promise.all([
+    callJsonRpc(client, "get_booking_workspace", args),
+    callJsonRpc(client, "get_booking_settlement", args),
+  ]);
+  const workspace = object(workspaceData);
+  const settlement = object(settlementData);
+  const booking = object(workspace.booking);
+  const capabilities = object(workspace.capabilities);
+  const settlementCapabilities = object(settlement.capabilities);
+  return parseBookingWorkspace({
+    ...workspace,
+    booking: {
+      ...booking,
+      settlement: settlement.settlement,
+    },
+    capabilities: {
+      ...capabilities,
+      ...settlementCapabilities,
+    },
+    payments: settlement.payments,
   });
-  return parseBookingWorkspace(data);
 }
 
 export async function getAvailableRooms(

@@ -8,6 +8,7 @@ export type WorkspaceCapabilities = {
   canManageRooms: boolean;
   canManageStaff: boolean;
   canRecordPayment: boolean;
+  canReversePayment: boolean;
   canViewActivity: boolean;
   canViewBookings: boolean;
   canViewCalendar: boolean;
@@ -28,6 +29,7 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageRooms: true,
     canManageStaff: true,
     canRecordPayment: true,
+    canReversePayment: true,
     canViewActivity: true,
     canViewBookings: true,
     canViewCalendar: true,
@@ -45,11 +47,12 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageProperty: true,
     canManageRooms: true,
     canManageStaff: true,
-    canRecordPayment: false,
+    canRecordPayment: true,
+    canReversePayment: true,
     canViewActivity: true,
     canViewBookings: true,
     canViewCalendar: true,
-    canViewFinance: false,
+    canViewFinance: true,
     canViewGuests: true,
     canViewNotifications: true,
     canViewOperations: true,
@@ -63,7 +66,8 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageProperty: false,
     canManageRooms: false,
     canManageStaff: false,
-    canRecordPayment: false,
+    canRecordPayment: true,
+    canReversePayment: false,
     canViewActivity: false,
     canViewBookings: true,
     canViewCalendar: true,
@@ -82,6 +86,7 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canManageRooms: false,
     canManageStaff: false,
     canRecordPayment: false,
+    canReversePayment: false,
     canViewActivity: false,
     canViewBookings: false,
     canViewCalendar: false,
