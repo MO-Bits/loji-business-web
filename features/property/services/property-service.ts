@@ -5,9 +5,25 @@ import type { PropertyAddress, PropertyType } from "../models/property";
 
 const BUCKET = "property-images";
 const PENDING_SETUP_KEY = "loji-property-setup:v1";
+const PROPERTY_REGISTRATION_DRAFT_PREFIX =
+  "loji-property-registration:v3";
 export const MAX_PROPERTY_IMAGES = 3;
 export const MAX_PROPERTY_IMAGE_BYTES = 5 * 1024 * 1024;
 export const PROPERTY_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+export function propertyRegistrationDraftKey(ownerId: string) {
+  return `${PROPERTY_REGISTRATION_DRAFT_PREFIX}:${ownerId}`;
+}
+
+export function clearPropertyRegistrationDraft(ownerId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(propertyRegistrationDraftKey(ownerId));
+    window.localStorage.removeItem("loji-property-registration:v2");
+  } catch {
+    // Browser storage is only a resume convenience.
+  }
+}
 
 export type PendingPropertySetup = {
   ownerId: string;

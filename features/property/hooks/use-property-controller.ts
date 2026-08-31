@@ -48,13 +48,18 @@ export function usePropertyController() {
         }
 
         const pending = getPendingPropertySetup(data.user.id);
-        const propertyId =
-          pending.propertyId ??
-          (await createPropertyBasicInfo(supabase, input, pending.requestKey));
+        const propertyId = await createPropertyBasicInfo(
+          supabase,
+          input,
+          pending.requestKey,
+        );
 
-        if (!pending.propertyId) {
-          savePendingPropertySetup({ ...pending, propertyId });
+        if (pending.propertyId && pending.propertyId !== propertyId) {
+          throw new Error(
+            "The saved property does not match this registration. Refresh and try again.",
+          );
         }
+        savePendingPropertySetup({ ...pending, propertyId });
 
         if (files.length) {
           setPhase("uploading");
@@ -77,7 +82,8 @@ export function usePropertyController() {
     (ownerId: string, sessionPropertyId: string | undefined, address: PropertyAddress) =>
       run(async () => {
         setPhase("saving-address");
-        const propertyId = sessionPropertyId ?? getPendingPropertySetup(ownerId).propertyId;
+        const propertyId =
+          getPendingPropertySetup(ownerId).propertyId ?? sessionPropertyId;
         if (!propertyId) {
           throw new Error("We could not identify the property being configured. Return to property details and try again.");
         }

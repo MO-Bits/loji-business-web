@@ -38,7 +38,7 @@ function destinationFor(status: AppStatus, step: AppStep): string {
     case AppStep.PropertyBasic:
       return "/onboarding/property";
     case AppStep.PropertyAddress:
-      return "/onboarding/property/address";
+      return "/onboarding/property/address/map";
     case AppStep.Done:
       return "/dashboard";
   }
