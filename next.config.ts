@@ -19,7 +19,15 @@ export default withSentryConfig(nextConfig, {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   authToken: process.env.SENTRY_AUTH_TOKEN,
+  telemetry: false,
+  sourcemaps: {
+    disable: process.env.SENTRY_DISABLE_AUTO_UPLOAD === "true",
+  },
+  webpack: {
+    treeshake: {
+      removeDebugLogging: true,
+    },
+  },
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  disableLogger: true,
 });

@@ -12,7 +12,10 @@ import { SettingsSection } from "@/components/settings/settings-shared";
 import { usePropertySettings } from "@/features/settings/property/hooks/use-property-settings";
 import { type PropertyProfileInput, type PropertySettingsWorkspace } from "@/features/settings/property/models/property-settings";
 import { notifyPropertySettingsChanged, updatePropertyProfile } from "@/features/settings/property/services/property-settings-service";
-import { propertyTypeDefinitions } from "@/features/property/property-type";
+import {
+  getPropertyTypeDefinition,
+  hospitalityPropertyTypeDefinitions,
+} from "@/features/property/property-type";
 import {
   EditorSaveBar,
   PropertyAccessDenied,
@@ -46,6 +49,12 @@ function ProfileForm({ client, propertyId, workspace }: { client: ReturnType<typ
   const [saving, setSaving] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currentTypeDefinition = getPropertyTypeDefinition(initial.propertyType);
+  const propertyTypeOptions = hospitalityPropertyTypeDefinitions.some(
+    (definition) => definition.value === currentTypeDefinition.value,
+  )
+    ? hospitalityPropertyTypeDefinitions
+    : [currentTypeDefinition, ...hospitalityPropertyTypeDefinitions];
   const normalized = {
     name: form.name.trim(),
     description: form.description.trim(),
@@ -103,7 +112,7 @@ function ProfileForm({ client, propertyId, workspace }: { client: ReturnType<typ
             select
             value={form.propertyType}
           >
-            {propertyTypeDefinitions.map((definition) => (
+            {propertyTypeOptions.map((definition) => (
               <MenuItem key={definition.value} value={definition.value}>
                 {t(definition.label[0], definition.label[1])}
               </MenuItem>

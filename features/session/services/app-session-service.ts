@@ -67,14 +67,30 @@ async function getCurrentUser(
 export async function evaluateAppSession(
   supabase: SupabaseClient<Database>,
 ): Promise<AppSession> {
-  const { data: raw, error } = await supabase.rpc("get_app_session");
+  const initial = await supabase.rpc("get_app_session");
 
-  if (error) {
-    throw new Error(error.message);
+  if (initial.error) {
+    throw new Error(initial.error.message);
   }
+
+  let raw = initial.data;
 
   if (!isObject(raw)) {
     throw new Error("The server returned an invalid application session.");
+  }
+
+  if (raw.step === "invitation" || raw.has_pending_invitation === true) {
+    const { error: claimError } = await supabase.rpc(
+      "claim_email_property_access",
+    );
+    if (claimError) throw new Error(claimError.message);
+
+    const refreshed = await supabase.rpc("get_app_session");
+    if (refreshed.error) throw new Error(refreshed.error.message);
+    if (!isObject(refreshed.data)) {
+      throw new Error("The server returned an invalid application session.");
+    }
+    raw = refreshed.data;
   }
 
   const status = raw.status;

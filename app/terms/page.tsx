@@ -10,7 +10,7 @@ If you are a property owner or authorized representative creating a workspace, y
 If you are a staff member invited to use Loji Business, you agree to use the platform only according to the permissions assigned to you.
 
 If you do not agree with these terms, you should not use Loji Business.` },
-  { title: "2. About Loji Business", content: `Loji Business provides digital tools for hotels, lodges, guesthouses, apartments, and similar properties.
+  { title: "2. About Loji Business", content: `Loji Business provides digital tools for hotels, lodges, and guesthouses.
 
 Features may include property and room management, booking management, guest records, staff accounts and permissions, availability management, reports, and operational tools.
 
@@ -75,7 +75,7 @@ Phone Number: +255772290005` },
 
 const swSections: Array<Pick<LegalSectionData, "swTitle" | "swContent">> = [
   { swTitle: "1. Kukubali Masharti", swContent: "Kwa kufungua akaunti, kukubali mwaliko au kutumia Loji Business, unakubali masharti haya. Wamiliki wanathibitisha kuwa wana mamlaka ya kusimamia biashara, na wafanyakazi watatumia mfumo kulingana na ruhusa walizopewa." },
-  { swTitle: "2. Kuhusu Loji Business", swContent: "Loji Business hutoa zana za kidijitali kwa hoteli, loji, nyumba za wageni, fleti za muda mfupi na biashara zinazofanana. Mfumo husaidia kusimamia biashara, vyumba, uhifadhi, wageni, wafanyakazi na shughuli; haumiliki wala kuendesha biashara yako." },
+  { swTitle: "2. Kuhusu Loji Business", swContent: "Loji Business hutoa zana za kidijitali kwa hoteli, loji na nyumba za wageni. Mfumo husaidia kusimamia biashara, vyumba, uhifadhi, wageni, wafanyakazi na shughuli; haumiliki wala kuendesha biashara yako." },
   { swTitle: "3. Akaunti, Majukumu na Ufikiaji", swContent: "Mfumo una majukumu ya Mmiliki, Meneja, Mapokezi na wafanyakazi wengine walioidhinishwa. Wasimamizi wanawajibika kutoa na kuondoa ruhusa. Kila mtumiaji anatakiwa kulinda akaunti yake na anawajibika kwa vitendo vinavyofanywa kupitia akaunti hiyo." },
   { swTitle: "4. Taarifa za Biashara", swContent: "Watumiaji wanaweza kuweka taarifa za biashara, vyumba, bei, uhifadhi, wageni na wafanyakazi. Biashara na watumiaji wake wanawajibika kuhakikisha taarifa hizo ni sahihi." },
   { swTitle: "5. Umiliki wa Taarifa za Biashara", swContent: "Taarifa zilizohifadhiwa kwenye eneo la kazi ni mali ya biashara inayomiliki eneo hilo. Wamiliki na wasimamizi walioidhinishwa hudhibiti ufikiaji. Loji Business huchakata taarifa kwa ajili ya kutoa, kulinda na kuboresha huduma." },

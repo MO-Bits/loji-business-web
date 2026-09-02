@@ -1,22 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
-import {
-  Alert,
-  Button,
-  CircularProgress,
-  LinearProgress,
-  Stack,
-  TextField,
-} from "@mui/material";
+import { Alert, LinearProgress, Stack, TextField } from "@mui/material";
 
+import { SetupShell } from "@/components/onboarding/setup-shell";
 import { useLanguage } from "@/components/providers/language-provider";
-import { getMyProfile, updateMyProfile } from "@/features/settings/services/settings-service";
+import {
+  getMyProfile,
+  updateMyProfile,
+} from "@/features/settings/services/settings-service";
 import { createClient } from "@/lib/supabase/client";
-
-import { OnboardingFrame } from "./onboarding-frame";
 
 export function ProfileOnboarding() {
   const { t } = useLanguage();
@@ -48,12 +42,18 @@ export function ProfileOnboarding() {
           setEmail(profile.email || user?.email || "");
         })
         .catch((caught) => {
-          if (active) setError(caught instanceof Error ? caught.message : t("Unable to load your profile.", "Imeshindikana kupakia wasifu wako."));
+          if (!active) return;
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : t("Unable to load your profile.", "Imeshindikana kupakia wasifu wako."),
+          );
         })
         .finally(() => {
           if (active) setLoading(false);
         });
     }, 0);
+
     return () => {
       active = false;
       window.clearTimeout(timer);
@@ -62,12 +62,14 @@ export function ProfileOnboarding() {
 
   const save = async () => {
     const name = displayName.trim();
+    if (loading || saving) return;
     if (name.length < 2) {
-      setError(t("Enter a name with at least 2 characters.", "Weka jina lenye angalau herufi 2."));
-      return;
-    }
-    if (phone.trim().length > 32 || bio.trim().length > 500) {
-      setError(t("Check the phone and bio lengths, then try again.", "Kagua urefu wa simu na maelezo, kisha jaribu tena."));
+      setError(
+        t(
+          "Enter a name with at least 2 characters.",
+          "Weka jina lenye angalau herufi 2.",
+        ),
+      );
       return;
     }
 
@@ -77,47 +79,36 @@ export function ProfileOnboarding() {
       await updateMyProfile(supabase, { displayName: name, phone, bio });
       window.location.replace("/");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : t("Unable to save your profile.", "Imeshindikana kuhifadhi wasifu wako."));
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : t("Unable to save your profile.", "Imeshindikana kuhifadhi wasifu wako."),
+      );
       setSaving(false);
     }
   };
 
   const signOut = async () => {
+    if (saving) return;
+    setSaving(true);
     await supabase.auth.signOut();
     window.location.replace("/login");
   };
 
   return (
-    <OnboardingFrame
-      action={
-        <Button
-          color="inherit"
-          disabled={saving}
-          onClick={() => void signOut()}
-          startIcon={<LogoutRoundedIcon />}
-          type="button"
-        >
-          {t("Sign out", "Toka")}
-        </Button>
-      }
+    <SetupShell
       description={t(
-        "Your profile appears on staff access, payments and the property activity record.",
-        "Wasifu wako unaonekana kwenye ruhusa za timu, malipo na historia ya shughuli.",
+        "This name identifies you to staff in Loji Business. Your sign-in email cannot be changed here.",
+        "Jina hili linakutambulisha kwa wafanyakazi ndani ya Loji Business. Barua pepe ya kuingia haiwezi kubadilishwa hapa.",
       )}
-      eyebrow={t("Account setup", "Usanidi wa akaunti")}
       icon={<PersonRoundedIcon />}
-      panelDescription={t("Step 1 of 3", "Hatua ya 1 kati ya 3")}
-      panelTitle={t("Create your profile", "Unda wasifu wako")}
+      loading={loading || saving}
+      nextDisabled={displayName.trim().length < 2}
+      onNext={() => void save()}
+      onSignOut={() => void signOut()}
       step={1}
-      steps={[
-        t("Personal profile", "Wasifu binafsi"),
-        t("Property details", "Taarifa za biashara"),
-        t("Location & finish", "Eneo na kumaliza"),
-      ]}
-      title={t(
-        "First, tell your team who you are.",
-        "Kwanza, iambie timu yako wewe ni nani.",
-      )}
+      title={t("What should your team call you?", "Timu yako ikuitaje?")}
+      totalSteps={10}
     >
       <Stack
         component="form"
@@ -129,48 +120,27 @@ export function ProfileOnboarding() {
       >
         {loading ? <LinearProgress /> : null}
         {error ? <Alert severity="error">{error}</Alert> : null}
-
-                <TextField
-                  autoComplete="name"
-                  disabled={loading || saving}
-                  fullWidth
-                  label={t("Display name", "Jina linaloonekana")}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  required
-                  value={displayName}
-                />
-                <TextField disabled fullWidth label={t("Email", "Barua pepe")} value={email} />
-                <TextField
-                  autoComplete="tel"
-                  disabled={loading || saving}
-                  fullWidth
-                  helperText={t("Optional · used by your property team", "Si lazima · hutumiwa na timu yako")}
-                  label={t("Phone number", "Namba ya simu")}
-                  onChange={(event) => setPhone(event.target.value)}
-                  slotProps={{ htmlInput: { inputMode: "tel", maxLength: 32 } }}
-                  value={phone}
-                />
-                <TextField
-                  disabled={loading || saving}
-                  fullWidth
-                  helperText={`${bio.length}/500`}
-                  label={t("Short bio", "Maelezo mafupi")}
-                  minRows={3}
-                  multiline
-                  onChange={(event) => setBio(event.target.value.slice(0, 500))}
-                  placeholder={t("Example: Property owner and operations lead", "Mfano: Mmiliki na kiongozi wa uendeshaji")}
-                  value={bio}
-                />
-                <Button
-                  disabled={loading || saving || displayName.trim().length < 2}
-                  fullWidth
-                  size="large"
-                  type="submit"
-                  variant="contained"
-                >
-                  {saving ? <CircularProgress color="inherit" size={22} /> : t("Save and continue", "Hifadhi na endelea")}
-                </Button>
+        <TextField
+          autoComplete="name"
+          autoFocus
+          disabled={loading || saving}
+          fullWidth
+          label={t("Your name", "Jina lako")}
+          onChange={(event) => {
+            setDisplayName(event.target.value.slice(0, 120));
+            setError(null);
+          }}
+          required
+          slotProps={{ htmlInput: { maxLength: 120 } }}
+          value={displayName}
+        />
+        <TextField
+          disabled
+          fullWidth
+          label={t("Sign-in email", "Barua pepe ya kuingia")}
+          value={email}
+        />
       </Stack>
-    </OnboardingFrame>
+    </SetupShell>
   );
 }

@@ -15,13 +15,12 @@ import { useHomeDashboard } from "@/features/dashboard/hooks/use-home-dashboard"
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { normalizeWorkspaceRole } from "@/features/session/permissions";
 
-import { OwnerFinancePanel } from "./dashboard-finance";
 import { DashboardHeader } from "./dashboard-header";
 import { DashboardMetricGrid } from "./dashboard-metrics";
 import { GuestMovementQueue } from "./dashboard-queue";
 import { RoomReadinessPanel } from "./dashboard-rooms";
 import { DashboardError, DashboardLoading } from "./dashboard-states";
-import { DailyStatusBanner, RoleQuickActions } from "./dashboard-status";
+import { DailyStatusBanner } from "./dashboard-status";
 
 export function DashboardScreen() {
   const { t } = useLanguage();
@@ -59,8 +58,6 @@ export function DashboardScreen() {
 
   const role = normalizeWorkspaceRole(dashboard.role);
   const canCreateBooking = dashboard.capabilities.createBooking;
-  const showFinance =
-    role === "owner" && dashboard.capabilities.viewFinance;
 
   return (
     <Box sx={{ minHeight: "100dvh", pb: { xs: canCreateBooking ? 11 : 0, md: 0 } }}>
@@ -102,78 +99,21 @@ export function DashboardScreen() {
             <>
               <DailyStatusBanner dashboard={dashboard} role={role} />
               <DashboardMetricGrid dashboard={dashboard} propertyType={sessionState.session?.property?.type} role={role} />
-
-              {role === "owner" ? (
-                <>
-                  <OwnerFinancePanel
-                    finance={showFinance ? dashboard.finance : null}
-                    summary={dashboard.summary}
-                  />
-                  <Box sx={twoColumnLayout}>
-                    <GuestMovementQueue
-                      arrivals={dashboard.arrivals}
-                      departures={dashboard.departures}
-                      role={role}
-                      showFinance={showFinance}
-                      summary={dashboard.summary}
-                    />
-                    <RoomReadinessPanel
-                      housekeeping={dashboard.housekeeping}
-                      propertyType={sessionState.session?.property?.type}
-                      role={role}
-                      summary={dashboard.summary}
-                    />
-                  </Box>
-                  <RoleQuickActions
-                    capabilities={dashboard.capabilities}
-                    role={role}
-                  />
-                </>
-              ) : role === "manager" ? (
-                <>
-                  <GuestMovementQueue
-                    arrivals={dashboard.arrivals}
-                    departures={dashboard.departures}
-                    role={role}
-                    showFinance={false}
-                    summary={dashboard.summary}
-                  />
-                  <Box sx={managerLayout}>
-                    <RoomReadinessPanel
-                      housekeeping={dashboard.housekeeping}
-                      propertyType={sessionState.session?.property?.type}
-                      role={role}
-                      summary={dashboard.summary}
-                    />
-                    <RoleQuickActions
-                      capabilities={dashboard.capabilities}
-                      role={role}
-                    />
-                  </Box>
-                </>
-              ) : (
-                <>
-                  <GuestMovementQueue
-                    arrivals={dashboard.arrivals}
-                    departures={dashboard.departures}
-                    role={role}
-                    showFinance={false}
-                    summary={dashboard.summary}
-                  />
-                  <Box sx={receptionLayout}>
-                    <RoleQuickActions
-                      capabilities={dashboard.capabilities}
-                      role={role}
-                    />
-                    <RoomReadinessPanel
-                      housekeeping={dashboard.housekeeping}
-                      propertyType={sessionState.session?.property?.type}
-                      role={role}
-                      summary={dashboard.summary}
-                    />
-                  </Box>
-                </>
-              )}
+              <Box sx={twoColumnLayout}>
+                <GuestMovementQueue
+                  arrivals={dashboard.arrivals}
+                  departures={dashboard.departures}
+                  role={role}
+                  showFinance={false}
+                  summary={dashboard.summary}
+                />
+                <RoomReadinessPanel
+                  housekeeping={dashboard.housekeeping}
+                  propertyType={sessionState.session?.property?.type}
+                  role={role}
+                  summary={dashboard.summary}
+                />
+              </Box>
             </>
           )}
         </Stack>
@@ -203,26 +143,6 @@ const twoColumnLayout = {
   gridTemplateColumns: {
     xs: "minmax(0,1fr)",
     xl: "minmax(0,1.28fr) minmax(360px,.82fr)",
-  },
-};
-
-const managerLayout = {
-  alignItems: "start",
-  display: "grid",
-  gap: { xs: 2, sm: 2.5 },
-  gridTemplateColumns: {
-    xs: "minmax(0,1fr)",
-    lg: "minmax(0,1.3fr) minmax(320px,.7fr)",
-  },
-};
-
-const receptionLayout = {
-  alignItems: "start",
-  display: "grid",
-  gap: { xs: 2, sm: 2.5 },
-  gridTemplateColumns: {
-    xs: "minmax(0,1fr)",
-    lg: "minmax(300px,.68fr) minmax(0,1.32fr)",
   },
 };
 

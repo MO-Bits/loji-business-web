@@ -34,11 +34,11 @@ function destinationFor(status: AppStatus, step: AppStep): string {
     case AppStep.Profile:
       return "/onboarding/profile";
     case AppStep.Invitation:
-      return "/onboarding/invitation";
+      return "/";
     case AppStep.PropertyBasic:
       return "/onboarding/property";
     case AppStep.PropertyAddress:
-      return "/onboarding/property/address/map";
+      return "/onboarding/property";
     case AppStep.Done:
       return "/dashboard";
   }

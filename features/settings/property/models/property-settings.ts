@@ -152,12 +152,6 @@ export const propertyTypes = [
   "hotel",
   "lodge",
   "guesthouse",
-  "apartment",
-  "house",
-  "resort",
-  "hostel",
-  "villa",
-  "bed_and_breakfast",
 ];
 
 export const propertyAmenities = [
