@@ -12,7 +12,6 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import BlockRoundedIcon from "@mui/icons-material/BlockRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
-import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
@@ -22,7 +21,6 @@ import PersonOffRoundedIcon from "@mui/icons-material/PersonOffRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
-import ShareRoundedIcon from "@mui/icons-material/ShareRounded";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import {
   Alert,
@@ -85,7 +83,6 @@ import {
   getTeamAccessWorkspace,
   inviteStaff,
   removeStaff,
-  resendStaffInvitation,
   revokeStaffInvitation,
   updateStaffStatus,
 } from "@/features/more/services/more-service";
@@ -97,7 +94,7 @@ import { createClient } from "@/lib/supabase/client";
 type TeamTab = "members" | "invitations" | "roles";
 type Translator = (english: string, swahili: string) => string;
 type MemberAction = "activate" | "change_role" | "remove" | "suspend";
-type InvitationAction = "resend" | "revoke";
+type InvitationAction = "revoke";
 
 type MemberActionTarget = {
   action: MemberAction;
@@ -158,23 +155,6 @@ function initials(member: StaffMember) {
 
 function hasMemberActions(member: StaffMember) {
   return Object.values(member.allowedActions).some(Boolean);
-}
-
-async function copyText(value: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-  const input = document.createElement("textarea");
-  input.value = value;
-  input.style.position = "fixed";
-  input.style.opacity = "0";
-  document.body.appendChild(input);
-  input.focus();
-  input.select();
-  const copied = document.execCommand("copy");
-  input.remove();
-  if (!copied) throw new Error("Copy is not supported by this browser.");
 }
 
 export function TeamAccessScreen() {
@@ -332,8 +312,7 @@ export function TeamAccessScreen() {
         (invitation) =>
           !normalizedQuery ||
           invitation.email.toLowerCase().includes(normalizedQuery) ||
-          invitation.invitedByName.toLowerCase().includes(normalizedQuery) ||
-          invitation.code.toLowerCase().includes(normalizedQuery),
+          invitation.invitedByName.toLowerCase().includes(normalizedQuery),
       ) ?? [],
     [normalizedQuery, workspace?.invitations],
   );
@@ -362,17 +341,21 @@ export function TeamAccessScreen() {
 
   const submitInvite = async (email: string, role: TeamRole) => {
     if (!propertyId) return false;
+    const access = { status: "pending" as "active" | "pending" };
     const success = await runAction(
       `invite:${email}`,
-      () => inviteStaff(client, propertyId, email, role),
+      async () => {
+        const result = await inviteStaff(client, propertyId, email, role);
+        access.status = result.status === "active" ? "active" : "pending";
+      },
       t(
-        "Invitation created. Share its code with the teammate.",
-        "Mwaliko umeundwa. Shiriki msimbo wake na mshiriki wa timu.",
+        "Email access saved. No invitation code is needed.",
+        "Ruhusa ya barua pepe imehifadhiwa. Hakuna msimbo wa mwaliko.",
       ),
     );
     if (success) {
       setInvitePropertyId(null);
-      setTab("invitations");
+      setTab(access.status === "active" ? "members" : "invitations");
       setQuery("");
       setInvitationPage(0);
     }
@@ -410,65 +393,13 @@ export function TeamAccessScreen() {
 
   const confirmInvitationAction = async () => {
     if (!activeInvitationAction || !propertyId) return;
-    const { action, invitation } = activeInvitationAction;
+    const { invitation } = activeInvitationAction;
     const success = await runAction(
-      `${action}:${invitation.id}`,
-      action === "resend"
-        ? () => resendStaffInvitation(client, propertyId, invitation.id)
-        : () => revokeStaffInvitation(client, propertyId, invitation.id),
-      action === "resend"
-        ? t(
-            "Invitation renewed with a new code.",
-            "Mwaliko umefanywa upya kwa msimbo mpya.",
-          )
-        : t("Invitation revoked.", "Mwaliko umebatilishwa."),
+      `revoke:${invitation.id}`,
+      () => revokeStaffInvitation(client, propertyId, invitation.id),
+      t("Pending email access removed.", "Ruhusa ya barua pepe inayosubiri imeondolewa."),
     );
     if (success) setInvitationAction(null);
-  };
-
-  const copyInvitationCode = async (invitation: StaffInvitation) => {
-    try {
-      await copyText(invitation.code);
-      feedback.success(
-        t("Invitation code copied.", "Msimbo wa mwaliko umenakiliwa."),
-      );
-    } catch (cause) {
-      feedback.error(
-        cause instanceof Error
-          ? cause.message
-          : t("Unable to copy code.", "Imeshindikana kunakili msimbo."),
-      );
-    }
-  };
-
-  const shareInvitation = async (invitation: StaffInvitation) => {
-    const message = t(
-      `You have been invited to ${workspace?.propertyName || "Loji Business"} as ${roleLabel(invitation.role, t)}. Sign in with ${invitation.email} and use invitation code ${invitation.code}.`,
-      `Umealikwa kwenye ${workspace?.propertyName || "Loji Business"} kama ${roleLabel(invitation.role, t)}. Ingia kwa ${invitation.email} na utumie msimbo wa mwaliko ${invitation.code}.`,
-    );
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          text: message,
-          title: t("Loji Business invitation", "Mwaliko wa Loji Business"),
-        });
-      } else {
-        await copyText(message);
-        feedback.success(
-          t("Invitation message copied.", "Ujumbe wa mwaliko umenakiliwa."),
-        );
-      }
-    } catch (cause) {
-      if (cause instanceof DOMException && cause.name === "AbortError") return;
-      feedback.error(
-        cause instanceof Error
-          ? cause.message
-          : t(
-              "Unable to share invitation.",
-              "Imeshindikana kushiriki mwaliko.",
-            ),
-      );
-    }
   };
 
   if (sessionLoading) {
@@ -536,7 +467,7 @@ export function TeamAccessScreen() {
               startIcon={<AddRoundedIcon />}
               variant="contained"
             >
-              {t("Invite teammate", "Alika mshiriki")}
+              {t("Add teammate", "Ongeza mfanyakazi")}
             </Button>
           ) : undefined
         }
@@ -587,9 +518,9 @@ export function TeamAccessScreen() {
           value={summary?.suspended ?? 0}
         />
         <MetricCell
-          caption={t("Waiting to be accepted", "Inasubiri kukubaliwa")}
+          caption={t("Activates on their next sign-in", "Itawashwa akiingia kwenye akaunti")}
           icon={<EmailRoundedIcon />}
-          label={t("Pending invites", "Mialiko inayosubiri")}
+          label={t("Pending access", "Ruhusa inayosubiri")}
           tone={summary?.pendingInvitations ? "warning" : "neutral"}
           value={summary?.pendingInvitations ?? 0}
         />
@@ -614,7 +545,7 @@ export function TeamAccessScreen() {
             value="members"
           />
           <Tab
-            label={`${t("Invitations", "Mialiko")} · ${workspace?.invitations.length ?? 0}`}
+            label={`${t("Pending access", "Ruhusa inayosubiri")} · ${workspace?.invitations.length ?? 0}`}
             value="invitations"
           />
           <Tab
@@ -690,14 +621,12 @@ export function TeamAccessScreen() {
           onAction={(action, invitation) =>
             propertyId && setInvitationAction({ action, invitation, propertyId })
           }
-          onCopy={(invitation) => void copyInvitationCode(invitation)}
           onInvite={canInvite ? () => propertyId && setInvitePropertyId(propertyId) : undefined}
           onPageChange={setInvitationPage}
           onRowsPerPageChange={(value) => {
             setInvitationRowsPerPage(value);
             setInvitationPage(0);
           }}
-          onShare={(invitation) => void shareInvitation(invitation)}
           page={safeInvitationPage}
           pendingKey={pendingKey}
           rowsPerPage={invitationRowsPerPage}
@@ -745,7 +674,7 @@ export function TeamAccessScreen() {
               startIcon={<AddRoundedIcon />}
               variant="contained"
             >
-              {t("Invite teammate", "Alika mshiriki")}
+              {t("Add teammate", "Ongeza mfanyakazi")}
             </Button>
           </StickyMobileActionBar>
         </Box>
@@ -784,7 +713,7 @@ function FilterBar({
                   "Search by name, email, or phone",
                   "Tafuta kwa jina, barua pepe au simu",
                 )
-              : t("Search invitations", "Tafuta mialiko")
+              : t("Search pending access", "Tafuta ruhusa inayosubiri")
           }
           size="small"
           slotProps={{
@@ -873,8 +802,8 @@ function MembersDirectory({
       <Surface padding={false}>
         <EmptyState
           description={t(
-            "Try a different search or filter. New teammates appear after accepting an invitation.",
-            "Jaribu utafutaji au kichujio tofauti. Washiriki wapya huonekana baada ya kukubali mwaliko.",
+            "Try a different search or filter. New teammates appear after signing in with an approved email.",
+            "Jaribu utafutaji au kichujio tofauti. Wafanyakazi wapya huonekana baada ya kuingia kwa barua pepe iliyoidhinishwa.",
           )}
           icon={<GroupsRoundedIcon />}
           title={t("No team members found", "Hakuna washiriki waliopatikana")}
@@ -1162,11 +1091,9 @@ function InvitationsDirectory({
   desktop,
   invitations,
   onAction,
-  onCopy,
   onInvite,
   onPageChange,
   onRowsPerPageChange,
-  onShare,
   page,
   pendingKey,
   rowsPerPage,
@@ -1175,11 +1102,9 @@ function InvitationsDirectory({
   desktop: boolean;
   invitations: StaffInvitation[];
   onAction: (action: InvitationAction, invitation: StaffInvitation) => void;
-  onCopy: (invitation: StaffInvitation) => void;
   onInvite?: () => void;
   onPageChange: (page: number) => void;
   onRowsPerPageChange: (rowsPerPage: number) => void;
-  onShare: (invitation: StaffInvitation) => void;
   page: number;
   pendingKey: string | null;
   rowsPerPage: number;
@@ -1190,15 +1115,15 @@ function InvitationsDirectory({
       <Surface padding={false}>
         <EmptyState
           actionLabel={
-            onInvite ? t("Invite teammate", "Alika mshiriki") : undefined
+            onInvite ? t("Add teammate", "Ongeza mfanyakazi") : undefined
           }
           description={t(
-            "Create an invitation, then copy or share its one-time access code.",
-            "Unda mwaliko, kisha nakili au shiriki msimbo wake wa ruhusa.",
+            "Add a teammate’s exact email. Their access will activate automatically when they sign in.",
+            "Weka barua pepe sahihi ya mfanyakazi. Ruhusa yake itawashwa moja kwa moja akiingia.",
           )}
           icon={<EmailRoundedIcon />}
           onAction={onInvite}
-          title={t("No pending invitations", "Hakuna mialiko inayosubiri")}
+          title={t("No pending email access", "Hakuna ruhusa ya barua pepe inayosubiri")}
         />
       </Surface>
     );
@@ -1206,26 +1131,24 @@ function InvitationsDirectory({
 
   return (
     <>
-      <Alert severity="info" icon={<KeyRoundedIcon />}>
+      <Alert severity="info" icon={<EmailRoundedIcon />}>
         {t(
-          "Invitation codes are visible only to authorized administrators. Share them with the invited email address through a trusted channel.",
-          "Misimbo ya mialiko inaonekana kwa wasimamizi walioidhinishwa pekee. Ishiriki na mwenye barua pepe iliyoalikwa kupitia njia salama.",
+          "No invitation code is needed. Pending access is matched to the exact email and activates on sign-in.",
+          "Hakuna msimbo wa mwaliko. Ruhusa inayosubiri inaunganishwa na barua pepe sahihi na kuwashwa akiingia.",
         )}
       </Alert>
       {desktop ? (
         <Surface padding={false}>
         <TableContainer>
-          <Table aria-label={t("Pending invitations", "Mialiko inayosubiri")}>
+          <Table aria-label={t("Pending email access", "Ruhusa ya barua pepe inayosubiri")}>
             <TableHead>
               <TableRow>
                 <TableCell>
-                  {t("Invited teammate", "Mshiriki aliyealikwa")}
+                  {t("Teammate email", "Barua pepe ya mfanyakazi")}
                 </TableCell>
                 <TableCell>{t("Role", "Jukumu")}</TableCell>
-                <TableCell>
-                  {t("Invitation code", "Msimbo wa mwaliko")}
-                </TableCell>
-                <TableCell>{t("Expires", "Unaisha")}</TableCell>
+                <TableCell>{t("Activation", "Uwashaji")}</TableCell>
+                <TableCell>{t("Added", "Imeongezwa")}</TableCell>
                 <TableCell align="right">{t("Actions", "Hatua")}</TableCell>
               </TableRow>
             </TableHead>
@@ -1237,16 +1160,16 @@ function InvitationsDirectory({
                       {invitation.email}
                     </Typography>
                     <Typography color="text.secondary" variant="caption">
-                      {t("Invited by", "Amealika")} {invitation.invitedByName}
+                      {t("Added by", "Imeongezwa na")} {invitation.invitedByName}
                     </Typography>
                   </TableCell>
                   <TableCell>{roleLabel(invitation.role, t)}</TableCell>
                   <TableCell>
-                    <InvitationCode code={invitation.code} />
+                    <StatusPill label={t("On sign-in", "Akiingia")} tone="info" />
                   </TableCell>
                   <TableCell>
                     <Typography color="text.secondary" variant="body2">
-                      {formatLocalDateTime(invitation.expiresAt)}
+                      {formatLocalDateTime(invitation.createdAt)}
                     </Typography>
                   </TableCell>
                   <TableCell align="right">
@@ -1255,36 +1178,6 @@ function InvitationsDirectory({
                       spacing={0.5}
                       sx={{ justifyContent: "flex-end" }}
                     >
-                      {invitation.code ? (
-                        <>
-                          <Tooltip title={t("Copy code", "Nakili msimbo")}>
-                            <IconButton
-                              aria-label={t(
-                                "Copy invitation code",
-                                "Nakili msimbo wa mwaliko",
-                              )}
-                              onClick={() => onCopy(invitation)}
-                              size="small"
-                            >
-                              <ContentCopyRoundedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip
-                            title={t("Share invitation", "Shiriki mwaliko")}
-                          >
-                            <IconButton
-                              aria-label={t(
-                                "Share invitation",
-                                "Shiriki mwaliko",
-                              )}
-                              onClick={() => onShare(invitation)}
-                              size="small"
-                            >
-                              <ShareRoundedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      ) : null}
                       <InvitationActionMenu
                         invitation={invitation}
                         onAction={onAction}
@@ -1324,8 +1217,7 @@ function InvitationsDirectory({
                     {invitation.email}
                   </Typography>
                   <Typography color="text.secondary" variant="caption">
-                    {roleLabel(invitation.role, t)} · {t("Expires", "Unaisha")}{" "}
-                    {formatLocalDateTime(invitation.expiresAt)}
+                    {roleLabel(invitation.role, t)} · {t("Activates on sign-in", "Itawashwa akiingia")}
                   </Typography>
                 </Box>
                 <InvitationActionMenu
@@ -1334,34 +1226,9 @@ function InvitationsDirectory({
                   pending={Boolean(pendingKey?.endsWith(invitation.id))}
                 />
               </Stack>
-              <Box>
-                <Typography color="text.secondary" variant="caption">
-                  {t("Invitation code", "Msimbo wa mwaliko")}
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <InvitationCode code={invitation.code} />
-                </Box>
-              </Box>
-              {invitation.code ? (
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    fullWidth
-                    onClick={() => onCopy(invitation)}
-                    startIcon={<ContentCopyRoundedIcon />}
-                    variant="outlined"
-                  >
-                    {t("Copy code", "Nakili msimbo")}
-                  </Button>
-                  <Button
-                    fullWidth
-                    onClick={() => onShare(invitation)}
-                    startIcon={<ShareRoundedIcon />}
-                    variant="contained"
-                  >
-                    {t("Share", "Shiriki")}
-                  </Button>
-                </Stack>
-              ) : null}
+              <Typography color="text.secondary" variant="caption">
+                {t("Added", "Imeongezwa")} {formatLocalDateTime(invitation.createdAt)}
+              </Typography>
             </Stack>
           </Surface>
         ))}
@@ -1369,13 +1236,13 @@ function InvitationsDirectory({
       )}
       <DirectoryPagination
         count={count}
-        itemLabel="invitations"
-        itemLabelSwahili="mialiko"
+        itemLabel="pending access entries"
+        itemLabelSwahili="ruhusa zinazosubiri"
         onPageChange={onPageChange}
         onRowsPerPageChange={onRowsPerPageChange}
         page={page}
         rowsPerPage={rowsPerPage}
-        rowsPerPageLabel={t("Invitations per page", "Mialiko kwa ukurasa")}
+        rowsPerPageLabel={t("Access entries per page", "Ruhusa kwa ukurasa")}
       />
     </>
   );
@@ -1436,29 +1303,6 @@ function DirectoryPagination({
   );
 }
 
-function InvitationCode({ code }: { code: string }) {
-  const { t } = useLanguage();
-  return code ? (
-    <Chip
-      label={code}
-      size="small"
-      sx={{
-        bgcolor:
-          "color-mix(in srgb, var(--mui-palette-primary-main) 9%, transparent)",
-        color: "primary.dark",
-        fontFamily: "monospace",
-        fontSize: ".8125rem",
-        fontWeight: 700,
-        letterSpacing: ".12em",
-      }}
-    />
-  ) : (
-    <Typography color="text.secondary" variant="caption">
-      {t("Code unavailable", "Msimbo haupatikani")}
-    </Typography>
-  );
-}
-
 function InvitationActionMenu({
   invitation,
   onAction,
@@ -1470,14 +1314,13 @@ function InvitationActionMenu({
 }) {
   const { t } = useLanguage();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
-  if (!invitation.allowedActions.resend && !invitation.allowedActions.revoke)
-    return null;
+  if (!invitation.allowedActions.revoke) return null;
   return (
     <>
       <IconButton
         aria-label={t(
-          `Manage invitation for ${invitation.email}`,
-          `Simamia mwaliko wa ${invitation.email}`,
+          `Manage pending access for ${invitation.email}`,
+          `Simamia ruhusa inayosubiri ya ${invitation.email}`,
         )}
         disabled={pending}
         onClick={(event) => setAnchor(event.currentTarget)}
@@ -1490,17 +1333,6 @@ function InvitationActionMenu({
         onClose={() => setAnchor(null)}
         open={Boolean(anchor)}
       >
-        {invitation.allowedActions.resend ? (
-          <MenuItem
-            onClick={() => {
-              setAnchor(null);
-              onAction("resend", invitation);
-            }}
-          >
-            <RefreshRoundedIcon fontSize="small" sx={{ mr: 1.25 }} />
-            {t("Renew invitation", "Fanya mwaliko upya")}
-          </MenuItem>
-        ) : null}
         {invitation.allowedActions.revoke ? (
           <MenuItem
             onClick={() => {
@@ -1510,7 +1342,7 @@ function InvitationActionMenu({
             sx={{ color: "error.main" }}
           >
             <DeleteOutlineRoundedIcon fontSize="small" sx={{ mr: 1.25 }} />
-            {t("Revoke invitation", "Batilisha mwaliko")}
+            {t("Remove pending access", "Ondoa ruhusa inayosubiri")}
           </MenuItem>
         ) : null}
       </Menu>
@@ -1749,7 +1581,7 @@ function InviteTeamMemberModal({
       open={open}
     >
       <DialogTitle>
-        {t("Invite a teammate", "Alika mshiriki wa timu")}
+        {t("Add teammate access", "Ongeza ruhusa ya mfanyakazi")}
       </DialogTitle>
       <Box
         component="form"
@@ -1762,8 +1594,8 @@ function InviteTeamMemberModal({
           <Stack spacing={2.25} sx={{ pt: 0.75 }}>
             <Typography color="text.secondary" variant="body2">
               {t(
-                "Create a pending invitation for their email address. You will receive a short code to share securely.",
-                "Unda mwaliko unaosubiri kwa barua pepe yao. Utapata msimbo mfupi wa kushiriki kwa usalama.",
+                "Add their exact email and role. Access activates automatically when they sign in—no invitation code is needed.",
+                "Weka barua pepe yao sahihi na jukumu. Ruhusa itawashwa moja kwa moja wakiingia—hakuna msimbo wa mwaliko.",
               )}
             </Typography>
             <TextField
@@ -1824,7 +1656,7 @@ function InviteTeamMemberModal({
           >
             {submitting
               ? t("Creating…", "Inaunda…")
-              : t("Create invitation", "Unda mwaliko")}
+              : t("Add access", "Ongeza ruhusa")}
           </Button>
         </DialogActions>
       </Box>
@@ -1958,25 +1790,15 @@ function InvitationActionModal({
 }) {
   const { t } = useLanguage();
   if (!target) return null;
-  const renew = target.action === "resend";
   return (
     <ResponsiveModal maxWidth="xs" onClose={pending ? undefined : onClose} open>
-      <DialogTitle>
-        {renew
-          ? t("Renew invitation?", "Fanya mwaliko upya?")
-          : t("Revoke invitation?", "Batilisha mwaliko?")}
-      </DialogTitle>
+      <DialogTitle>{t("Remove pending access?", "Ondoa ruhusa inayosubiri?")}</DialogTitle>
       <DialogContent>
         <Typography color="text.secondary" variant="body2">
-          {renew
-            ? t(
-                `The current code for ${target.invitation.email} will stop working and a new code will be created for seven more days.`,
-                `Msimbo wa sasa wa ${target.invitation.email} utaacha kufanya kazi na msimbo mpya utaundwa kwa siku saba zaidi.`,
-              )
-            : t(
-                `${target.invitation.email} will no longer be able to use this invitation code.`,
-                `${target.invitation.email} hataweza tena kutumia msimbo huu wa mwaliko.`,
-              )}
+          {t(
+            `${target.invitation.email} will no longer receive automatic access when they sign in.`,
+            `${target.invitation.email} hatapewa tena ruhusa moja kwa moja akiingia.`,
+          )}
         </Typography>
       </DialogContent>
       <DialogActions>
@@ -1984,23 +1806,15 @@ function InvitationActionModal({
           {t("Cancel", "Ghairi")}
         </Button>
         <Button
-          color={renew ? "primary" : "error"}
+          color="error"
           disabled={pending}
           onClick={() => void onConfirm()}
           startIcon={
-            pending ? (
-              <CircularProgress size={17} />
-            ) : renew ? (
-              <RefreshRoundedIcon />
-            ) : (
-              <DeleteOutlineRoundedIcon />
-            )
+            pending ? <CircularProgress size={17} /> : <DeleteOutlineRoundedIcon />
           }
           variant="contained"
         >
-          {renew
-            ? t("Renew invitation", "Fanya mwaliko upya")
-            : t("Revoke", "Batilisha")}
+          {t("Remove access", "Ondoa ruhusa")}
         </Button>
       </DialogActions>
     </ResponsiveModal>

@@ -106,6 +106,13 @@ export const propertyTypeDefinitions: readonly PropertyTypeDefinition[] = [
   },
 ] as const;
 
+export const hospitalityPropertyTypeDefinitions = propertyTypeDefinitions.filter(
+  (definition) =>
+    definition.value === "hotel" ||
+    definition.value === "lodge" ||
+    definition.value === "guesthouse",
+);
+
 const fallback = propertyTypeDefinitions[0];
 
 export function normalizePropertyType(value: unknown): PropertyType {

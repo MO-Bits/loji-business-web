@@ -120,7 +120,7 @@ export function inviteStaff(
       p_email: email.trim(),
       p_role: role,
     },
-    "Unable to send invitation.",
+    "Unable to add email access.",
   );
 }
 

@@ -1,9 +1,8 @@
 "use client";
 
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
-import DomainRoundedIcon from "@mui/icons-material/DomainRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
+import OtherHousesRoundedIcon from "@mui/icons-material/OtherHousesRounded";
 
 import { MarketingPageShell } from "@/components/content/marketing-page-shell";
 import {
@@ -27,7 +26,7 @@ const solutions = [
       "Give an independent guesthouse a reliable daily workspace without adding unnecessary complexity.",
       "Ipe nyumba ya wageni inayojitegemea sehemu ya kuaminika ya shughuli za kila siku bila kuongeza ugumu usiohitajika.",
     ],
-    icon: ApartmentRoundedIcon,
+    icon: OtherHousesRoundedIcon,
     title: ["Guesthouses", "Nyumba za wageni"],
   },
   {
@@ -37,14 +36,6 @@ const solutions = [
     ],
     icon: HotelRoundedIcon,
     title: ["Hotels", "Hoteli"],
-  },
-  {
-    description: [
-      "Organise units, stays and guest records as your apartment or short-stay portfolio grows.",
-      "Panga nyumba, ukaaji na taarifa za wageni kadri biashara yako ya fleti au makazi ya muda mfupi inavyokua.",
-    ],
-    icon: DomainRoundedIcon,
-    title: ["Apartments & short stays", "Fleti na makazi ya muda mfupi"],
   },
 ] as const;
 
@@ -63,7 +54,7 @@ export default function SolutionsPage() {
         "Imejengwa kuendana na namna biashara za malazi zinavyofanya kazi.",
       ]}
     >
-      <MarketingGrid columns={{ xs: 1, sm: 2 }}>
+      <MarketingGrid columns={{ xs: 1, sm: 3 }}>
         {solutions.map(({ description, icon: Icon, title }) => (
           <MarketingCard
             description={t(description[0], description[1])}
@@ -76,10 +67,10 @@ export default function SolutionsPage() {
       <MarketingCallout
         action={{ href: "/contact", label: t("Talk to our team", "Wasiliana na timu") }}
         description={t(
-          "Tell us your property type and room count. We will help you identify the clearest way to set up your workspace.",
-          "Tuambie aina ya biashara na idadi ya vyumba. Tutakusaidia kuona njia iliyo wazi zaidi ya kuandaa sehemu yako ya kazi.",
+          "Loji Business gives hotel, lodge and guesthouse teams one clear workspace for rooms, guests and daily operations.",
+          "Loji Business inaipa timu ya hoteli, loji au nyumba ya wageni eneo moja wazi la kusimamia vyumba, wageni na shughuli za kila siku.",
         )}
-        title={t("Not sure where your property fits?", "Huna uhakika biashara yako inafaa wapi?")}
+        title={t("Built only for hospitality teams", "Imeundwa kwa timu za biashara za malazi")}
       />
     </MarketingPageShell>
   );

@@ -328,6 +328,16 @@ export type Database = {
     };
     Functions: {
       get_app_session: { Args: Record<PropertyKey, never>; Returns: Json };
+      claim_email_property_access: { Args: Record<PropertyKey, never>; Returns: Json };
+      complete_hospitality_registration: {
+        Args: {
+          p_request_key: string;
+          p_business: Json;
+          p_rooms: Json;
+          p_staff?: Json;
+        };
+        Returns: Json;
+      };
       create_property_basic_info: {
         Args: { p_name: string; p_type: string; p_phone: string; p_email: string | null; p_amenities: Json; p_request_key?: string | null };
         Returns: string;

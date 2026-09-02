@@ -1,5 +1,12 @@
-import { PropertySetupIntro } from "@/components/property/property-setup-intro";
+import { Suspense } from "react";
+
+import { BusinessSetupFlow } from "@/components/onboarding/business-setup-flow";
+import { FullPageLoader } from "@/components/shared/full-page-loader";
 
 export default function PropertyOnboardingPage() {
-  return <PropertySetupIntro />;
+  return (
+    <Suspense fallback={<FullPageLoader />}>
+      <BusinessSetupFlow />
+    </Suspense>
+  );
 }

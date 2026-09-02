@@ -1,3 +1,5 @@
-import { InvitationOnboarding } from "@/components/auth/invitation-onboarding";
+import { redirect } from "next/navigation";
 
-export default function InvitationOnboardingPage() { return <InvitationOnboarding />; }
+export default function InvitationOnboardingPage() {
+  redirect("/");
+}
