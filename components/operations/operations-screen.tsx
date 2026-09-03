@@ -243,8 +243,20 @@ export function OperationsScreen() {
 
         <Surface padding={false}>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", p: 1.25 }}>
-            <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto" }}>
-              <ToggleButtonGroup exclusive onChange={(_, value: Lane | null) => value && setLane(value)} size="small" sx={{ minWidth: "max-content" }} value={lane}>
+            <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto", scrollbarWidth: "thin", WebkitOverflowScrolling: "touch" }}>
+              <ToggleButtonGroup
+                exclusive
+                onChange={(_, value: Lane | null) => value && setLane(value)}
+                size="small"
+                sx={{
+                  minWidth: "max-content",
+                  "& .MuiToggleButton-root": {
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
+                  },
+                }}
+                value={lane}
+              >
                 <ToggleButton value="arrivals">{t("Arrivals", "Wanaowasili")} · {board?.arrivals.length ?? 0}</ToggleButton>
                 <ToggleButton value="departures">{t("Departures", "Wanaotoka")} · {board?.departures.length ?? 0}</ToggleButton>
                 <ToggleButton value="in_house">{t("In house", "Waliopo")} · {board?.inHouse.length ?? 0}</ToggleButton>
