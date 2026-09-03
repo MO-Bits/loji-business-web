@@ -111,6 +111,18 @@ Deno.serve(async (request) => {
     const senderId = Deno.env.get("BEEM_SENDER_ID");
     if (!apiKey || !beemSecret || !senderId) throw new Error("Beem credentials are missing.");
 
+    const { error: claimError } = await admin.from("booking_sms_deliveries").insert({
+      booking_id: booking.id,
+      property_id: booking.property_id,
+      status: "sending",
+    });
+    if (claimError) {
+      if (claimError.code === "23505") {
+        return json({ success: true, alreadySent: true });
+      }
+      throw new Error("Unable to reserve the automatic SMS delivery.");
+    }
+
     const response = await fetch("https://apisms.beem.africa/v1/send", {
       method: "POST",
       signal: AbortSignal.timeout(15_000),
@@ -129,9 +141,21 @@ Deno.serve(async (request) => {
     let provider: unknown = responseText;
     try { provider = JSON.parse(responseText); } catch { /* Keep non-JSON provider response for diagnostics. */ }
     if (!response.ok) {
+      await admin.from("booking_sms_deliveries").update({
+        completed_at: new Date().toISOString(),
+        last_error: "The SMS provider rejected the message.",
+        provider_status: response.status,
+        status: "failed",
+      }).eq("booking_id", booking.id);
       console.error("booking_sms_provider_failed", { bookingId: booking.id, status: response.status, provider });
       return json({ success: false, error: "The SMS provider rejected the message." }, 502);
     }
+
+    await admin.from("booking_sms_deliveries").update({
+      completed_at: new Date().toISOString(),
+      provider_status: response.status,
+      status: "sent",
+    }).eq("booking_id", booking.id);
 
     console.log("booking_sms_sent", { bookingId: booking.id, propertyId: booking.property_id, recipient: recipient.slice(-4) });
     return json({ success: true, phone: recipient });

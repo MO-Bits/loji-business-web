@@ -137,15 +137,20 @@ export function MobileNavigation({
     <Paper
       component="nav"
       aria-label={t("Primary navigation", "Menyu kuu")}
-      square
       elevation={0}
       sx={{
-        bottom: 0,
+        backdropFilter: "saturate(150%) blur(20px)",
+        bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 94%, transparent)",
+        border: 1,
+        borderColor: "divider",
+        borderRadius: 3,
+        bottom: "max(8px, env(safe-area-inset-bottom))",
+        boxShadow: "0 12px 38px rgba(15, 34, 58, .18)",
         display: { xs: "block", md: "none" },
-        left: 0,
-        pb: "env(safe-area-inset-bottom)",
+        left: 10,
+        overflow: "hidden",
         position: "fixed",
-        right: 0,
+        right: 10,
         zIndex: (theme) => theme.zIndex.appBar,
       }}
     >
@@ -160,15 +165,26 @@ export function MobileNavigation({
           onNavigate(String(value));
         }}
         sx={{
-          borderTop: 1,
-          borderColor: "divider",
-          height: 64,
+          bgcolor: "transparent",
+          height: 62,
           px: 0.25,
           "& .MuiBottomNavigationAction-root": {
             color: "text.secondary",
             minWidth: 52,
             position: "relative",
-            "&.Mui-selected": { color: "primary.main" },
+            "&.Mui-selected": {
+              color: "primary.main",
+              "&::before": {
+                bgcolor: "primary.main",
+                borderRadius: 999,
+                content: '\"\"',
+                height: 3,
+                left: "34%",
+                position: "absolute",
+                right: "34%",
+                top: 0,
+              },
+            },
           },
           "& .MuiBottomNavigationAction-label": {
             fontSize: ".6875rem",

@@ -341,19 +341,20 @@ export function InlineLoading({ label = "Loading" }: { label?: string }) {
 export function StickyMobileActionBar({ children }: { children: ReactNode }) {
   return (
     <Paper
-      elevation={8}
+      elevation={0}
       sx={{
         backdropFilter: "blur(18px)",
         bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 92%, transparent)",
-        borderRadius: 0,
-        borderTop: 1,
+        border: 1,
+        borderRadius: 3,
         borderColor: "divider",
-        bottom: "calc(64px + env(safe-area-inset-bottom))",
+        bottom: "calc(78px + env(safe-area-inset-bottom))",
+        boxShadow: "0 12px 38px rgba(15, 34, 58, .16)",
         display: { xs: "block", md: "none" },
-        left: 0,
-        p: 1.5,
+        left: 10,
+        p: 1,
         position: "fixed",
-        right: 0,
+        right: 10,
         zIndex: (theme) => theme.zIndex.appBar - 1,
       }}
     >

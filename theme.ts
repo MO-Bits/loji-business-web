@@ -23,9 +23,9 @@ export const theme = createTheme({
         warning: { main: "#C76A00" },
         error: { main: "#D70015" },
         info: { main: "#007AFF" },
-        background: { default: "#F5F5F7", paper: "#FFFFFF" },
-        text: { primary: "#1D1D1F", secondary: "#6E6E73" },
-        divider: "#E5E5EA",
+        background: { default: "#F3F6FA", paper: "#FFFFFF" },
+        text: { primary: "#132238", secondary: "#627086" },
+        divider: "#DEE5EF",
         action: {
           hover: "rgba(0,122,255,.055)",
           selected: "rgba(0,122,255,.105)",
@@ -169,7 +169,7 @@ export const theme = createTheme({
         rounded: { borderRadius: "12px !important" },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
-          boxShadow: "0 1px 2px rgba(0,0,0,.025)",
+          boxShadow: "0 1px 2px rgba(15,34,58,.025)",
         },
       },
     },
@@ -365,6 +365,17 @@ export const theme = createTheme({
       styleOverrides: {
         root: { minHeight: 56, minWidth: 56 },
         label: { fontSize: ".75rem", marginTop: 3 },
+      },
+    },
+    MuiCheckbox: {
+      styleOverrides: {
+        root: { borderRadius: 8, padding: 8 },
+      },
+    },
+    MuiFormControlLabel: {
+      styleOverrides: {
+        root: { marginLeft: -8, minHeight: 40 },
+        label: { fontSize: ".875rem", lineHeight: 1.45 },
       },
     },
     MuiAvatar: {

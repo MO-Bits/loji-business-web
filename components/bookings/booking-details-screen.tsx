@@ -18,7 +18,6 @@ import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import SmsRoundedIcon from "@mui/icons-material/SmsRounded";
 import {
   Alert,
   Avatar,
@@ -51,7 +50,6 @@ import {
   getBookingWorkspace,
   getAvailableRooms,
   recordBookingPayment,
-  sendBookingSms,
   updateBookingLifecycle,
   updatePropertyBooking,
   type BookingLifecycleAction,
@@ -131,7 +129,6 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
   const [allowBalance, setAllowBalance] = useState(false);
   const [amendOpen, setAmendOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [smsWorking, setSmsWorking] = useState(false);
   const requestId = useRef(0);
   const handledRequestedAction = useRef<string | null>(null);
   const activePropertyId = useRef<string | undefined>(undefined);
@@ -294,19 +291,6 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
     }
   };
 
-  const resendBookingSms = async () => {
-    if (smsWorking || !booking.phone) return;
-    setSmsWorking(true);
-    try {
-      await sendBookingSms(client, propertyId, booking.id);
-      feedback.success(t("Booking SMS sent.", "SMS ya uhifadhi imetumwa."));
-    } catch (cause) {
-      feedback.error(cause instanceof Error ? cause.message : t("Unable to send booking SMS.", "Imeshindikana kutuma SMS ya uhifadhi."));
-    } finally {
-      setSmsWorking(false);
-    }
-  };
-
   return (
     <Box sx={{ pb: { xs: primaryAction ? 14 : 4, md: 5 } }}>
       <Container maxWidth="xl" sx={{ py: { xs: 1.5, sm: 2.5, lg: 3 } }}>
@@ -341,7 +325,6 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
                 title={t("Guest profile")}
                 action={
                   <Stack direction="row" spacing={0.5}>
-                    {booking.phone ? <IconButton aria-label={t("Send booking SMS", "Tuma SMS ya uhifadhi")} disabled={smsWorking} onClick={() => void resendBookingSms()} size="small"><SmsRoundedIcon fontSize="small" /></IconButton> : null}
                     {booking.phone ? <IconButton component="a" href={`tel:${booking.phone}`} aria-label={t("Call guest")} size="small"><PhoneRoundedIcon fontSize="small" /></IconButton> : null}
                     {booking.email ? <IconButton component="a" href={`mailto:${booking.email}`} aria-label={t("Email guest")} size="small"><EmailRoundedIcon fontSize="small" /></IconButton> : null}
                   </Stack>

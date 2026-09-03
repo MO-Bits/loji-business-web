@@ -390,10 +390,22 @@ function NavigationList({
               columnGap: 1.1,
               mb: 0.2,
               minHeight: { xs: 44, md: 40 },
+              overflow: "hidden",
+              position: "relative",
               px: 1.25,
               "&.Mui-selected": {
                 bgcolor: "action.selected",
                 color: "primary.main",
+                "&::before": {
+                  bgcolor: "primary.main",
+                  borderRadius: 999,
+                  bottom: 9,
+                  content: '\"\"',
+                  left: 0,
+                  position: "absolute",
+                  top: 9,
+                  width: 3,
+                },
                 "&:hover": { bgcolor: "action.selected" },
               },
             }}
