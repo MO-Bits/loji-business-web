@@ -40,8 +40,8 @@ export function StaffAccessStep({
     <Stack spacing={2}>
       <Alert icon={<EmailRoundedIcon />} severity="info" variant="outlined">
         {t(
-          "No invitation code is needed. Access activates automatically when a teammate signs in with the email you add here.",
-          "Hakuna msimbo wa mwaliko. Ruhusa itawashwa moja kwa moja mfanyakazi akiingia kwa barua pepe utakayoweka hapa.",
+          "Existing Loji accounts receive access immediately. Otherwise access stays pending for 30 days while the teammate signs in with this email.",
+          "Akaunti zilizopo za Loji hupata ruhusa mara moja. Vinginevyo ruhusa husubiri kwa siku 30 ili mfanyakazi aingie kwa barua pepe hii.",
         )}
       </Alert>
 

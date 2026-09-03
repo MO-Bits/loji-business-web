@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
@@ -22,7 +22,9 @@ import {
 import { SettingsPageHeader } from "./settings-shared";
 
 function titleCase(value: string) {
-  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function SettingsHub() {
@@ -36,7 +38,8 @@ export function SettingsHub() {
       session?.user?.email?.split("@")[0] ??
       t("Your profile", "Wasifu wako"),
   );
-  const email = session?.user?.email ?? t("Signed-in account", "Akaunti iliyoingia");
+  const email =
+    session?.user?.email ?? t("Signed-in account", "Akaunti iliyoingia");
   const avatarUrl =
     typeof session?.user?.user_metadata?.avatar_url === "string"
       ? session.user.user_metadata.avatar_url
@@ -83,7 +86,12 @@ export function SettingsHub() {
             </Typography>
           </Box>
           <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap" }}>
-            <Chip color="primary" label={titleCase(role)} size="small" variant="outlined" />
+            <Chip
+              color="primary"
+              label={titleCase(role)}
+              size="small"
+              variant="outlined"
+            />
             <Chip label={workspaceName} size="small" />
           </Stack>
         </Stack>
@@ -93,7 +101,10 @@ export function SettingsHub() {
         sx={{
           display: "grid",
           gap: 2,
-          gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" },
+          gridTemplateColumns: {
+            xs: "minmax(0, 1fr)",
+            sm: "repeat(2, minmax(0, 1fr))",
+          },
         }}
       >
         <SettingsCard
@@ -133,7 +144,11 @@ export function SettingsHub() {
           <Typography component="h3" variant="h5">
             {t("Workspace administration", "Usimamizi wa biashara")}
           </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.4, mb: 1.5 }} variant="body2">
+          <Typography
+            color="text.secondary"
+            sx={{ mt: 0.4, mb: 1.5 }}
+            variant="body2"
+          >
             {t(
               "These options are shown because of your role in this workspace.",
               "Chaguo hizi zinaonekana kulingana na jukumu lako kwenye biashara hii.",
@@ -143,17 +158,20 @@ export function SettingsHub() {
             sx={{
               display: "grid",
               gap: 2,
-              gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))" },
+              gridTemplateColumns: {
+                xs: "minmax(0, 1fr)",
+                sm: "repeat(2, minmax(0, 1fr))",
+              },
             }}
           >
             {capabilities.canManageProperty ? (
               <SettingsCard
                 description={t(
-                  "Business identity, location, images, and operational details.",
-                  "Utambulisho wa biashara, eneo, picha na taarifa za uendeshaji.",
+                  "Business identity, location, services, payments, and operational details.",
+                  "Utambulisho wa biashara, eneo, huduma, malipo na taarifa za uendeshaji.",
                 )}
                 href="/settings/property"
-                icon={<ApartmentOutlinedIcon />}
+                icon={<BusinessOutlinedIcon />}
                 meta={workspaceName}
                 title={t("Property settings", "Mipangilio ya biashara")}
               />
@@ -161,8 +179,8 @@ export function SettingsHub() {
             {capabilities.canManageStaff ? (
               <SettingsCard
                 description={t(
-                  "Invite teammates and manage their roles and access.",
-                  "Alika washiriki na udhibiti majukumu na ruhusa zao.",
+                  "Add teammate email access and manage roles and account status.",
+                  "Ongeza ruhusa kwa barua pepe na udhibiti majukumu na hali ya akaunti.",
                 )}
                 href="/settings/team"
                 icon={<GroupsOutlinedIcon />}
@@ -202,7 +220,8 @@ function SettingsCard({
         minHeight: 190,
         p: { xs: 2, sm: 2.5 },
         textDecoration: "none",
-        transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+        transition:
+          "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
         "&:hover": {
           borderColor: "primary.main",
           boxShadow: "0 10px 28px rgba(0,122,255,.09)",
@@ -214,12 +233,16 @@ function SettingsCard({
         },
       }}
     >
-      <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
+      <Stack
+        direction="row"
+        sx={{ alignItems: "flex-start", justifyContent: "space-between" }}
+      >
         <Box
           aria-hidden="true"
           sx={{
             alignItems: "center",
-            bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+            bgcolor:
+              "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
             borderRadius: 2,
             color: "primary.main",
             display: "flex",
@@ -231,7 +254,9 @@ function SettingsCard({
         >
           {icon}
         </Box>
-        <ArrowForwardRoundedIcon sx={{ color: "text.secondary", fontSize: 20 }} />
+        <ArrowForwardRoundedIcon
+          sx={{ color: "text.secondary", fontSize: 20 }}
+        />
       </Stack>
       <Box sx={{ flex: 1, mt: 2 }}>
         <Typography component="h3" variant="h5">

@@ -12,9 +12,13 @@ export type Membership = {
 
 export type Property = {
   formatted_address?: string;
+  business_date?: string;
+  businessDate?: string;
   id?: string;
   images?: unknown[];
   name?: string;
+  payment_methods?: unknown[];
+  paymentMethods?: unknown[];
   type?: string;
   address?: string;
   [key: string]: unknown;

@@ -54,7 +54,8 @@ type GuestUpdatePayload = {
   id_number?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
-  notes?: string;
+  property_notes?: string;
+  expected_updated_at?: string;
 };
 
 function guestRpcClient(client: SupabaseClient<Database>): GuestRpcClient {
@@ -123,7 +124,7 @@ export async function updatePropertyGuest(
   propertyId: string,
   guestId: string,
   guest: GuestUpdateInput,
-): Promise<void> {
+): Promise<string> {
   const payload: GuestUpdatePayload = {
     first_name: guest.firstName,
     last_name: guest.lastName,
@@ -145,7 +146,8 @@ export async function updatePropertyGuest(
   if (guest.emergencyContactPhone !== undefined) {
     payload.emergency_contact_phone = guest.emergencyContactPhone;
   }
-  if (guest.notes !== undefined) payload.notes = guest.notes;
+  if (guest.propertyNotes !== undefined) payload.property_notes = guest.propertyNotes;
+  if (guest.expectedUpdatedAt) payload.expected_updated_at = guest.expectedUpdatedAt;
 
   const { data, error } = await guestRpcClient(client).rpc(
     "update_property_guest",
@@ -159,5 +161,11 @@ export async function updatePropertyGuest(
   if (error) throw new Error(error.message);
   if (data !== null && data !== undefined) {
     assertObject(data, "The guest update returned an invalid response.");
+    const updatedGuest = (data as Record<string, unknown>).guest;
+    if (updatedGuest && typeof updatedGuest === "object" && !Array.isArray(updatedGuest)) {
+      const updatedId = (updatedGuest as Record<string, unknown>).id;
+      if (typeof updatedId === "string" && updatedId) return updatedId;
+    }
   }
+  return guestId;
 }

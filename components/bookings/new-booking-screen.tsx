@@ -10,7 +10,6 @@ import {
   type FormEvent,
   type ReactNode,
 } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
@@ -58,6 +57,11 @@ import {
   getInventoryDefinition,
   getPropertyTypeDefinition,
 } from "@/features/property/property-type";
+import {
+  acceptedPaymentMethods,
+  normalizeAcceptedPaymentMethods,
+  type AcceptedPaymentMethod,
+} from "@/features/property/property-catalog";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -94,10 +98,18 @@ const emptyGuest: GuestForm = {
   specialRequests: "",
 };
 
-function tomorrow() {
-  const value = new Date();
-  value.setDate(value.getDate() + 1);
-  return localDateKey(value);
+function isDateKey(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+  );
+}
+
+function nextDateKey(dateKey: string) {
+  const value = new Date(`${dateKey}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + 1);
+  return value.toISOString().slice(0, 10);
 }
 
 function nightCount(checkIn: string, checkOut: string) {
@@ -111,6 +123,14 @@ export function NewBookingScreen() {
   const { session, loading, error } = useAppSession();
   const { t } = useLanguage();
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
+  const paymentMethods = normalizeAcceptedPaymentMethods(
+    session?.property?.payment_methods ?? session?.property?.paymentMethods,
+  );
+  const businessDate = isDateKey(session?.property?.business_date)
+    ? session.property.business_date
+    : isDateKey(session?.property?.businessDate)
+      ? session.property.businessDate
+      : localDateKey();
 
   if (loading) return <BookingFlowSkeleton />;
   if (error || !session?.activePropertyId || !session.user?.id) {
@@ -126,6 +146,8 @@ export function NewBookingScreen() {
         key={`${session.user.id}:${session.activePropertyId}`}
         propertyId={session.activePropertyId}
         propertyType={session.property?.type}
+        businessDate={businessDate}
+        paymentMethods={paymentMethods}
         userId={session.user.id}
         canRecordPayment={capabilities.canRecordPayment}
       />
@@ -133,7 +155,7 @@ export function NewBookingScreen() {
   );
 }
 
-function BookingWizard({ propertyId, propertyType, userId, canRecordPayment }: { propertyId: string; propertyType?: string; userId: string; canRecordPayment: boolean }) {
+function BookingWizard({ businessDate, propertyId, propertyType, paymentMethods, userId, canRecordPayment }: { businessDate: string; propertyId: string; propertyType?: string; paymentMethods: AcceptedPaymentMethod[]; userId: string; canRecordPayment: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedGuestId = searchParams.get("guest");
@@ -169,7 +191,7 @@ function BookingWizard({ propertyId, propertyType, userId, canRecordPayment }: {
   const [showMoreGuest, setShowMoreGuest] = useState(false);
   const [paymentMode, setPaymentMode] = useState<"none" | "deposit" | "full">("none");
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState<AcceptedPaymentMethod>(paymentMethods[0] ?? "cash");
   const [paymentReference, setPaymentReference] = useState("");
   const [loadingRooms, setLoadingRooms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -183,20 +205,26 @@ function BookingWizard({ propertyId, propertyType, userId, canRecordPayment }: {
     const timer = window.setTimeout(() => {
       try {
         const draft = JSON.parse(window.localStorage.getItem(draftKey) ?? "{}") as Record<string, unknown>;
-        setCheckIn(typeof draft.checkIn === "string" ? draft.checkIn : localDateKey());
-        setCheckOut(typeof draft.checkOut === "string" ? draft.checkOut : tomorrow());
+        const nextCheckIn = isDateKey(draft.checkIn) && draft.checkIn >= businessDate
+          ? draft.checkIn
+          : businessDate;
+        const nextCheckOut = isDateKey(draft.checkOut) && draft.checkOut > nextCheckIn
+          ? draft.checkOut
+          : nextDateKey(nextCheckIn);
+        setCheckIn(nextCheckIn);
+        setCheckOut(nextCheckOut);
         setAdults(typeof draft.adults === "number" ? Math.min(20, Math.max(1, Math.floor(draft.adults))) : 1);
         setChildren(typeof draft.children === "number" ? Math.min(20, Math.max(0, Math.floor(draft.children))) : 0);
         setSource(typeof draft.source === "string" ? draft.source : "front_desk");
       } catch {
-        setCheckIn(localDateKey());
-        setCheckOut(tomorrow());
+        setCheckIn(businessDate);
+        setCheckOut(nextDateKey(businessDate));
       } finally {
         setDraftLoaded(true);
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [draftKey]);
+  }, [businessDate, draftKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -280,6 +308,10 @@ function BookingWizard({ propertyId, propertyType, userId, canRecordPayment }: {
   });
 
   const validateStay = () => {
+    if (checkIn < businessDate) {
+      setError(t("Check-in cannot be before the property's current business date.", "Tarehe ya kuingia haiwezi kuwa kabla ya tarehe ya sasa ya biashara."));
+      return false;
+    }
     if (!checkIn || !checkOut || checkOut <= checkIn) {
       setError(t("Check-out must be after check-in.", "Tarehe ya kutoka lazima iwe baada ya tarehe ya kuingia."));
       return false;
@@ -423,7 +455,7 @@ function BookingWizard({ propertyId, propertyType, userId, canRecordPayment }: {
           <Box sx={{ alignItems: "start", display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: "minmax(0,1fr) 340px" } }}>
             <Box>
               {activeStep === 0 ? (
-                <StayStep checkIn={checkIn} checkOut={checkOut} adults={adults} childCount={children} inventoryPlural={plural} source={source} onCheckIn={setCheckIn} onCheckOut={setCheckOut} onAdults={setAdults} onChildren={setChildren} onSource={setSource} />
+                <StayStep businessDate={businessDate} checkIn={checkIn} checkOut={checkOut} adults={adults} childCount={children} inventoryPlural={plural} source={source} onCheckIn={setCheckIn} onCheckOut={setCheckOut} onAdults={setAdults} onChildren={setChildren} onSource={setSource} />
               ) : null}
               {activeStep === 1 ? (
                 <RoomStep rooms={rooms} singular={singular} plural={plural} selectedId={selectedRoom?.id} onSelect={setSelectedRoom} onSearchAgain={() => setActiveStep(0)} />
@@ -456,10 +488,11 @@ function BookingWizard({ propertyId, propertyType, userId, canRecordPayment }: {
                   paymentMode={paymentMode}
                   paymentAmount={paymentAmount}
                   paymentMethod={paymentMethod}
+                  paymentMethods={paymentMethods}
                   paymentReference={paymentReference}
                   onPaymentMode={setPaymentMode}
                   onPaymentAmount={setPaymentAmount}
-                  onPaymentMethod={setPaymentMethod}
+                  onPaymentMethod={(value) => setPaymentMethod(value)}
                   onPaymentReference={setPaymentReference}
                 />
               ) : null}
@@ -504,13 +537,13 @@ function Section({ icon, title, description, children }: { icon: ReactNode; titl
   );
 }
 
-function StayStep(props: { checkIn: string; checkOut: string; adults: number; childCount: number; inventoryPlural: string; source: string; onCheckIn: (v: string) => void; onCheckOut: (v: string) => void; onAdults: (v: number) => void; onChildren: (v: number) => void; onSource: (v: string) => void }) {
+function StayStep(props: { businessDate: string; checkIn: string; checkOut: string; adults: number; childCount: number; inventoryPlural: string; source: string; onCheckIn: (v: string) => void; onCheckOut: (v: string) => void; onAdults: (v: number) => void; onChildren: (v: number) => void; onSource: (v: string) => void }) {
   const { t } = useLanguage();
   return (
     <Section icon={<CalendarMonthRoundedIcon />} title={t("When is the guest staying?", "Mgeni atakaa lini?")} description={t(`Set the stay and party size before checking available ${props.inventoryPlural}.`, `Weka tarehe za ukaaji na idadi ya wageni kabla ya kukagua ${props.inventoryPlural} zinazopatikana.`)}>
       <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
-        <TextField required label={t("Check-in")} type="date" value={props.checkIn} onChange={(event) => props.onCheckIn(event.target.value)} slotProps={{ htmlInput: { min: localDateKey() }, inputLabel: { shrink: true } }} />
-        <TextField required label={t("Check-out")} type="date" value={props.checkOut} onChange={(event) => props.onCheckOut(event.target.value)} slotProps={{ htmlInput: { min: props.checkIn || localDateKey() }, inputLabel: { shrink: true } }} />
+        <TextField required label={t("Check-in")} type="date" value={props.checkIn} onChange={(event) => props.onCheckIn(event.target.value)} slotProps={{ htmlInput: { min: props.businessDate }, inputLabel: { shrink: true } }} />
+        <TextField required label={t("Check-out")} type="date" value={props.checkOut} onChange={(event) => props.onCheckOut(event.target.value)} slotProps={{ htmlInput: { min: nextDateKey(props.checkIn || props.businessDate) }, inputLabel: { shrink: true } }} />
         <TextField label={t("Adults")} type="number" value={props.adults} onChange={(event) => props.onAdults(Math.min(20, Math.max(1, Math.floor(Number(event.target.value) || 1))))} slotProps={{ htmlInput: { min: 1, max: 20 } }} />
         <TextField label={t("Children")} type="number" value={props.childCount} onChange={(event) => props.onChildren(Math.min(20, Math.max(0, Math.floor(Number(event.target.value) || 0))))} slotProps={{ htmlInput: { min: 0, max: 20 } }} />
         <TextField select label={t("Booking source")} value={props.source} onChange={(event) => props.onSource(event.target.value)} sx={{ gridColumn: { sm: "1 / -1" } }}>
@@ -538,18 +571,14 @@ function RoomStep({ rooms, singular, plural, selectedId, onSelect, onSearchAgain
 
 function RoomChoice({ room, selected, onSelect }: { room: AvailableRoom; selected: boolean; onSelect: () => void }) {
   const { t } = useLanguage();
-  const definition = getInventoryDefinition(room.inventoryType);
   return (
-    <Paper component="button" type="button" role="radio" aria-checked={selected} onClick={onSelect} variant="outlined" sx={{ appearance: "none", bgcolor: selected ? "action.selected" : "background.paper", borderColor: selected ? "primary.main" : "divider", color: "text.primary", cursor: "pointer", overflow: "hidden", p: 0, textAlign: "left", width: "100%", "&:hover": { borderColor: "primary.main" } }}>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "104px minmax(0,1fr)", sm: "132px minmax(0,1fr)" }, minHeight: 128 }}>
-        <Box sx={{ bgcolor: "action.hover", position: "relative" }}>{room.images[0] ? <Image src={room.images[0]} alt={room.name} fill sizes="132px" style={{ objectFit: "cover" }} /> : <Box sx={{ color: "text.disabled", display: "grid", height: "100%", placeItems: "center" }}><BedRoundedIcon /></Box>}</Box>
-        <Stack spacing={0.45} sx={{ minWidth: 0, p: { xs: 1.25, sm: 1.5 } }}>
+    <Paper component="button" type="button" role="radio" aria-checked={selected} onClick={onSelect} variant="outlined" sx={{ appearance: "none", bgcolor: selected ? "action.selected" : "background.paper", borderColor: selected ? "primary.main" : "divider", color: "text.primary", cursor: "pointer", minHeight: 128, p: { xs: 1.5, sm: 2 }, textAlign: "left", width: "100%", "&:hover": { borderColor: "primary.main" } }}>
+        <Stack spacing={0.6} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", justifyContent: "space-between", minWidth: 0 }}><Typography noWrap variant="subtitle1" sx={{ flex: 1, fontWeight: 700, minWidth: 0 }}>{room.name}</Typography>{selected ? <CheckCircleRoundedIcon color="primary" fontSize="small" sx={{ flexShrink: 0 }} /> : null}</Stack>
-          <Typography color="text.secondary" variant="body2" sx={{ overflowWrap: "anywhere", textTransform: "capitalize" }}>{room.roomType} · {t(`${room.capacity} guests`)} · {t(`${room.bedCount} bed${room.bedCount === 1 ? "" : "s"}`)}{definition.inventoryType !== "room" ? t(` · ${room.bedroomCount} bedroom${room.bedroomCount === 1 ? "" : "s"} · ${room.bathroomCount} bathroom${room.bathroomCount === 1 ? "" : "s"}`, ` · vyumba vya kulala ${room.bedroomCount} · bafu ${room.bathroomCount}`) : ""}</Typography>
+          <Typography color="text.secondary" variant="body2" sx={{ overflowWrap: "anywhere", textTransform: "capitalize" }}>{room.roomType} · {t(`${room.capacity} guests`)} · {t(`${room.bedCount} bed${room.bedCount === 1 ? "" : "s"}`)}</Typography>
           <Typography color="text.secondary" noWrap variant="caption">{room.amenities.slice(0, 3).join(" · ") || t("Standard amenities", "Huduma za kawaida")}</Typography>
           <Box sx={{ mt: "auto!important", pt: 0.75 }}><Typography color="primary.main" sx={{ fontWeight: 700 }}>{money.format(room.totalPrice)}</Typography><Typography color="text.secondary" variant="caption">{money.format(room.pricePerNight)} / {t("night", "usiku")}</Typography></Box>
         </Stack>
-      </Box>
     </Paper>
   );
 }
@@ -599,7 +628,7 @@ function GuestStep({ existingGuestId, field, showMore, onChangeGuest, onToggleMo
   );
 }
 
-function ReviewStep(props: { room: AvailableRoom; guest: GuestForm; checkIn: string; checkOut: string; guests: number; canRecordPayment: boolean; paymentMode: "none" | "deposit" | "full"; paymentAmount: string; paymentMethod: string; paymentReference: string; onPaymentMode: (v: "none" | "deposit" | "full") => void; onPaymentAmount: (v: string) => void; onPaymentMethod: (v: string) => void; onPaymentReference: (v: string) => void }) {
+function ReviewStep(props: { room: AvailableRoom; guest: GuestForm; checkIn: string; checkOut: string; guests: number; canRecordPayment: boolean; paymentMode: "none" | "deposit" | "full"; paymentAmount: string; paymentMethod: AcceptedPaymentMethod; paymentMethods: AcceptedPaymentMethod[]; paymentReference: string; onPaymentMode: (v: "none" | "deposit" | "full") => void; onPaymentAmount: (v: string) => void; onPaymentMethod: (v: AcceptedPaymentMethod) => void; onPaymentReference: (v: string) => void }) {
   const { t } = useLanguage();
   const definition = getInventoryDefinition(props.room.inventoryType);
   const singular = t(definition.inventorySingular[0], definition.inventorySingular[1]);
@@ -617,7 +646,7 @@ function ReviewStep(props: { room: AvailableRoom; guest: GuestForm; checkIn: str
           <Stack spacing={1.5}>
             <TextField select label={t("Payment at booking")} value={props.paymentMode} onChange={(event) => props.onPaymentMode(event.target.value as "none" | "deposit" | "full")}><MenuItem value="none">{t("No payment now")}</MenuItem><MenuItem value="deposit">{t("Record a deposit")}</MenuItem><MenuItem value="full">{t("Pay in full")}</MenuItem></TextField>
             {props.paymentMode === "deposit" ? <TextField label={t("Deposit amount")} type="number" value={props.paymentAmount} onChange={(event) => props.onPaymentAmount(event.target.value)} slotProps={{ input: { startAdornment: <Typography color="text.secondary" sx={{ mr: 1 }}>TZS</Typography> }, htmlInput: { min: 1, max: props.room.totalPrice } }} /> : null}
-            {props.paymentMode !== "none" ? <><TextField select label={t("Payment method")} value={props.paymentMethod} onChange={(event) => props.onPaymentMethod(event.target.value)}><MenuItem value="cash">{t("Cash")}</MenuItem><MenuItem value="mobile_money">{t("Mobile money")}</MenuItem><MenuItem value="card">{t("Card")}</MenuItem><MenuItem value="bank_transfer">{t("Bank transfer")}</MenuItem><MenuItem value="cheque">{t("Cheque")}</MenuItem><MenuItem value="other">{t("Other")}</MenuItem></TextField><TextField label={t("Transaction reference (optional)")} value={props.paymentReference} onChange={(event) => props.onPaymentReference(event.target.value)} /></> : null}
+            {props.paymentMode !== "none" ? <><TextField select label={t("Payment method")} value={props.paymentMethod} onChange={(event) => props.onPaymentMethod(event.target.value as AcceptedPaymentMethod)}>{props.paymentMethods.map((value) => { const method = acceptedPaymentMethods.find((item) => item.value === value); return method ? <MenuItem key={value} value={value}>{t(method.label[0], method.label[1])}</MenuItem> : null; })}</TextField><TextField label={t("Transaction reference (optional)")} value={props.paymentReference} onChange={(event) => props.onPaymentReference(event.target.value)} /></> : null}
           </Stack>
         ) : <Alert severity="info">{t("This reservation will be created as unpaid. No payment or finance data is exposed to your role.", "Uhifadhi huu utatengenezwa bila malipo. Jukumu lako halitaonyeshwa taarifa za malipo au fedha.")}</Alert>}
       </Section>

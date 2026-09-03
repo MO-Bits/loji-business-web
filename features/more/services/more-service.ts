@@ -106,7 +106,7 @@ export function removeStaff(
   );
 }
 
-export function inviteStaff(
+export function addStaffAccess(
   client: SupabaseClient<Database>,
   propertyId: string,
   email: string,
@@ -124,37 +124,18 @@ export function inviteStaff(
   );
 }
 
-export function resendStaffInvitation(
+export function removePendingStaffAccess(
   client: SupabaseClient<Database>,
   propertyId: string,
-  invitationId: string,
-) {
-  return callTeamRpc(
-    client,
-    "resend_staff_invitation",
-    {
-      p_property_id: propertyId,
-      p_invitation_id: invitationId,
-    },
-    "Unable to resend invitation.",
-  );
-}
-
-export function revokeStaffInvitation(
-  client: SupabaseClient<Database>,
-  propertyId: string,
-  invitationId: string,
+  pendingAccessId: string,
 ) {
   return callTeamRpc(
     client,
     "cancel_staff_invitation",
     {
       p_property_id: propertyId,
-      p_invitation_id: invitationId,
+      p_invitation_id: pendingAccessId,
     },
-    "Unable to revoke invitation.",
+    "Unable to remove pending access.",
   );
 }
-
-/** Compatibility alias. Revocation remains visible in the property's audit history. */
-export const deleteInvitation = revokeStaffInvitation;

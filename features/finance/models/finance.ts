@@ -68,6 +68,53 @@ export type PaymentLedger = {
   total: number;
 };
 
+export type OutstandingBalanceItem = {
+  bookingId: string;
+  bookingNumber: string;
+  guestId: string;
+  guestName: string;
+  guestPhone: string;
+  roomId: string;
+  roomName: string;
+  status: string;
+  checkIn: string;
+  checkOut: string;
+  total: number;
+  paid: number;
+  balance: number;
+  ageDays: number;
+  overdue: boolean;
+};
+
+export type OutstandingBalances = {
+  businessDate: string;
+  totalCount: number;
+  totalBalance: number;
+  overdueCount: number;
+  itemsReturned: number;
+  truncated: boolean;
+  items: OutstandingBalanceItem[];
+};
+
+export type CashierClosing = {
+  id: string;
+  cashierId: string;
+  cashierName: string;
+  openingFloat: number;
+  expectedCash: number;
+  countedCash: number;
+  variance: number;
+  notes: string;
+  closedAt: string;
+};
+
+export type CashierCloseWorkspace = {
+  businessDate: string;
+  expectedCash: number;
+  closing: CashierClosing | null;
+  teamClosings: CashierClosing[];
+};
+
 export function parseFinanceDashboard(value: Json): FinanceDashboard {
   const root = object(value);
   const property = object(root.property);
@@ -130,6 +177,69 @@ export function parsePaymentLedger(value: Json): PaymentLedger {
           canRefund: item.can_refund === true,
           canVoid: item.can_void === true,
         }))
+      : [],
+  };
+}
+
+export function parseOutstandingBalances(value: Json): OutstandingBalances {
+  const root = object(value);
+  const summary = object(root.summary);
+  const items = Array.isArray(root.items) ? root.items.map((value) => object(value)).map((item) => ({
+    bookingId: text(item.booking_id),
+    bookingNumber: text(item.booking_number),
+    guestId: text(item.guest_id),
+    guestName: text(item.guest_name) || "Guest",
+    guestPhone: text(item.guest_phone),
+    roomId: text(item.room_id),
+    roomName: text(item.room_name) || "Room",
+    status: text(item.status),
+    checkIn: text(item.check_in),
+    checkOut: text(item.check_out),
+    total: number(item.total),
+    paid: number(item.paid),
+    balance: number(item.balance),
+    ageDays: number(item.age_days),
+    overdue: item.overdue === true,
+  })) : [];
+  return {
+    businessDate: text(root.business_date),
+    totalCount: number(summary.total_count ?? items.length),
+    totalBalance: number(
+      summary.total_balance ?? items.reduce((sum, item) => sum + item.balance, 0),
+    ),
+    overdueCount: number(
+      summary.overdue_count ?? items.filter((item) => item.overdue).length,
+    ),
+    itemsReturned: number(summary.items_returned ?? items.length),
+    truncated: summary.truncated === true,
+    items,
+  };
+}
+
+function parseCashierClosing(value: Json | undefined): CashierClosing | null {
+  const row = object(value);
+  if (!text(row.id)) return null;
+  return {
+    id: text(row.id),
+    cashierId: text(row.cashier_id),
+    cashierName: text(row.cashier_name) || "Staff",
+    openingFloat: number(row.opening_float),
+    expectedCash: number(row.expected_cash),
+    countedCash: number(row.counted_cash),
+    variance: number(row.variance),
+    notes: text(row.notes),
+    closedAt: text(row.closed_at),
+  };
+}
+
+export function parseCashierCloseWorkspace(value: Json): CashierCloseWorkspace {
+  const root = object(value);
+  return {
+    businessDate: text(root.business_date),
+    expectedCash: number(root.expected_cash),
+    closing: parseCashierClosing(root.closing),
+    teamClosings: Array.isArray(root.team_closings)
+      ? root.team_closings.map((item) => parseCashierClosing(item)).filter((item): item is CashierClosing => Boolean(item))
       : [],
   };
 }

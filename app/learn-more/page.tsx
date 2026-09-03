@@ -85,8 +85,8 @@ const features = [
     icon: GroupWorkRoundedIcon,
     title: "Team",
     swTitle: "Timu",
-    description: "Invite staff, assign responsibility and maintain accountability.",
-    swDescription: "Alika wafanyakazi, gawa majukumu na dumisha uwajibikaji.",
+    description: "Add staff access, assign responsibility and maintain accountability.",
+    swDescription: "Ongeza ruhusa za wafanyakazi, gawa majukumu na dumisha uwajibikaji.",
   },
   {
     icon: InsightsRoundedIcon,

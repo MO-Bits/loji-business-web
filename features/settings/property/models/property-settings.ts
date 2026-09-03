@@ -18,6 +18,7 @@ export type PropertySettings = {
   checkinTime: string;
   checkoutTime: string;
   amenities: string[];
+  paymentMethods: string[];
   images: string[];
   isActive: boolean;
   updatedAt: string | null;
@@ -45,6 +46,7 @@ export type PropertyOperationsInput = {
   timezone: string;
   checkinTime: string;
   checkoutTime: string;
+  paymentMethods: string[];
 };
 
 export type PropertyLocationInput = {
@@ -133,6 +135,7 @@ export function parsePropertySettingsWorkspace(input: unknown): PropertySettings
       checkinTime: timeValue(text(property, "checkin_time", "checkinTime"), "14:00"),
       checkoutTime: timeValue(text(property, "checkout_time", "checkoutTime"), "10:00"),
       amenities: strings(field(property, "amenities")),
+      paymentMethods: strings(field(property, "payment_methods", "paymentMethods")),
       images: strings(field(property, "images")),
       isActive: boolean(property, "is_active", "isActive", boolean(property, "status")),
       updatedAt: field(property, "updated_at", "updatedAt")
@@ -154,25 +157,4 @@ export const propertyTypes = [
   "guesthouse",
 ];
 
-export const propertyAmenities = [
-  "WiFi",
-  "Parking",
-  "Restaurant",
-  "Breakfast",
-  "Swimming Pool",
-  "Airport Shuttle",
-  "24-hour Front Desk",
-  "Room Service",
-  "Laundry Service",
-  "Air Conditioning",
-  "Conference Room",
-  "Bar / Lounge",
-  "Gym",
-  "Spa",
-  "Wheelchair Access",
-  "Family Rooms",
-  "Business Centre",
-  "Garden",
-  "Security",
-  "Backup Power",
-];
+export { propertyAmenities } from "@/features/property/property-catalog";

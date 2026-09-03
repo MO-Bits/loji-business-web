@@ -5,24 +5,28 @@ import { useRouter, useSearchParams } from "next/navigation";
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import CallRoundedIcon from "@mui/icons-material/CallRounded";
 import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import CreditCardRoundedIcon from "@mui/icons-material/CreditCardRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import LocationOnRoundedIcon from "@mui/icons-material/LocationOnRounded";
 import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
 import SignpostRoundedIcon from "@mui/icons-material/SignpostRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
+import LocalOfferRoundedIcon from "@mui/icons-material/LocalOfferRounded";
+import NotesRoundedIcon from "@mui/icons-material/NotesRounded";
 import { Alert, Box } from "@mui/material";
 import type { ReactNode } from "react";
 
 import { FullPageLoader } from "@/components/shared/full-page-loader";
+import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
-import {
-  clearPendingPropertySetup,
-  clearPropertyRegistrationDraft,
-} from "@/features/property/services/property-service";
+import { AppStatus, AppStep } from "@/features/session/models/app-status";
+import { normalizeWorkspaceRole } from "@/features/session/permissions";
 import {
   configuredRoomCount,
+  clearLegacyPropertySetupDrafts,
   createBusinessSetupDraft,
   isEmail,
   MAX_ONBOARDING_ROOMS,
@@ -49,6 +53,12 @@ import { RegistrationReview } from "./registration-review";
 import { RoomGroupsStep } from "./room-groups-step";
 import { SetupShell } from "./setup-shell";
 import { StaffAccessStep } from "./staff-access-step";
+import {
+  AcceptedPaymentsStep,
+  BusinessDescriptionStep,
+  OperatingScheduleStep,
+  PropertyOfferingsStep,
+} from "./property-details-steps";
 
 type Translation = readonly [english: string, swahili: string];
 
@@ -86,6 +96,12 @@ const stepContent: ReadonlyArray<{
     icon: <CallRoundedIcon />,
   },
   {
+    slug: "description",
+    title: ["How would you describe the property?", "Unaielezeaje biashara yako?"],
+    description: ["A short description helps managers and staff identify the workspace. You can skip it.", "Maelezo mafupi huwasaidia mameneja na wafanyakazi kuitambua biashara. Unaweza kuruka."],
+    icon: <NotesRoundedIcon />,
+  },
+  {
     slug: "area",
     title: ["Which area is the business in?", "Biashara ipo eneo gani?"],
     description: [
@@ -98,10 +114,28 @@ const stepContent: ReadonlyArray<{
     slug: "address",
     title: ["Add a simple local address", "Weka anwani rahisi ya eneo"],
     description: [
-      "A ward, street or nearby landmark is all Loji needs—there is no map step.",
-      "Kata, mtaa au alama ya karibu ndiyo Loji inahitaji—hakuna hatua ya ramani.",
+      "Add a ward, street or nearby landmark that staff and guests can recognise.",
+      "Weka kata, mtaa au alama ya karibu ambayo wafanyakazi na wageni wanaweza kuitambua.",
     ],
     icon: <SignpostRoundedIcon />,
+  },
+  {
+    slug: "offerings",
+    title: ["What is available at the property?", "Ni huduma gani zinapatikana?"],
+    description: ["Check every facility and guest service you currently provide.", "Weka tiki kwenye vifaa na huduma zote unazotoa sasa."],
+    icon: <LocalOfferRoundedIcon />,
+  },
+  {
+    slug: "payments",
+    title: ["How can guests pay?", "Wageni wanaweza kulipaje?"],
+    description: ["Check every payment method the front desk can accept.", "Weka tiki kwenye njia zote za malipo zinazokubaliwa mapokezi."],
+    icon: <CreditCardRoundedIcon />,
+  },
+  {
+    slug: "schedule",
+    title: ["When do guests check in and out?", "Wageni wanaingia na kutoka saa ngapi?"],
+    description: ["Set the standard times used to flag overdue arrivals and departures.", "Weka muda wa kawaida utakaotumika kuonyesha waliochelewa kuingia au kutoka."],
+    icon: <AccessTimeRoundedIcon />,
   },
   {
     slug: "room-count",
@@ -125,8 +159,8 @@ const stepContent: ReadonlyArray<{
     slug: "staff",
     title: ["Who should have access?", "Nani apewe ruhusa?"],
     description: [
-      "Add staff emails and roles now, or continue alone. No invitation codes are used.",
-      "Weka barua pepe na majukumu ya wafanyakazi sasa, au endelea mwenyewe. Hakuna misimbo ya mwaliko.",
+      "Add staff emails and roles now, or continue alone. Existing Loji accounts receive access immediately; all others can claim pending access within 30 days.",
+      "Weka barua pepe na majukumu ya wafanyakazi sasa, au endelea mwenyewe. Akaunti zilizopo za Loji hupata ruhusa mara moja; nyingine zinaweza kudai ruhusa ndani ya siku 30.",
     ],
     icon: <GroupsRoundedIcon />,
   },
@@ -144,13 +178,35 @@ const stepContent: ReadonlyArray<{
 export function BusinessSetupFlow() {
   const router = useRouter();
   const sessionState = useAppSession();
+  const session = sessionState.session;
+  const propertySetupAllowed = session?.status === AppStatus.Onboarding &&
+    (session.step === AppStep.PropertyBasic || session.step === AppStep.PropertyAddress) &&
+    Boolean(session.user);
 
   useEffect(() => {
-    if (!sessionState.loading && !sessionState.session?.user) router.replace("/");
-  }, [router, sessionState.loading, sessionState.session?.user]);
+    if (sessionState.loading || sessionState.error || propertySetupAllowed) return;
+    if (!session?.user || session.status === AppStatus.Unauthenticated) {
+      router.replace("/login");
+      return;
+    }
+    if (session.status === AppStatus.Inactive) {
+      router.replace("/inactive");
+      return;
+    }
+    if (session.status === AppStatus.Ready) {
+      const role = normalizeWorkspaceRole(session.activeRole);
+      router.replace(role === "owner" ? "/dashboard" : role === "manager" || role === "receptionist" ? "/front-desk" : "/settings/profile");
+      return;
+    }
+    router.replace(session.step === AppStep.Profile ? "/onboarding/profile" : "/");
+  }, [propertySetupAllowed, router, session, sessionState.error, sessionState.loading]);
 
-  const user = sessionState.session?.user;
-  if (sessionState.loading || !user) return <FullPageLoader />;
+  if (sessionState.error) {
+    return <SessionErrorScreen error={sessionState.error} onRetry={() => void sessionState.refresh()} />;
+  }
+
+  const user = session?.user;
+  if (sessionState.loading || !propertySetupAllowed || !user) return <FullPageLoader />;
 
   return (
     <ReadyBusinessSetupFlow
@@ -174,21 +230,28 @@ function ReadyBusinessSetupFlow({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
-  const [draft, setDraft] = useState<BusinessSetupDraft>(() => {
-    if (typeof window === "undefined") return createBusinessSetupDraft(ownerEmail);
-    try {
-      const saved = JSON.parse(
-        window.localStorage.getItem(setupDraftStorageKey(ownerId)) ?? "null",
-      ) as unknown;
-      return restoreBusinessSetupDraft(saved, ownerEmail);
-    } catch {
-      return createBusinessSetupDraft(ownerEmail);
-    }
-  });
+  const [draft, setDraft] = useState<BusinessSetupDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = JSON.parse(
+          window.localStorage.getItem(setupDraftStorageKey(ownerId)) ?? "null",
+        ) as unknown;
+        setDraft(restoreBusinessSetupDraft(saved, ownerEmail));
+      } catch {
+        setDraft(createBusinessSetupDraft(ownerEmail));
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [ownerEmail, ownerId]);
+
+  if (!draft) return <FullPageLoader />;
+
   const requestedStep = searchParams.get("step");
+  const returnToReview = searchParams.get("return") === "review";
   const requestedIndex = setupStepSlugs.findIndex((slug) => slug === requestedStep);
   const stepIndex = requestedIndex >= 0 ? requestedIndex : 0;
   const step = stepContent[stepIndex];
@@ -203,10 +266,12 @@ function ReadyBusinessSetupFlow({
     }
   };
 
-  const goToStep = (index: number) => {
+  const goToStep = (index: number, returnAfterEdit = false) => {
     const nextIndex = Math.max(0, Math.min(stepContent.length - 1, index));
     setError(null);
-    router.replace(`/onboarding/property?step=${stepContent[nextIndex].slug}`, {
+    const params = new URLSearchParams({ step: stepContent[nextIndex].slug });
+    if (returnAfterEdit && nextIndex < stepContent.length - 1) params.set("return", "review");
+    router.replace(`/onboarding/property?${params.toString()}`, {
       scroll: false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -232,6 +297,10 @@ function ReadyBusinessSetupFlow({
         }
         return null;
       }
+      case "description":
+        return draft.description.length <= 2000
+          ? null
+          : t("Keep the description under 2,000 characters.", "Maelezo yawe na herufi zisizozidi 2,000.");
       case "area":
         return tanzaniaRegions.some((region) => region === draft.region) &&
           draft.district.trim()
@@ -241,6 +310,18 @@ function ReadyBusinessSetupFlow({
         return draft.ward.trim() || draft.street.trim()
           ? null
           : t("Add a ward, street or nearby landmark.", "Weka kata, mtaa au alama ya karibu.");
+      case "offerings":
+        return null;
+      case "payments":
+        return draft.paymentMethods.length
+          ? null
+          : t("Choose at least one accepted payment method.", "Chagua angalau njia moja ya malipo.");
+      case "schedule":
+        return /^([01]\d|2[0-3]):[0-5]\d$/.test(draft.checkinTime) &&
+          /^([01]\d|2[0-3]):[0-5]\d$/.test(draft.checkoutTime) &&
+          draft.checkinTime !== draft.checkoutTime
+          ? null
+          : t("Choose valid and different check-in and checkout times.", "Chagua muda sahihi na tofauti wa kuingia na kutoka.");
       case "room-count":
         return Number.isInteger(draft.roomCount) &&
           draft.roomCount >= 1 &&
@@ -295,6 +376,10 @@ function ReadyBusinessSetupFlow({
         setError(validationError);
         return;
       }
+      if (returnToReview) {
+        goToStep(stepContent.length - 1);
+        return;
+      }
       goToStep(stepIndex + 1);
       return;
     }
@@ -313,8 +398,7 @@ function ReadyBusinessSetupFlow({
     try {
       await completeBusinessRegistration(createClient(), draft);
       window.localStorage.removeItem(setupDraftStorageKey(ownerId));
-      clearPropertyRegistrationDraft(ownerId);
-      clearPendingPropertySetup(ownerId);
+      clearLegacyPropertySetupDrafts(ownerId);
       await refreshSession();
       window.location.replace("/dashboard");
     } catch (caught) {
@@ -360,6 +444,9 @@ function ReadyBusinessSetupFlow({
         />
       );
       break;
+    case "description":
+      content = <BusinessDescriptionStep onChange={(description) => commit({ ...draft, description })} value={draft.description} />;
+      break;
     case "area":
       content = (
         <BusinessAreaStep
@@ -375,6 +462,15 @@ function ReadyBusinessSetupFlow({
           onChange={(field, value) => commit({ ...draft, [field]: value })}
         />
       );
+      break;
+    case "offerings":
+      content = <PropertyOfferingsStep onChange={(amenities) => commit({ ...draft, amenities })} value={draft.amenities} />;
+      break;
+    case "payments":
+      content = <AcceptedPaymentsStep onChange={(paymentMethods) => commit({ ...draft, paymentMethods })} value={draft.paymentMethods} />;
+      break;
+    case "schedule":
+      content = <OperatingScheduleStep checkinTime={draft.checkinTime} checkoutTime={draft.checkoutTime} onChange={(field, value) => commit({ ...draft, [field]: value })} />;
       break;
     case "room-count":
       content = (
@@ -408,7 +504,12 @@ function ReadyBusinessSetupFlow({
       );
       break;
     case "review":
-      content = <RegistrationReview draft={draft} />;
+      content = (
+        <RegistrationReview
+          draft={draft}
+          onEdit={(slug) => goToStep(setupStepSlugs.indexOf(slug), true)}
+        />
+      );
       break;
   }
 
@@ -422,7 +523,11 @@ function ReadyBusinessSetupFlow({
           ? t("Create my business", "Unda biashara yangu")
           : undefined
       }
-      onBack={stepIndex ? () => goToStep(stepIndex - 1) : undefined}
+      onBack={returnToReview
+        ? () => goToStep(stepContent.length - 1)
+        : stepIndex
+          ? () => goToStep(stepIndex - 1)
+          : undefined}
       onNext={() => void continueSetup()}
       onSignOut={() => void signOut()}
       step={stepIndex + 2}

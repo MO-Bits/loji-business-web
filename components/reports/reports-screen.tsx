@@ -39,6 +39,8 @@ import {
 } from "@/components/shared/workspace-ui";
 import type { PropertyReport, RoomPerformance } from "@/features/reports/models/report";
 import { getPropertyReport } from "@/features/reports/services/report-service";
+import { getOutstandingBalances } from "@/features/finance/services/finance-service";
+import { getRoomBoard } from "@/features/rooms/services/room-service";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import { createClient } from "@/lib/supabase/client";
@@ -109,6 +111,7 @@ export function ReportsScreen() {
   const [reportState, setReportState] = useState<{
     propertyId: string;
     value: PropertyReport;
+    outstanding: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
@@ -117,6 +120,9 @@ export function ReportsScreen() {
   const report = reportState && reportState.propertyId === propertyId
     ? reportState.value
     : null;
+  const outstanding = reportState && reportState.propertyId === propertyId
+    ? reportState.outstanding
+    : 0;
   const error = errorState && errorState.propertyId === propertyId
     ? errorState.message
     : null;
@@ -139,7 +145,23 @@ export function ReportsScreen() {
     setReportState((current) => current?.propertyId === requestPropertyId ? current : null);
     let awaitingAlignedReload = false;
     try {
-      const value = await getPropertyReport(supabase, requestPropertyId, from, to);
+      const [rawValue, balances, roomBoard] = await Promise.all([
+        getPropertyReport(supabase, requestPropertyId, from, to),
+        getOutstandingBalances(supabase, requestPropertyId),
+        getRoomBoard(supabase, requestPropertyId),
+      ]);
+      const existingRooms = new Map(rawValue.rooms.map((room) => [room.roomId, room]));
+      const value: PropertyReport = {
+        ...rawValue,
+        rooms: roomBoard.rooms.map((room) => existingRooms.get(room.id) ?? {
+          roomId: room.id,
+          roomName: room.name,
+          roomType: room.roomType,
+          roomRevenue: 0,
+          roomNights: 0,
+          occupancyRate: 0,
+        }),
+      };
       if (requestId.current === currentRequest) {
         const businessDate = isDateKey(value.businessDate) ? value.businessDate : null;
         const businessContext = businessDate
@@ -163,7 +185,11 @@ export function ReportsScreen() {
             return;
           }
         }
-        setReportState({ propertyId: requestPropertyId, value });
+        setReportState({
+          propertyId: requestPropertyId,
+          value,
+          outstanding: balances.totalBalance,
+        });
       }
     } catch (caught) {
       if (requestId.current === currentRequest) {
@@ -203,13 +229,29 @@ export function ReportsScreen() {
 
   const exportCsv = () => {
     if (!report) return;
+    const denominatorNote = report.summary.availabilityDenominatorEstimated
+      ? t(
+          "Estimated using the current active room count; historical room availability and out-of-service periods are not stored.",
+          "Makadirio yanatumia idadi ya sasa ya vyumba vinavyotumika; historia ya upatikanaji wa vyumba na vipindi vya kutotumika haijahifadhiwa.",
+        )
+      : report.methodology.availabilityHistoryAvailable
+        ? t(
+            "Calculated from recorded room availability.",
+            "Imehesabiwa kwa kutumia upatikanaji wa vyumba uliorekodiwa.",
+          )
+        : t(
+            "Room availability history was not supplied with this report.",
+            "Historia ya upatikanaji wa vyumba haikutolewa pamoja na ripoti hii.",
+          );
     const rows: (string | number)[][] = [
       [t("Loji property performance report", "Ripoti ya utendaji wa biashara ya Loji")],
       [t("From", "Kuanzia"), from, t("To", "Hadi"), to],
+      [t("Occupancy and RevPAR basis", "Msingi wa ukaaji na RevPAR"), denominatorNote],
       [],
       [t("Summary", "Muhtasari")],
       [t("Room revenue", "Mapato ya vyumba"), report.summary.roomRevenue],
       [t("Collected", "Iliyokusanywa"), report.summary.collected],
+      [t("Outstanding", "Yanayodaiwa"), outstanding],
       [t("Occupancy rate", "Kiwango cha matumizi ya vyumba"), report.summary.occupancyRate],
       [t("Average daily rate", "Wastani wa bei kwa siku"), report.summary.averageDailyRate],
       [t("Revenue per available room", "Mapato kwa kila chumba kinachopatikana"), report.summary.revenuePerAvailableRoom],
@@ -271,8 +313,8 @@ export function ReportsScreen() {
       <WorkspacePage>
         <Alert severity="warning">
           {t(
-            "Performance reports are available to property owners only.",
-            "Ripoti za utendaji zinapatikana kwa wamiliki wa biashara pekee.",
+            "Performance reports are available to property owners and managers.",
+            "Ripoti za utendaji zinapatikana kwa wamiliki na mameneja wa biashara.",
           )}
         </Alert>
       </WorkspacePage>
@@ -390,11 +432,20 @@ export function ReportsScreen() {
           </Alert>
         ) : null}
 
+        {report?.summary.availabilityDenominatorEstimated ? (
+          <Alert severity="info">
+            {t(
+              "Occupancy and RevPAR are estimates. They use the current active room count because historical room availability and out-of-service periods are not recorded.",
+              "Ukaaji na RevPAR ni makadirio. Yanatumia idadi ya sasa ya vyumba vinavyotumika kwa sababu historia ya upatikanaji wa vyumba na vipindi vya kutotumika haijarekodiwa.",
+            )}
+          </Alert>
+        ) : null}
+
         <Box
           sx={{
             display: "grid",
             gap: { xs: 1.5, sm: 2 },
-            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", xl: "repeat(4, minmax(0, 1fr))" },
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", xl: "repeat(6, minmax(0, 1fr))" },
           }}
         >
           <MetricCell
@@ -423,7 +474,38 @@ export function ReportsScreen() {
             label="RevPAR"
             value={dataLoading && !report ? "—" : money(summary?.revenuePerAvailableRoom ?? 0)}
           />
+          <MetricCell
+            caption={t("Completed guest payments", "Malipo ya wageni yaliyokamilika")}
+            icon={<PaymentsRoundedIcon />}
+            label={t("Collected", "Iliyokusanywa")}
+            tone="success"
+            value={dataLoading && !report ? "—" : money(summary?.collected ?? 0)}
+          />
+          <MetricCell
+            caption={t("All open booking balances", "Salio zote za uhifadhi zilizo wazi")}
+            icon={<PaymentsRoundedIcon />}
+            label={t("Outstanding", "Yanayodaiwa")}
+            tone={outstanding ? "warning" : "success"}
+            value={dataLoading && !report ? "—" : money(outstanding)}
+          />
         </Box>
+
+        <Surface>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "center" }, justifyContent: "space-between" }}>
+            <Box>
+              <Typography sx={{ fontWeight: 800 }}>{t("Bookings created", "Uhifadhi ulioundwa")}</Typography>
+              <Typography color="text.secondary" variant="body2">
+                {t(
+                  `${summary?.bookings ?? 0} bookings were created in this period; ${summary?.cancellations ?? 0} of them were cancelled (${summary?.bookings ? Math.round(((summary?.cancellations ?? 0) / summary.bookings) * 100) : 0}%).`,
+                  `Uhifadhi ${summary?.bookings ?? 0} uliundwa katika kipindi hiki; ${summary?.cancellations ?? 0} kati yake ulighairiwa (${summary?.bookings ? Math.round(((summary?.cancellations ?? 0) / summary.bookings) * 100) : 0}%).`,
+                )}
+              </Typography>
+            </Box>
+            <Button component={Link} href={outstanding ? "/finance?section=outstanding" : "/bookings"} variant="outlined">
+              {outstanding ? t("Resolve balances", "Shughulikia salio") : t("Open bookings", "Fungua uhifadhi")}
+            </Button>
+          </Stack>
+        </Surface>
 
         <Box
           sx={{

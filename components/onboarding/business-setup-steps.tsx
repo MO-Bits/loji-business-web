@@ -2,9 +2,9 @@
 
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
-import OtherHousesRoundedIcon from "@mui/icons-material/OtherHousesRounded";
+import LandscapeRoundedIcon from "@mui/icons-material/LandscapeRounded";
+import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
 import RemoveRoundedIcon from "@mui/icons-material/RemoveRounded";
-import VillaRoundedIcon from "@mui/icons-material/VillaRounded";
 import {
   Box,
   ButtonBase,
@@ -27,8 +27,8 @@ import {
 
 const businessIcons: Record<HospitalityBusinessType, ElementType> = {
   hotel: HotelRoundedIcon,
-  lodge: VillaRoundedIcon,
-  guesthouse: OtherHousesRoundedIcon,
+  lodge: LandscapeRoundedIcon,
+  guesthouse: MeetingRoomRoundedIcon,
 };
 
 export function BusinessTypeStep({
@@ -185,8 +185,8 @@ export function BusinessAddressStep({
         autoComplete="street-address"
         fullWidth
         helperText={t(
-          "A street, neighbourhood or landmark is enough—no map pin is needed.",
-          "Mtaa, kitongoji au alama maarufu inatosha—huhitaji kuweka pini ya ramani.",
+          "Use a street, neighbourhood or landmark that staff and guests will recognise.",
+          "Tumia mtaa, kitongoji au alama maarufu ambayo wafanyakazi na wageni wataitambua.",
         )}
         label={t("Street or nearby landmark", "Mtaa au alama ya karibu")}
         onChange={(event) => onChange("street", event.target.value.slice(0, 200))}

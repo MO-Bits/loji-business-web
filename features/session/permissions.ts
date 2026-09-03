@@ -3,6 +3,7 @@ export type WorkspaceRole = "owner" | "manager" | "receptionist" | "member";
 export type WorkspaceCapabilities = {
   canCheckIn: boolean;
   canCheckout: boolean;
+  canCheckoutWithBalance: boolean;
   canCreateBooking: boolean;
   canManageProperty: boolean;
   canManageRooms: boolean;
@@ -24,6 +25,7 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
   owner: {
     canCheckIn: true,
     canCheckout: true,
+    canCheckoutWithBalance: true,
     canCreateBooking: true,
     canManageProperty: true,
     canManageRooms: true,
@@ -43,6 +45,7 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
   manager: {
     canCheckIn: true,
     canCheckout: true,
+    canCheckoutWithBalance: false,
     canCreateBooking: true,
     canManageProperty: true,
     canManageRooms: true,
@@ -56,12 +59,13 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
     canViewGuests: true,
     canViewNotifications: true,
     canViewOperations: true,
-    canViewReports: false,
+    canViewReports: true,
     canViewRooms: true,
   },
   receptionist: {
     canCheckIn: true,
-    canCheckout: false,
+    canCheckout: true,
+    canCheckoutWithBalance: false,
     canCreateBooking: true,
     canManageProperty: false,
     canManageRooms: false,
@@ -81,6 +85,7 @@ const roleCapabilities: Record<WorkspaceRole, WorkspaceCapabilities> = {
   member: {
     canCheckIn: false,
     canCheckout: false,
+    canCheckoutWithBalance: false,
     canCreateBooking: false,
     canManageProperty: false,
     canManageRooms: false,

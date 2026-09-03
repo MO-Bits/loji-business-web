@@ -9,67 +9,31 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
-import BedRoundedIcon from "@mui/icons-material/BedRounded";
-import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
-import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
-import PeopleOutlineRoundedIcon from "@mui/icons-material/PeopleOutlineRounded";
-import PeopleRoundedIcon from "@mui/icons-material/PeopleRounded";
-import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
-  BottomNavigation,
-  BottomNavigationAction,
   Box,
   Button,
-  Collapse,
-  Divider,
   Drawer,
   IconButton,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   Paper,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
-import { BrandLockup } from "@/components/shared/brand-lockup";
 import { BrandSymbol } from "@/components/shared/brand-symbol";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
-import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
-import type { Membership, Property } from "@/features/session/models/app-session";
 import { AppStatus } from "@/features/session/models/app-status";
-import {
-  getWorkspaceCapabilities,
-  type WorkspaceCapabilities,
-} from "@/features/session/permissions";
+import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/components/providers/language-provider";
 import { useDirtyNavigation } from "@/components/providers/unsaved-changes-provider";
-import {
-  accountDestination,
-  businessDestinations,
-  managementDestinations,
-  operationsDestinations,
-  requiredCapabilityForPath,
-  settingsDestination,
-  type MainDestination,
-  visibleDestinations,
-  workspaceDestinations,
-} from "./destinations";
-import { PropertySwitcher } from "./property-switcher";
+import { requiredCapabilityForPath } from "./destinations";
+import { MobileNavigation } from "./mobile-navigation";
+import { SidebarContent } from "./sidebar-content";
 import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
@@ -95,6 +59,7 @@ function getLocationLabel(
   if (pathname.startsWith("/guests/")) return translate("Guest profile", "Taarifa za mgeni");
   if (pathname.startsWith("/guests")) return translate("Guests", "Wageni");
   if (pathname.startsWith("/operations")) return translate("Operations", "Shughuli");
+  if (pathname.startsWith("/front-desk")) return translate("Front Desk", "Mapokezi");
   if (pathname.startsWith("/finance")) return translate("Finance", "Fedha");
   if (pathname.startsWith("/reports")) return translate("Reports", "Ripoti");
   if (pathname.startsWith("/activity")) return translate("Activity", "Matukio");
@@ -123,12 +88,14 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
   const requiredCapability = requiredCapabilityForPath(pathname);
   const dashboardAllowed =
-    capabilities.canViewBookings && capabilities.canViewRooms;
+    session?.activeRole === "owner" && capabilities.canViewBookings && capabilities.canViewRooms;
   const routeAllowed =
     pathname === "/dashboard"
       ? dashboardAllowed
       : !requiredCapability || capabilities[requiredCapability];
-  const homePath = dashboardAllowed ? "/dashboard" : "/settings/profile";
+  const homePath = session?.activeRole === "receptionist" || session?.activeRole === "manager"
+    ? "/front-desk"
+    : dashboardAllowed ? "/dashboard" : "/settings/profile";
 
   const guardInternalLink = (event: ReactMouseEvent<HTMLElement>) => {
     if (
@@ -192,7 +159,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   if (!routeAllowed) {
     return (
       <PermissionDeniedScreen
-        dashboardAllowed={dashboardAllowed}
+        homePath={homePath}
       />
     );
   }
@@ -203,15 +170,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     propertyDefinition.inventoryPlural[1],
   );
   const locationLabel = getLocationLabel(pathname, t, session.property?.type);
-  const mobileNavValue = pathname.startsWith("/bookings")
-    ? "/bookings"
-    : pathname.startsWith("/rooms")
-      ? "/rooms"
-      : pathname.startsWith("/guests")
-        ? "/guests"
-        : pathname === "/dashboard"
-          ? "/dashboard"
-          : "menu";
   const name = String(
     session.user?.user_metadata?.full_name ??
       session.user?.user_metadata?.name ??
@@ -228,6 +186,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     "/calendar",
     "/guests",
     "/operations",
+    "/front-desk",
     "/rooms",
   ].some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
@@ -242,9 +201,33 @@ export function MainShell({ children }: { children: React.ReactNode }) {
 
   const switchActiveProperty = async (propertyId: string) => {
     await requestNavigation(async () => {
+      const nextMembership = session.memberships.find(
+        (membership) => membership.property_id === propertyId,
+      );
+      const nextRole = nextMembership?.role;
+      const nextCapabilities = getWorkspaceCapabilities(nextRole);
+      const nextDashboardAllowed =
+        nextRole === "owner" &&
+        nextCapabilities.canViewBookings &&
+        nextCapabilities.canViewRooms;
+      const nextRouteAllowed =
+        pathname === "/dashboard"
+          ? nextDashboardAllowed
+          : !requiredCapability || nextCapabilities[requiredCapability];
+      const nextHomePath =
+        nextRole === "manager" || nextRole === "receptionist"
+          ? "/front-desk"
+          : nextDashboardAllowed
+            ? "/dashboard"
+            : "/settings/profile";
+
       await switchProperty(propertyId);
       clearDrafts();
-      router.refresh();
+      if (nextRouteAllowed) {
+        router.refresh();
+      } else {
+        router.replace(nextHomePath);
+      }
     });
   };
 
@@ -381,20 +364,14 @@ export function MainShell({ children }: { children: React.ReactNode }) {
               <Box
                 component={Link}
                 href={homePath}
-                aria-label={dashboardAllowed
-                  ? t("Loji Business home", "Nyumbani Loji Business")
-                  : t("Open my account", "Fungua akaunti yangu")}
+                aria-label={homePath === "/settings/profile"
+                  ? t("Open my account", "Fungua akaunti yangu")
+                  : t("Loji Business home", "Nyumbani Loji Business")}
                 sx={{ display: "inline-flex", flexShrink: 0 }}
               >
                 <BrandSymbol priority size={30} />
               </Box>
-              <PropertySwitcher
-                activePropertyId={session.activePropertyId}
-                memberships={session.memberships}
-                property={session.property}
-                onSwitch={switchActiveProperty}
-                placement="topbar"
-              />
+              <Typography noWrap sx={{ fontSize: ".9375rem", fontWeight: 700 }}>{locationLabel}</Typography>
             </Stack>
 
             <Typography
@@ -458,93 +435,28 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         <Fragment key={session.activePropertyId}>{children}</Fragment>
       </Box>
 
-      <Paper
-        component="nav"
-        aria-label={t("Primary navigation", "Menyu kuu")}
-        square
-        elevation={0}
-        sx={{
-          bottom: 0,
-          display: { xs: "block", md: "none" },
-          left: 0,
-          pb: "env(safe-area-inset-bottom)",
-          position: "fixed",
-          right: 0,
-          zIndex: (theme) => theme.zIndex.appBar,
+      <MobileNavigation
+        capabilities={capabilities}
+        dashboardAllowed={dashboardAllowed}
+        inventoryLabel={inventoryPlural}
+        menuOpen={mobileOpen}
+        onNavigate={(path) => {
+          void requestNavigation(() => {
+            router.push(path);
+          });
         }}
-      >
-        <BottomNavigation
-          showLabels
-          value={mobileOpen ? "menu" : mobileNavValue}
-          onChange={(_, value) => {
-            if (value === "menu") {
-              setMobileOpen(true);
-              return;
-            }
-            void requestNavigation(() => {
-              router.push(String(value));
-            });
-          }}
-          sx={{
-            borderTop: 1,
-            borderColor: "divider",
-            height: 64,
-            px: 0.25,
-            "& .MuiBottomNavigationAction-root": {
-              color: "text.secondary",
-              minWidth: 52,
-              position: "relative",
-              "&.Mui-selected": { color: "primary.main" },
-            },
-            "& .MuiBottomNavigationAction-label": {
-              fontSize: ".6875rem",
-              fontWeight: 500,
-              mt: 0.25,
-              "&.Mui-selected": { fontSize: ".6875rem", fontWeight: 700 },
-            },
-          }}
-        >
-          {dashboardAllowed ? (
-            <BottomNavigationAction
-              label={t("Home", "Nyumbani")}
-              value="/dashboard"
-              icon={mobileNavValue === "/dashboard" ? <HomeRoundedIcon /> : <HomeOutlinedIcon />}
-            />
-          ) : null}
-          {capabilities.canViewBookings ? (
-            <BottomNavigationAction
-              label={t("Bookings", "Uhifadhi")}
-              value="/bookings"
-              icon={mobileNavValue === "/bookings" ? <EventNoteRoundedIcon /> : <EventNoteOutlinedIcon />}
-            />
-          ) : null}
-          {capabilities.canViewRooms ? (
-            <BottomNavigationAction
-              label={inventoryPlural}
-              value="/rooms"
-              icon={mobileNavValue === "/rooms" ? <BedRoundedIcon /> : <BedOutlinedIcon />}
-            />
-          ) : null}
-          {capabilities.canViewGuests ? (
-            <BottomNavigationAction
-              label={t("Guests", "Wageni")}
-              value="/guests"
-              icon={mobileNavValue === "/guests" ? <PeopleRoundedIcon /> : <PeopleOutlineRoundedIcon />}
-            />
-          ) : null}
-          <BottomNavigationAction
-            label={t("More", "Zaidi")}
-            value="menu"
-            icon={<MoreHorizRoundedIcon />}
-          />
-        </BottomNavigation>
-      </Paper>
+        onOpenMenu={() => setMobileOpen(true)}
+        pathname={pathname}
+        role={session.activeRole}
+      />
     </Box>
   );
 }
 
-function PermissionDeniedScreen({ dashboardAllowed }: { dashboardAllowed: boolean }) {
+function PermissionDeniedScreen({ homePath }: { homePath: string }) {
   const { t } = useLanguage();
+  const accountHome = homePath === "/settings/profile";
+  const frontDeskHome = homePath === "/front-desk";
 
   return (
     <Box
@@ -587,368 +499,17 @@ function PermissionDeniedScreen({ dashboardAllowed }: { dashboardAllowed: boolea
         </Typography>
         <Button
           component={Link}
-          href={dashboardAllowed ? "/dashboard" : "/settings/profile"}
+          href={homePath}
           sx={{ mt: 3 }}
           variant="contained"
         >
-          {dashboardAllowed
-            ? t("Return home", "Rudi nyumbani")
-            : t("Open my account", "Fungua akaunti yangu")}
+          {accountHome
+            ? t("Open my account", "Fungua akaunti yangu")
+            : frontDeskHome
+              ? t("Open Front Desk", "Fungua Mapokezi")
+              : t("Return home", "Rudi nyumbani")}
         </Button>
       </Paper>
     </Box>
-  );
-}
-
-type SidebarContentProps = {
-  activePropertyId?: string;
-  avatar?: string;
-  capabilities: WorkspaceCapabilities;
-  dashboardAllowed: boolean;
-  homePath: string;
-  memberships: Membership[];
-  name: string;
-  onClose: () => void;
-  onSignOut: () => Promise<void>;
-  onSwitchProperty: (propertyId: string) => Promise<void>;
-  pathname: string;
-  property?: Property | null;
-  role: string;
-};
-
-function SidebarContent({
-  activePropertyId,
-  avatar,
-  capabilities,
-  dashboardAllowed,
-  homePath,
-  memberships,
-  name,
-  onClose,
-  onSignOut,
-  onSwitchProperty,
-  pathname,
-  property,
-  role,
-}: SidebarContentProps) {
-  const { t } = useLanguage();
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
-  const propertyDefinition = getPropertyTypeDefinition(property?.type);
-  const contextualize = (items: MainDestination[]) =>
-    items.map((item) =>
-      item.path === "/rooms"
-        ? {
-            ...item,
-            label: propertyDefinition.inventoryPlural[0],
-            localizedLabel: propertyDefinition.inventoryPlural,
-          }
-        : item,
-    );
-  const operations = contextualize(visibleDestinations(operationsDestinations, capabilities));
-  const business = contextualize(visibleDestinations(businessDestinations, capabilities));
-  const management = contextualize(visibleDestinations(managementDestinations, capabilities));
-
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flex: 1,
-        flexDirection: "column",
-        minHeight: 0,
-        pb: { xs: "env(safe-area-inset-bottom)", md: 0 },
-      }}
-    >
-      <Stack
-        direction="row"
-        sx={{
-          alignItems: "center",
-          borderBottom: 1,
-          borderColor: "divider",
-          height: { xs: "calc(60px + env(safe-area-inset-top))", md: 60 },
-          justifyContent: "space-between",
-          px: 1.5,
-          pt: { xs: "env(safe-area-inset-top)", md: 0 },
-        }}
-      >
-        <Box
-          component={Link}
-          href={homePath}
-          aria-label={dashboardAllowed
-            ? t("Loji Business home", "Nyumbani Loji Business")
-            : t("Open my account", "Fungua akaunti yangu")}
-          onClick={onClose}
-          sx={{ display: "inline-flex", p: 0.5, textDecoration: "none" }}
-        >
-          <BrandLockup symbolSize={28} textSize=".9375rem" />
-        </Box>
-        <IconButton
-          aria-label={t("Close navigation", "Funga menyu")}
-          onClick={onClose}
-          size="small"
-          sx={{ display: { xs: "inline-flex", md: "none" } }}
-        >
-          <CloseRoundedIcon fontSize="small" />
-        </IconButton>
-      </Stack>
-
-      <Box sx={{ borderBottom: 1, borderColor: "divider", p: 1.25 }}>
-        <PropertySwitcher
-          activePropertyId={activePropertyId}
-          memberships={memberships}
-          property={property}
-          onSwitch={onSwitchProperty}
-          placement="sidebar"
-        />
-      </Box>
-
-      <Box
-        component="nav"
-        aria-label={t("Workspace navigation", "Menyu ya eneo la kazi")}
-        sx={{
-          display: "flex",
-          flex: 1,
-          flexDirection: "column",
-          minHeight: 0,
-          overflowY: "auto",
-          px: 1,
-          py: 1.5,
-        }}
-      >
-        <NavigationSection
-          items={contextualize(visibleDestinations(workspaceDestinations, capabilities)).filter(
-            (item) => item.path !== "/dashboard" || dashboardAllowed,
-          )}
-          label={t("Workspace", "Eneo la kazi")}
-          onNavigate={onClose}
-          pathname={pathname}
-        />
-        {operations.length ? (
-          <NavigationSection
-            items={operations}
-            label={t("Operations", "Shughuli")}
-            onNavigate={onClose}
-            pathname={pathname}
-          />
-        ) : null}
-        {business.length ? (
-          <NavigationSection
-            items={business}
-            label={t("Business", "Biashara")}
-            onNavigate={onClose}
-            pathname={pathname}
-          />
-        ) : null}
-        {management.length ? (
-          <NavigationSection
-            items={management}
-            label={t("Manage", "Usimamizi")}
-            onNavigate={onClose}
-            pathname={pathname}
-          />
-        ) : null}
-
-        <Box sx={{ flex: 1, minHeight: 20 }} />
-
-        <NavigationList
-          items={[settingsDestination]}
-          onNavigate={onClose}
-          pathname={pathname}
-        />
-
-        <ListItemButton
-          aria-expanded={preferencesOpen}
-          onClick={() => setPreferencesOpen((open) => !open)}
-          sx={{ borderRadius: 1, minHeight: 40, px: 1.25 }}
-        >
-          <ListItemIcon sx={{ color: "text.secondary", minWidth: 30 }}>
-            <TuneRoundedIcon sx={{ fontSize: 19 }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={t("Preferences", "Mapendeleo")}
-            slotProps={{ primary: { sx: { fontSize: ".8125rem", fontWeight: 500 } } }}
-          />
-          <ExpandMoreRoundedIcon
-            sx={{
-              color: "text.secondary",
-              fontSize: 18,
-              transform: preferencesOpen ? "rotate(180deg)" : "none",
-              transition: "transform 160ms ease",
-            }}
-          />
-        </ListItemButton>
-
-        <Collapse in={preferencesOpen} timeout="auto" unmountOnExit>
-          <Stack
-            spacing={1.25}
-            sx={{
-              bgcolor: "background.default",
-              border: 1,
-              borderColor: "divider",
-              borderRadius: 1,
-              mt: 0.5,
-              p: 1.25,
-            }}
-          >
-            <Box>
-              <Typography color="text.secondary" variant="caption" sx={{ display: "block", fontWeight: 500, mb: 0.6 }}>
-                {t("Appearance", "Mwonekano")}
-              </Typography>
-              <ThemeModeSelect fullWidth />
-            </Box>
-            <Box>
-              <Typography color="text.secondary" variant="caption" sx={{ display: "block", fontWeight: 500, mb: 0.6 }}>
-                {t("Language", "Lugha")}
-              </Typography>
-              <TopBarLanguageSwitch fullWidth />
-            </Box>
-          </Stack>
-        </Collapse>
-
-        <Divider sx={{ my: 1 }} />
-        <Stack
-          direction="row"
-          spacing={0.75}
-          sx={{ alignItems: "center", borderRadius: 1, minHeight: 52, p: 0.5 }}
-        >
-          <Stack
-            component={Link}
-            direction="row"
-            href={accountDestination.path}
-            onClick={onClose}
-            spacing={1}
-            sx={{
-              alignItems: "center",
-              borderRadius: 1,
-              color: "inherit",
-              flex: 1,
-              minWidth: 0,
-              p: 0.5,
-              textDecoration: "none",
-              "&:hover": { bgcolor: "action.hover" },
-            }}
-          >
-            <Avatar src={avatar} sx={{ bgcolor: "primary.main", height: 32, width: 32 }}>
-              {name[0]?.toUpperCase()}
-            </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography noWrap sx={{ fontSize: ".8125rem", fontWeight: 700 }}>
-                {name}
-              </Typography>
-              <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>
-                {role.replaceAll("_", " ")}
-              </Typography>
-            </Box>
-          </Stack>
-          <Tooltip title={t("Sign out", "Ondoka")}>
-            <IconButton
-              aria-label={t("Sign out", "Ondoka")}
-              onClick={() => void onSignOut()}
-              size="small"
-            >
-              <LogoutRoundedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      </Box>
-    </Box>
-  );
-}
-
-function NavigationSection({
-  items,
-  label,
-  onNavigate,
-  pathname,
-}: {
-  items: MainDestination[];
-  label: string;
-  onNavigate: () => void;
-  pathname: string;
-}) {
-  return (
-    <Box sx={{ mb: 1.5 }}>
-      <Typography
-        color="text.secondary"
-        component="p"
-        sx={{
-          fontSize: ".6875rem",
-          fontWeight: 700,
-          letterSpacing: ".07em",
-          mb: 0.5,
-          px: 1.25,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </Typography>
-      <NavigationList items={items} onNavigate={onNavigate} pathname={pathname} />
-    </Box>
-  );
-}
-
-function NavigationList({
-  items,
-  onNavigate,
-  pathname,
-}: {
-  items: MainDestination[];
-  onNavigate: () => void;
-  pathname: string;
-}) {
-  const { t } = useLanguage();
-
-  return (
-    <List disablePadding>
-      {items.map((item) => {
-        const selected = item.match(pathname);
-        return (
-          <ListItemButton
-            aria-current={selected ? "page" : undefined}
-            component={Link}
-            href={item.path}
-            key={item.path}
-            onClick={onNavigate}
-            selected={selected}
-            sx={{
-              borderRadius: 1,
-              columnGap: 1.1,
-              mb: 0.2,
-              minHeight: 40,
-              px: 1.25,
-              "&.Mui-selected": {
-                bgcolor: "action.selected",
-                color: "primary.main",
-                "&:hover": { bgcolor: "action.selected" },
-              },
-            }}
-          >
-            <ListItemIcon
-              sx={{
-                alignItems: "center",
-                color: selected ? "primary.main" : "text.secondary",
-                justifyContent: "center",
-                minWidth: 22,
-                width: 22,
-                "& .MuiSvgIcon-root": { fontSize: 20 },
-              }}
-            >
-              {selected ? item.activeIcon : item.icon}
-            </ListItemIcon>
-            <ListItemText
-              primary={t(...item.localizedLabel)}
-              sx={{ m: 0 }}
-              slotProps={{
-                primary: {
-                  sx: {
-                    fontSize: ".875rem",
-                    fontWeight: selected ? 700 : 500,
-                  },
-                },
-              }}
-            />
-          </ListItemButton>
-        );
-      })}
-    </List>
   );
 }

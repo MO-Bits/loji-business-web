@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
@@ -113,7 +112,8 @@ export function RoomsScreen() {
   const board = boardState && boardState.property.id === propertyId ? boardState : null;
   const error = errorState && errorState.propertyId === propertyId ? errorState.message : null;
   const dataLoading = loading || Boolean(boardState && boardState.property.id !== propertyId);
-  const canManage = Boolean(board?.capabilities.manageRooms);
+  const canManageHousekeeping = Boolean(board?.capabilities.manageHousekeeping);
+  const canManageInventory = Boolean(board?.capabilities.manageRooms);
   const canCreateBooking = Boolean(board?.capabilities.createBooking);
   const propertyDefinition = getPropertyTypeDefinition(
     board?.property.propertyType ?? session?.property?.type,
@@ -185,7 +185,8 @@ export function RoomsScreen() {
 
   const rooms = useMemo(() => board?.rooms ?? [], [board]);
   const canAddInventory =
-    canManage &&
+    canManageInventory &&
+    board?.property.inventoryType === "room" &&
     (propertyDefinition.allowsMultipleInventory || rooms.length === 0);
   const visibleRooms = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
@@ -302,7 +303,7 @@ export function RoomsScreen() {
           )}
         />
 
-        {canManage && rooms.length > 0 && propertyDefinition.allowsMultipleInventory && remainingSetupCount > 0 ? (
+        {canAddInventory && rooms.length > 0 && propertyDefinition.allowsMultipleInventory && remainingSetupCount > 0 ? (
           <Alert
             action={<Button component={Link} href="/rooms/new" color="inherit" size="small">{t(`Add ${singular}`, `Ongeza ${singular}`)}</Button>}
             severity="info"
@@ -367,7 +368,7 @@ export function RoomsScreen() {
               <ToggleButton value="checking_out_today">{t("Due out", "Wanatoka")} · {filterCounts.get("checking_out_today") ?? 0}</ToggleButton>
               <ToggleButton value="needs_cleaning">{t("Dirty", "Vichafu")} · {filterCounts.get("needs_cleaning") ?? 0}</ToggleButton>
               <ToggleButton value="cleaning">{t("Cleaning", "Usafi")} · {filterCounts.get("cleaning") ?? 0}</ToggleButton>
-              <ToggleButton value="out_of_service">{t("Out of service", "Havitumiki")} · {filterCounts.get("out_of_service") ?? 0}</ToggleButton>
+              <ToggleButton value="out_of_service">{t("Maintenance", "Matengenezo")} · {filterCounts.get("out_of_service") ?? 0}</ToggleButton>
               <ToggleButton value="inactive">{t("Inactive", "Vimezimwa")} · {filterCounts.get("inactive") ?? 0}</ToggleButton>
             </ToggleButtonGroup>
           </Box>
@@ -384,7 +385,7 @@ export function RoomsScreen() {
             <EmptyState
               actionHref={canAddInventory ? "/rooms/new" : undefined}
               actionLabel={canAddInventory ? t(`Add your first ${singular}`, `Ongeza ${singular} yako ya kwanza`) : undefined}
-              description={t(`Add the rate, capacity, layout and photos for each bookable ${singular}.`, `Ongeza bei, uwezo, mpangilio na picha za kila ${singular} inayoweza kuhifadhiwa.`)}
+              description={t(`Add the rate, capacity and amenities for each bookable ${singular}.`, `Ongeza bei, uwezo na huduma za kila ${singular} inayoweza kuhifadhiwa.`)}
               icon={<BedRoundedIcon />}
               title={t(`Your ${singular} inventory is empty`, `Orodha ya ${plural} haina kitu`)}
             />
@@ -398,7 +399,8 @@ export function RoomsScreen() {
             {isDesktopLayout ? (
               <RoomTable
                 canCreateBooking={canCreateBooking}
-                canManage={canManage}
+                canManageHousekeeping={canManageHousekeeping}
+                canManageInventory={canManageInventory}
                 onActive={updateActive}
                 onHousekeeping={updateHousekeeping}
                 pendingRoom={pendingRoom}
@@ -409,7 +411,8 @@ export function RoomsScreen() {
               {pagedRooms.map((room) => (
                 <RoomCard
                   canCreateBooking={canCreateBooking}
-                  canManage={canManage}
+                  canManageHousekeeping={canManageHousekeeping}
+                  canManageInventory={canManageInventory}
                   key={room.id}
                   onActive={updateActive}
                   onHousekeeping={updateHousekeeping}
@@ -459,14 +462,16 @@ export function RoomsScreen() {
 
 function RoomTable({
   canCreateBooking,
-  canManage,
+  canManageHousekeeping,
+  canManageInventory,
   onActive,
   onHousekeeping,
   pendingRoom,
   rooms,
 }: {
   canCreateBooking: boolean;
-  canManage: boolean;
+  canManageHousekeeping: boolean;
+  canManageInventory: boolean;
   onActive: (room: RoomBoardItem, active: boolean) => Promise<void>;
   onHousekeeping: (room: RoomBoardItem, status: HousekeepingStatus) => Promise<void>;
   pendingRoom: string | null;
@@ -502,10 +507,10 @@ function RoomTable({
             <TableRow hover key={room.id} sx={{ opacity: pendingRoom === room.id ? 0.55 : 1 }}>
               <TableCell>
                 <Stack component={Link} href={`/rooms/${room.id}`} direction="row" spacing={1.25} sx={{ alignItems: "center", color: "inherit", minWidth: 0, textDecoration: "none" }}>
-                  <RoomThumb room={room} />
+                  <RoomThumb />
                   <Box sx={{ minWidth: 0 }}>
                     <Typography noWrap variant="body2" sx={{ fontWeight: 700 }}>{room.name}</Typography>
-                    <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")}{room.inventoryType !== "room" ? ` · ${room.bedroomCount} ${t("bedrooms", "vyumba vya kulala")}` : ""}</Typography>
+                    <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")} · {room.bedCount} {t("beds", "vitanda")}</Typography>
                   </Box>
                 </Stack>
               </TableCell>
@@ -517,7 +522,7 @@ function RoomTable({
                 <Typography color="text.secondary" variant="caption">/{t("night", "usiku")}</Typography>
               </TableCell>
               <TableCell align="right">
-                <RoomActions canCreateBooking={canCreateBooking} canManage={canManage} disabled={Boolean(pendingRoom)} onActive={onActive} onHousekeeping={onHousekeeping} room={room} />
+                <RoomActions canCreateBooking={canCreateBooking} canManageHousekeeping={canManageHousekeeping} canManageInventory={canManageInventory} disabled={Boolean(pendingRoom)} onActive={onActive} onHousekeeping={onHousekeeping} room={room} />
               </TableCell>
             </TableRow>
           ))}
@@ -529,14 +534,16 @@ function RoomTable({
 
 function RoomCard({
   canCreateBooking,
-  canManage,
+  canManageHousekeeping,
+  canManageInventory,
   onActive,
   onHousekeeping,
   pending,
   room,
 }: {
   canCreateBooking: boolean;
-  canManage: boolean;
+  canManageHousekeeping: boolean;
+  canManageInventory: boolean;
   onActive: (room: RoomBoardItem, active: boolean) => Promise<void>;
   onHousekeeping: (room: RoomBoardItem, status: HousekeepingStatus) => Promise<void>;
   pending: boolean;
@@ -549,21 +556,16 @@ function RoomCard({
   return (
     <Paper variant="outlined" sx={{ borderRadius: 3, minWidth: 0, opacity: pending ? 0.55 : 1, overflow: "hidden" }}>
       <Box component={Link} href={`/rooms/${room.id}`} sx={{ color: "inherit", display: "block", textDecoration: "none" }}>
-        <Box sx={{ aspectRatio: "16/8", bgcolor: "action.hover", overflow: "hidden", position: "relative" }}>
-          {room.images[0] ? (
-            <Image alt={room.name} fill sizes="(max-width: 600px) 100vw, 50vw" src={room.images[0]} style={{ objectFit: "cover" }} />
-          ) : (
-            <Box sx={{ display: "grid", height: "100%", placeItems: "center" }}><BedRoundedIcon sx={{ color: "text.disabled", fontSize: 44 }} /></Box>
-          )}
-          <Box sx={{ left: 12, position: "absolute", top: 12 }}><RoomStatusPill status={room.operationalStatus} t={t} /></Box>
-        </Box>
         <Stack spacing={1.5} sx={{ p: 2 }}>
+          <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+            <RoomStatusPill status={room.operationalStatus} t={t} />
+            <Typography noWrap sx={{ fontSize: ".875rem", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money.format(room.pricePerNight)}</Typography>
+          </Stack>
           <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
             <Box sx={{ minWidth: 0 }}>
               <Typography noWrap variant="subtitle1" sx={{ fontWeight: 700 }}>{room.name}</Typography>
-              <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")} · {room.bedCount} {t("beds", "vitanda")}{room.inventoryType !== "room" ? ` · ${room.bedroomCount} ${t("bedrooms", "vyumba vya kulala")}` : ""}</Typography>
+              <Typography color="text.secondary" noWrap variant="caption" sx={{ textTransform: "capitalize" }}>{room.roomType} · {room.capacity} {t("guests", "wageni")} · {room.bedCount} {t("beds", "vitanda")}</Typography>
             </Box>
-            <Typography noWrap sx={{ fontSize: ".875rem", fontVariantNumeric: "tabular-nums", fontWeight: 700 }}>{money.format(room.pricePerNight)}</Typography>
           </Stack>
           <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}>
             <StayMini label={t("In house", "Aliyepo")} stay={room.currentStay} />
@@ -576,16 +578,16 @@ function RoomCard({
         {hasInlineBookingAction ? (
           <Button component={Link} href={`/bookings/new?room=${room.id}`} size="small" startIcon={<CalendarMonthRoundedIcon />}>{t(`Book ${singular}`, `Hifadhi ${singular}`)}</Button>
         ) : <Box />}
-        <RoomActions canCreateBooking={canCreateBooking} canManage={canManage} disabled={pending} hideCreateBooking={hasInlineBookingAction} onActive={onActive} onHousekeeping={onHousekeeping} room={room} />
+        <RoomActions canCreateBooking={canCreateBooking} canManageHousekeeping={canManageHousekeeping} canManageInventory={canManageInventory} disabled={pending} hideCreateBooking={hasInlineBookingAction} onActive={onActive} onHousekeeping={onHousekeeping} room={room} />
       </Stack>
     </Paper>
   );
 }
 
-function RoomThumb({ room }: { room: RoomBoardItem }) {
+function RoomThumb() {
   return (
-    <Box sx={{ bgcolor: "action.hover", borderRadius: 1.5, flexShrink: 0, height: 44, overflow: "hidden", position: "relative", width: 52 }}>
-      {room.images[0] ? <Image alt="" fill sizes="52px" src={room.images[0]} style={{ objectFit: "cover" }} /> : <Box sx={{ display: "grid", height: "100%", placeItems: "center" }}><BedRoundedIcon color="disabled" fontSize="small" /></Box>}
+    <Box aria-hidden sx={{ bgcolor: "action.hover", borderRadius: 1.5, display: "grid", flexShrink: 0, height: 44, placeItems: "center", width: 52 }}>
+      <BedRoundedIcon color="disabled" fontSize="small" />
     </Box>
   );
 }
@@ -612,7 +614,8 @@ function StayMini({ label, stay }: { label: string; stay: RoomStay | null }) {
 
 function RoomActions({
   canCreateBooking,
-  canManage,
+  canManageHousekeeping,
+  canManageInventory,
   disabled,
   hideCreateBooking = false,
   onActive,
@@ -620,7 +623,8 @@ function RoomActions({
   room,
 }: {
   canCreateBooking: boolean;
-  canManage: boolean;
+  canManageHousekeeping: boolean;
+  canManageInventory: boolean;
   disabled: boolean;
   hideCreateBooking?: boolean;
   onActive: (room: RoomBoardItem, active: boolean) => Promise<void>;
@@ -639,8 +643,8 @@ function RoomActions({
       <Menu anchorEl={anchor} onClose={() => setAnchor(null)} open={Boolean(anchor)}>
         <MenuItem component={Link} href={`/rooms/${room.id}`} onClick={() => setAnchor(null)}>{t(`Open ${singular} workspace`, `Fungua eneo la ${singular}`)}</MenuItem>
         {canCreateBooking && room.isActive && !hideCreateBooking ? <MenuItem component={Link} href={`/bookings/new?room=${room.id}`} onClick={() => setAnchor(null)}>{t("Create booking", "Tengeneza uhifadhi")}</MenuItem> : null}
-        {canManage ? <MenuItem component={Link} href={`/rooms/${room.id}/edit`} onClick={() => setAnchor(null)}>{t(`Edit ${singular}`, `Hariri ${singular}`)}</MenuItem> : null}
-        {canManage && room.isActive && !["occupied", "checking_out_today"].includes(room.operationalStatus)
+        {canManageInventory ? <MenuItem component={Link} href={`/rooms/${room.id}/edit`} onClick={() => setAnchor(null)}>{t(`Edit ${singular}`, `Hariri ${singular}`)}</MenuItem> : null}
+        {canManageHousekeeping && room.isActive && !["occupied", "checking_out_today"].includes(room.operationalStatus)
           ? housekeepingOptions.map((option) => (
               <MenuItem
                 disabled={room.housekeepingStatus === option.value}
@@ -651,8 +655,8 @@ function RoomActions({
               </MenuItem>
             ))
           : null}
-        {canManage ? <Divider /> : null}
-        {canManage ? (
+        {canManageInventory ? <Divider /> : null}
+        {canManageInventory ? (
           <MenuItem onClick={() => { setAnchor(null); void onActive(room, !room.isActive); }}>
             {room.isActive ? t(`Deactivate ${singular}`, `Zima ${singular}`) : t(`Activate ${singular}`, `Washa ${singular}`)}
           </MenuItem>

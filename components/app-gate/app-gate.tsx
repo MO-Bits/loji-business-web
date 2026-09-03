@@ -13,9 +13,21 @@ import { AppStateScreen } from "@/components/session/app-state-screen";
 import { useOnlineStatus } from "@/components/session/use-online-status";
 import { useLanguage } from "@/components/providers/language-provider";
 import { AppStatus, AppStep } from "@/features/session/models/app-status";
+import { normalizeWorkspaceRole } from "@/features/session/permissions";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 
-function destinationFor(status: AppStatus, step: AppStep): string {
+function readyDestination(activeRole?: string): string {
+  const role = normalizeWorkspaceRole(activeRole);
+  if (role === "owner") return "/dashboard";
+  if (role === "manager" || role === "receptionist") return "/front-desk";
+  return "/settings/profile";
+}
+
+function destinationFor(
+  status: AppStatus,
+  step: AppStep,
+  activeRole?: string,
+): string {
   if (status === AppStatus.Unauthenticated) {
     return "/login";
   }
@@ -25,7 +37,7 @@ function destinationFor(status: AppStatus, step: AppStep): string {
   }
 
   if (status === AppStatus.Ready) {
-    return "/dashboard";
+    return readyDestination(activeRole);
   }
 
   switch (step) {
@@ -33,14 +45,12 @@ function destinationFor(status: AppStatus, step: AppStep): string {
       return "/login";
     case AppStep.Profile:
       return "/onboarding/profile";
-    case AppStep.Invitation:
-      return "/";
     case AppStep.PropertyBasic:
       return "/onboarding/property";
     case AppStep.PropertyAddress:
       return "/onboarding/property";
     case AppStep.Done:
-      return "/dashboard";
+      return readyDestination(activeRole);
   }
 }
 
@@ -52,7 +62,11 @@ export function AppGate() {
 
   useEffect(() => {
     if (session) {
-      const destination = destinationFor(session.status, session.step);
+      const destination = destinationFor(
+        session.status,
+        session.step,
+        session.activeRole,
+      );
       router.prefetch(destination);
       router.replace(destination);
     }

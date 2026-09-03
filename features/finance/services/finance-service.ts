@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database.types";
-import { parseFinanceDashboard, parsePaymentLedger } from "../models/finance";
+import type { Database, Json } from "@/types/database.types";
+import { parseCashierCloseWorkspace, parseFinanceDashboard, parseOutstandingBalances, parsePaymentLedger } from "../models/finance";
 
 export async function getPropertyFinanceDashboard(
   supabase: SupabaseClient<Database>,
@@ -62,6 +62,53 @@ export async function reverseBookingPayment(
     p_action: args.action,
     p_reason: args.reason.trim(),
     p_idempotency_key: args.idempotencyKey,
+  });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+type JsonRpc = (
+  name: string,
+  args?: Record<string, unknown>,
+) => PromiseLike<{ data: unknown; error: { message: string } | null }>;
+
+export async function getOutstandingBalances(
+  supabase: SupabaseClient<Database>,
+  propertyId: string,
+) {
+  const call = supabase.rpc.bind(supabase) as unknown as JsonRpc;
+  const { data, error } = await call("get_finance_outstanding_balances", { p_property_id: propertyId });
+  if (error) throw new Error(error.message);
+  return parseOutstandingBalances(data as Json);
+}
+
+export async function getCashierCloseWorkspace(
+  supabase: SupabaseClient<Database>,
+  propertyId: string,
+) {
+  const call = supabase.rpc.bind(supabase) as unknown as JsonRpc;
+  const { data, error } = await call("get_cashier_close_workspace", { p_property_id: propertyId });
+  if (error) throw new Error(error.message);
+  return parseCashierCloseWorkspace(data as Json);
+}
+
+export async function closeCashierDay(
+  supabase: SupabaseClient<Database>,
+  args: {
+    propertyId: string;
+    requestKey: string;
+    openingFloat: number;
+    countedCash: number;
+    notes: string;
+  },
+) {
+  const call = supabase.rpc.bind(supabase) as unknown as JsonRpc;
+  const { data, error } = await call("close_cashier_day", {
+    p_property_id: args.propertyId,
+    p_request_key: args.requestKey,
+    p_opening_float: args.openingFloat,
+    p_counted_cash: args.countedCash,
+    p_notes: args.notes.trim() || null,
   });
   if (error) throw new Error(error.message);
   return data;

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
@@ -11,7 +10,6 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import CleaningServicesRoundedIcon from "@mui/icons-material/CleaningServicesRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import GroupRoundedIcon from "@mui/icons-material/GroupRounded";
-import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SellRoundedIcon from "@mui/icons-material/SellRounded";
@@ -57,7 +55,6 @@ export function RoomDetails({ roomId }: { roomId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
-  const [activeImage, setActiveImage] = useState(0);
   const propertyId = session?.activePropertyId;
   const workspace = workspaceState && workspaceState.property.id === propertyId ? workspaceState : null;
   const error = errorState && errorState.propertyId === propertyId ? errorState.message : null;
@@ -135,7 +132,8 @@ export function RoomDetails({ roomId }: { roomId: string }) {
   const plural = t(definition.inventoryPlural[0], definition.inventoryPlural[1]);
   // Once the workspace has loaded, the server projection is authoritative.
   // A stale client session must never re-enable an action the RPC denied.
-  const canManage = workspace.capabilities.manageRooms;
+  const canManageHousekeeping = workspace.capabilities.manageHousekeeping;
+  const canManageInventory = workspace.capabilities.manageRooms;
   const canCreateBooking = workspace.capabilities.createBooking;
 
   const updateHousekeeping = async (status: HousekeepingStatus) => {
@@ -167,20 +165,18 @@ export function RoomDetails({ roomId }: { roomId: string }) {
               eyebrow={t(definition.inventoryBoard[0], definition.inventoryBoard[1])}
               title={room.name}
               description={t(
-                `${room.roomType} · ${room.capacity} guests · ${room.bedCount} ${room.bedCount === 1 ? "bed" : "beds"}${room.inventoryType !== "room" ? ` · ${room.bedroomCount} bedrooms · ${room.bathroomCount} bathrooms` : ""}`,
-                `${room.roomType} · wageni ${room.capacity} · vitanda ${room.bedCount}${room.inventoryType !== "room" ? ` · vyumba vya kulala ${room.bedroomCount} · bafu ${room.bathroomCount}` : ""}`,
+                `${room.roomType} · ${room.capacity} guests · ${room.bedCount} ${room.bedCount === 1 ? "bed" : "beds"}`,
+                `${room.roomType} · wageni ${room.capacity} · vitanda ${room.bedCount}`,
               )}
               action={(
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
                   {canCreateBooking && room.isActive ? <Button component={Link} href={`/bookings/new?room=${room.id}`} startIcon={<CalendarMonthRoundedIcon />} variant="contained">{t("New booking", "Uhifadhi mpya")}</Button> : null}
-                  {canManage ? <Button component={Link} href={`/rooms/${room.id}/edit`} startIcon={<EditRoundedIcon />} variant="outlined">{t(`Edit ${singular}`, `Hariri ${singular}`)}</Button> : null}
+                  {canManageInventory ? <Button component={Link} href={`/rooms/${room.id}/edit`} startIcon={<EditRoundedIcon />} variant="outlined">{t(`Edit ${singular}`, `Hariri ${singular}`)}</Button> : null}
                 </Stack>
               )}
             />
           </Box>
         </Stack>
-
-        <RoomGallery activeImage={activeImage} images={room.images} name={room.name} onSelect={setActiveImage} singular={singular} />
 
         <Box sx={{ alignItems: "start", display: "grid", gap: { xs: 2, lg: 3 }, gridTemplateColumns: { xs: "minmax(0,1fr)", lg: "minmax(0,1.45fr) minmax(300px,.75fr)" } }}>
           <Stack spacing={{ xs: 2, sm: 2.5 }}>
@@ -232,7 +228,7 @@ export function RoomDetails({ roomId }: { roomId: string }) {
                 {room.housekeepingNotes ? <Typography sx={{ mt: 1.25, overflowWrap: "anywhere" }} variant="body2">“{room.housekeepingNotes}”</Typography> : null}
                 {room.housekeepingUpdatedAt ? <Typography color="text.secondary" sx={{ display: "block", mt: 1.25 }} variant="caption">{t("Updated", "Imesasishwa")} {formatLocalDateTime(room.housekeepingUpdatedAt)}</Typography> : null}
               </Box>
-              {canManage && room.isActive && !room.currentStay ? <HousekeepingAction disabled={saving} onChange={updateHousekeeping} status={room.housekeepingStatus} /> : null}
+              {canManageHousekeeping && room.isActive && !room.currentStay ? <HousekeepingAction disabled={saving} onChange={updateHousekeeping} status={room.housekeepingStatus} /> : null}
             </Surface>
 
             <Surface>
@@ -241,8 +237,6 @@ export function RoomDetails({ roomId }: { roomId: string }) {
                 <InfoRow icon={<SellRoundedIcon />} label={t(`${singular} type`, `Aina ya ${singular}`)} value={room.roomType} />
                 <InfoRow icon={<GroupRoundedIcon />} label={t("Guest capacity", "Uwezo wa wageni")} value={`${room.capacity}`} />
                 <InfoRow icon={<BedRoundedIcon />} label={t("Beds", "Vitanda")} value={`${room.bedCount}`} />
-                {room.inventoryType !== "room" ? <InfoRow icon={<BedRoundedIcon />} label={t("Bedrooms", "Vyumba vya kulala")} value={`${room.bedroomCount}`} /> : null}
-                {room.inventoryType !== "room" ? <InfoRow icon={<CheckCircleRoundedIcon />} label={t("Bathrooms", "Bafu")} value={`${room.bathroomCount}`} /> : null}
                 <InfoRow icon={<PaymentsRoundedIcon />} label={t("Nightly rate", "Bei kwa usiku")} value={money.format(room.pricePerNight)} />
                 <InfoRow icon={<CheckCircleRoundedIcon />} label={t("Inventory", "Orodha")} value={room.isActive ? t("Active", "Kinatumika") : t("Inactive", "Kimezimwa")} />
               </Stack>
@@ -253,36 +247,6 @@ export function RoomDetails({ roomId }: { roomId: string }) {
         </Box>
       </Stack>
     </WorkspacePage>
-  );
-}
-
-function RoomGallery({ activeImage, images, name, onSelect, singular }: { activeImage: number; images: string[]; name: string; onSelect: (index: number) => void; singular: string }) {
-  const { t } = useLanguage();
-  if (!images.length) return (
-    <Surface sx={{ bgcolor: "action.hover", display: "grid", minHeight: { xs: 240, sm: 360 }, placeItems: "center" }}>
-      <Stack spacing={1} sx={{ alignItems: "center", color: "text.secondary" }}><ImageRoundedIcon sx={{ fontSize: 42 }} /><Typography variant="body2">{t(`No ${singular} photos yet`, `Hakuna picha za ${singular} bado`)}</Typography></Stack>
-    </Surface>
-  );
-  const selected = Math.min(activeImage, images.length - 1);
-  const desktopImages = [
-    { index: selected, url: images[selected] },
-    ...images.map((url, index) => ({ index, url })).filter((item) => item.index !== selected),
-  ].slice(0, 5);
-  return (
-    <>
-      <Box sx={{ display: { xs: "none", md: "grid" }, gap: 1, gridTemplateColumns: "2fr 1fr 1fr", gridTemplateRows: "repeat(2, minmax(150px, 220px))", overflow: "hidden", borderRadius: 3 }}>
-        {desktopImages.map((item, position) => (
-          <Box aria-label={t(`Show photo ${item.index + 1} as cover`, `Onyesha picha ${item.index + 1} kama kubwa`)} component="button" key={`${item.index}:${item.url}`} onClick={() => onSelect(item.index)} sx={{ appearance: "none", bgcolor: "action.hover", border: 0, cursor: "pointer", gridColumn: position === 0 ? "1" : "auto", gridRow: position === 0 ? "1 / span 2" : "auto", minHeight: 0, p: 0, position: "relative", "&:focus-visible": { outline: "3px solid", outlineColor: "primary.main", outlineOffset: -3 } }} type="button">
-            <Image alt={position === 0 ? name : `${name} ${item.index + 1}`} fill priority={position === 0} sizes={position === 0 ? "60vw" : "25vw"} src={item.url} style={{ objectFit: "cover" }} />
-            {position === 4 && images.length > 5 ? <Box sx={{ alignItems: "center", bgcolor: "rgba(0,0,0,.48)", color: "white", display: "flex", inset: 0, justifyContent: "center", position: "absolute" }}><Typography sx={{ fontWeight: 700 }}>+{images.length - 5} {t("photos", "picha")}</Typography></Box> : null}
-          </Box>
-        ))}
-      </Box>
-      <Surface padding={false} sx={{ display: { xs: "block", md: "none" } }}>
-        <Box sx={{ aspectRatio: "16/10", position: "relative" }}><Image alt={name} fill priority sizes="100vw" src={images[selected]} style={{ objectFit: "cover" }} /></Box>
-        {images.length > 1 ? <Stack direction="row" spacing={1} sx={{ overflowX: "auto", p: 1.25 }}>{images.map((url, index) => <Box aria-label={t(`View photo ${index + 1}`, `Tazama picha ${index + 1}`)} aria-pressed={selected === index} component="button" key={`${index}:${url}`} onClick={() => onSelect(index)} sx={{ appearance: "none", border: 2, borderColor: selected === index ? "primary.main" : "transparent", borderRadius: 1.5, flex: "0 0 70px", height: 52, overflow: "hidden", p: 0, position: "relative", "&:focus-visible": { outline: "3px solid", outlineColor: "primary.main", outlineOffset: 1 } }} type="button"><Image alt="" fill sizes="70px" src={url} style={{ objectFit: "cover" }} /></Box>)}</Stack> : null}
-      </Surface>
-    </>
   );
 }
 

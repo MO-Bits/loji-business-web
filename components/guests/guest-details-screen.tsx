@@ -201,7 +201,7 @@ export function GuestDetailsScreen({ guestId }: { guestId: string }) {
                 <CommercialPanel commercial={workspace.commercial} />
               ) : null}
               <TravelIdentityPanel guest={workspace.guest} />
-              {workspace.guest.notes ? <GuestNotes notes={workspace.guest.notes} /> : null}
+              {workspace.guest.propertyNotes ? <GuestNotes notes={workspace.guest.propertyNotes} /> : null}
             </Stack>
           </Box>
         </Stack>

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
@@ -50,7 +50,7 @@ const destinations = [
   {
     capability: "canManageProperty" as const,
     href: "/settings/property",
-    icon: <ApartmentOutlinedIcon />,
+    icon: <BusinessOutlinedIcon />,
     label: ["Property", "Biashara"] as const,
     match: (path: string) => path.startsWith("/settings/property"),
   },

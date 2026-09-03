@@ -171,9 +171,7 @@ export function parseHomeDashboard(value: unknown): HomeDashboard {
   const list = (candidate: unknown) =>
     Array.isArray(candidate) ? candidate : [];
   const role = text(raw, "role").trim().toLowerCase() || "member";
-  const viewFinance =
-    role === "owner" &&
-    boolean(capabilityRaw, "view_finance", "viewFinance");
+  const viewFinance = boolean(capabilityRaw, "view_finance", "viewFinance");
   const capabilities: DashboardCapabilities = {
     createBooking: boolean(capabilityRaw, "create_booking", "createBooking"),
     manageRooms: boolean(capabilityRaw, "manage_rooms", "manageRooms"),

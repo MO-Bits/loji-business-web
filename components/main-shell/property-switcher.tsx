@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
+import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import {
@@ -19,20 +19,9 @@ import {
 import { useLanguage } from "@/components/providers/language-provider";
 import type { Membership, Property } from "@/features/session/models/app-session";
 
-function imageFromProperty(property: Record<string, unknown> | null | undefined) {
-  if (!property || !Array.isArray(property.images) || !property.images.length) return undefined;
-  const first = property.images[0];
-  if (typeof first === "string") return first;
-  if (first && typeof first === "object" && "url" in first) {
-    return String((first as { url?: unknown }).url ?? "") || undefined;
-  }
-  return undefined;
-}
-
 type PropertyOption = {
   address?: string;
   id: string;
-  image?: string;
   name: string;
   role?: string;
 };
@@ -77,7 +66,6 @@ export function PropertySwitcher({
                   ? item.address
                   : undefined,
             id: membership.property_id,
-            image: imageFromProperty(item),
             name: String(item.name ?? t("Property", "Biashara")),
             role: membership.role,
           },
@@ -86,9 +74,7 @@ export function PropertySwitcher({
     [memberships, t],
   );
 
-  const propertyRecord = property as Record<string, unknown> | null | undefined;
   const propertyName = String(property?.name ?? t("Property", "Biashara"));
-  const propertyImage = imageFromProperty(propertyRecord);
   const visibleOptions = options.filter((option) => membershipIds.includes(option.id));
   const canSwitch = visibleOptions.length > 1;
   const sidebar = placement === "sidebar";
@@ -110,7 +96,6 @@ export function PropertySwitcher({
   const identity = (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0, width: "100%" }}>
       <Avatar
-        src={propertyImage}
         variant="rounded"
         sx={{
           bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
@@ -119,7 +104,7 @@ export function PropertySwitcher({
           width: sidebar ? 36 : 30,
         }}
       >
-        <ApartmentRoundedIcon sx={{ fontSize: sidebar ? 18 : 16 }} />
+        <BusinessRoundedIcon sx={{ fontSize: sidebar ? 18 : 16 }} />
       </Avatar>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         {sidebar ? (
@@ -218,11 +203,10 @@ export function PropertySwitcher({
             >
               <ListItemIcon sx={{ minWidth: 42 }}>
                 <Avatar
-                  src={option.image}
                   variant="rounded"
                   sx={{ bgcolor: "action.selected", color: "primary.main", height: 32, width: 32 }}
                 >
-                  <ApartmentRoundedIcon sx={{ fontSize: 16 }} />
+                  <BusinessRoundedIcon sx={{ fontSize: 16 }} />
                 </Avatar>
               </ListItemIcon>
               <ListItemText

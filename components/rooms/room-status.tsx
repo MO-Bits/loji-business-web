@@ -12,7 +12,7 @@ export const housekeepingOptions: Array<{
   { value: "ready", label: "Mark ready", swahili: "Weka tayari" },
   { value: "needs_cleaning", label: "Needs cleaning", swahili: "Kinahitaji usafi" },
   { value: "cleaning", label: "Cleaning in progress", swahili: "Usafi unaendelea" },
-  { value: "out_of_service", label: "Out of service", swahili: "Hakitumiki" },
+  { value: "out_of_service", label: "Send to maintenance", swahili: "Weka matengenezo" },
 ];
 
 export function roomStatusMeta(
@@ -25,7 +25,7 @@ export function roomStatusMeta(
     checking_out_today: { label: "Checking out today", swahili: "Anatoka leo", tone: "warning" },
     needs_cleaning: { label: "Needs cleaning", swahili: "Kinahitaji usafi", tone: "warning" },
     cleaning: { label: "Cleaning", swahili: "Kinasafishwa", tone: "info" },
-    out_of_service: { label: "Out of service", swahili: "Hakitumiki", tone: "danger" },
+    out_of_service: { label: "Maintenance", swahili: "Matengenezo", tone: "danger" },
     inactive: { label: "Inactive", swahili: "Kimezimwa", tone: "neutral" },
   };
   const item = values[status];

@@ -12,6 +12,7 @@ export type GuestCapabilities = {
   updateGuest: boolean;
   viewFinance: boolean;
   viewGuests: boolean;
+  viewSettlement: boolean;
 };
 
 export type GuestCommercial = {
@@ -88,7 +89,9 @@ export type GuestProfile = {
   emergencyContactName: string;
   emergencyContactPhone: string;
   notes: string;
+  propertyNotes: string;
   createdAt: string | null;
+  updatedAt: string | null;
 };
 
 export type GuestUpdateInput = {
@@ -106,7 +109,8 @@ export type GuestUpdateInput = {
   idNumber?: string;
   emergencyContactName?: string;
   emergencyContactPhone?: string;
-  notes?: string;
+  propertyNotes?: string;
+  expectedUpdatedAt?: string;
 };
 
 export type GuestStaySettlement = {
@@ -213,14 +217,20 @@ function nullableDate(raw: Raw, ...keys: string[]): string | null {
 
 function parseCapabilities(value: unknown): GuestCapabilities {
   const raw = object(value);
+  const viewFinance = boolean(raw, "view_finance", "viewFinance");
+  const viewSettlement =
+    raw.view_settlement === undefined && raw.viewSettlement === undefined
+      ? viewFinance
+      : boolean(raw, "view_settlement", "viewSettlement");
   return {
     createBooking: boolean(raw, "create_booking", "createBooking"),
     updateGuest: boolean(raw, "update_guest", "updateGuest"),
-    viewFinance: boolean(raw, "view_finance", "viewFinance"),
+    viewFinance,
     viewGuests:
       raw.view_guests === undefined && raw.viewGuests === undefined
         ? true
         : boolean(raw, "view_guests", "viewGuests"),
+    viewSettlement,
   };
 }
 
@@ -353,7 +363,9 @@ function parseGuestProfile(value: unknown): GuestProfile {
       "emergencyContactPhone",
     ),
     notes: text(raw, "notes"),
+    propertyNotes: text(raw, "property_notes", "propertyNotes"),
     createdAt: nullableDate(raw, "created_at", "createdAt"),
+    updatedAt: nullableDate(raw, "updated_at", "updatedAt"),
   };
 }
 
@@ -419,7 +431,7 @@ export function parseGuestWorkspace(value: unknown): GuestWorkspace {
   const upcomingStays = list(stays.upcoming).map(parseStay);
   const pastStays = list(stays.past).map(parseStay);
   const redactSettlement = (items: GuestStay[]) =>
-    capabilities.viewFinance
+    capabilities.viewSettlement
       ? items
       : items.map((stay) => ({ ...stay, settlement: null }));
 
@@ -434,6 +446,7 @@ export function parseGuestWorkspace(value: unknown): GuestWorkspace {
       createBooking: capabilities.createBooking,
       updateGuest: capabilities.updateGuest,
       viewFinance: capabilities.viewFinance,
+      viewSettlement: capabilities.viewSettlement,
     },
     guest: parseGuestProfile(raw.guest),
     summary: {

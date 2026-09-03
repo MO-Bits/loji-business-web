@@ -8,10 +8,6 @@ import {
   type PropertySettingsWorkspace,
 } from "../models/property-settings";
 
-const BUCKET = "property-images";
-export const MAX_PROPERTY_GALLERY_IMAGES = 8;
-export const MAX_PROPERTY_IMAGE_BYTES = 5 * 1024 * 1024;
-
 export function notifyPropertySettingsChanged() {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("loji:property-change"));
@@ -61,11 +57,12 @@ export async function updatePropertyOperationalSettings(
   propertyId: string,
   input: PropertyOperationsInput,
 ): Promise<PropertySettingsWorkspace> {
-  return settingsRpc(client, "update_property_operational_settings", {
+  return settingsRpc(client, "update_property_operations_and_payments", {
     p_property_id: propertyId,
     p_timezone: input.timezone,
     p_checkin_time: input.checkinTime,
     p_checkout_time: input.checkoutTime,
+    p_payment_methods: input.paymentMethods,
   });
 }
 
@@ -99,17 +96,6 @@ export async function updatePropertyAmenities(
   });
 }
 
-export async function updatePropertyGallery(
-  client: SupabaseClient<Database>,
-  propertyId: string,
-  images: string[],
-): Promise<PropertySettingsWorkspace> {
-  return settingsRpc(client, "update_property_gallery", {
-    p_property_id: propertyId,
-    p_images: images,
-  });
-}
-
 export async function updatePropertyVisibility(
   client: SupabaseClient<Database>,
   propertyId: string,
@@ -119,85 +105,4 @@ export async function updatePropertyVisibility(
     p_property_id: propertyId,
     p_is_active: isActive,
   });
-}
-
-async function optimizePropertyImage(file: File): Promise<File> {
-  if (typeof createImageBitmap !== "function") return file;
-  const bitmap = await createImageBitmap(file);
-  const maxDimension = 2200;
-  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-  const context = canvas.getContext("2d");
-  if (!context) {
-    bitmap.close();
-    return file;
-  }
-  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.84));
-  if (!blob || blob.size >= file.size) return file;
-  return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.webp`, {
-    type: "image/webp",
-    lastModified: file.lastModified,
-  });
-}
-
-export async function uploadPropertySettingsImages(
-  client: SupabaseClient<Database>,
-  propertyId: string,
-  files: File[],
-): Promise<string[]> {
-  if (!files.length || files.length > MAX_PROPERTY_GALLERY_IMAGES) {
-    throw new Error("Choose between 1 and 8 property photos.");
-  }
-  for (const file of files) {
-    if (!file.size) throw new Error(`${file.name} is empty.`);
-    if (file.size > MAX_PROPERTY_IMAGE_BYTES) throw new Error(`${file.name} is larger than 5 MB.`);
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      throw new Error(`${file.name} must be a JPG, PNG, or WebP image.`);
-    }
-  }
-
-  const paths: string[] = [];
-  try {
-    const optimized = await Promise.all(files.map(optimizePropertyImage));
-    return await Promise.all(optimized.map(async (file, index) => {
-      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${propertyId}/${Date.now()}_${index}_${crypto.randomUUID()}.${extension}`;
-      const { error } = await client.storage.from(BUCKET).upload(path, file, {
-        cacheControl: "31536000",
-        contentType: file.type,
-        upsert: false,
-      });
-      if (error) throw new Error(error.message);
-      paths.push(path);
-      return client.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-    }));
-  } catch (cause) {
-    if (paths.length) await client.storage.from(BUCKET).remove(paths);
-    throw cause;
-  }
-}
-
-function propertyStoragePath(url: string): string | null {
-  try {
-    const marker = "/storage/v1/object/public/property-images/";
-    const pathname = new URL(url).pathname;
-    const index = pathname.indexOf(marker);
-    return index >= 0 ? decodeURIComponent(pathname.slice(index + marker.length)) : null;
-  } catch {
-    return null;
-  }
-}
-
-export async function removePropertySettingsImages(
-  client: SupabaseClient<Database>,
-  urls: string[],
-): Promise<void> {
-  const paths = urls.map(propertyStoragePath).filter((path): path is string => Boolean(path));
-  if (!paths.length) return;
-  const { error } = await client.storage.from(BUCKET).remove(paths);
-  if (error) throw new Error(error.message);
 }

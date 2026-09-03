@@ -12,24 +12,24 @@ import { useLanguage } from "@/components/providers/language-provider";
 const steps = [
   {
     description: [
-      "Add the identity, contact details, facilities, photos and exact location for your lodge, hotel or guesthouse.",
-      "Ongeza utambulisho, mawasiliano, huduma, picha na eneo sahihi la loji, hoteli au nyumba yako ya wageni.",
+      "Add the identity, contact details, services, accepted payments, operating times and local address for your lodge, hotel or guesthouse.",
+      "Ongeza utambulisho, mawasiliano, huduma, njia za malipo, muda wa uendeshaji na anwani ya loji, hoteli au nyumba yako ya wageni.",
     ],
     number: "01",
     title: ["Create the property", "Tengeneza biashara"],
   },
   {
     description: [
-      "Set up room names, types, capacity, prices, amenities and photos so availability is useful from day one.",
-      "Weka majina ya vyumba, aina, uwezo, bei, huduma na picha ili upatikanaji uwe na maana tangu siku ya kwanza.",
+      "Set up room names, types, capacity, prices and amenities so availability is useful from day one.",
+      "Weka majina ya vyumba, aina, uwezo, bei na huduma ili upatikanaji uwe na maana tangu siku ya kwanza.",
     ],
     number: "02",
     title: ["Add rooms", "Ongeza vyumba"],
   },
   {
     description: [
-      "Invite managers or reception staff, then give each role only the access needed for their work.",
-      "Alika mameneja au mapokezi, kisha mpe kila jukumu ruhusa zinazohitajika kwa kazi yake.",
+      "Add manager or receptionist email access, then give each role only what their work requires.",
+      "Ongeza ruhusa kwa barua pepe ya meneja au mapokezi, kisha mpe kila jukumu kinachohitajika kwa kazi yake.",
     ],
     number: "03",
     title: ["Bring in the team", "Ongeza timu"],

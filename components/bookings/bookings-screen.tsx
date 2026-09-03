@@ -235,6 +235,7 @@ function BookingsWorkspace() {
   const showContextualCreateAction =
     canCreateBooking && !filtersActive && result?.bookings.length === 0;
   const showGlobalCreateAction = canCreateBooking && !showContextualCreateAction;
+  const showCalendarAction = capabilities.canViewCalendar;
 
   return (
     <>
@@ -250,10 +251,19 @@ function BookingsWorkspace() {
               "Simamia wanaowasili, waliopo na wanaoondoka kutoka rejista moja ya moja kwa moja.",
             )}
             action={
-              showGlobalCreateAction ? (
-                <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", sm: "inline-flex" } }}>
-                  {t("New booking")}
-                </Button>
+              showGlobalCreateAction || showCalendarAction ? (
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                  {showCalendarAction ? (
+                    <Button component={Link} href="/calendar" startIcon={<CalendarTodayRoundedIcon />} variant="outlined">
+                      {t("Calendar", "Kalenda")}
+                    </Button>
+                  ) : null}
+                  {showGlobalCreateAction ? (
+                    <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", sm: "inline-flex" } }}>
+                      {t("New booking")}
+                    </Button>
+                  ) : null}
+                </Stack>
               ) : undefined
             }
           />

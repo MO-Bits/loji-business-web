@@ -1,6 +1,6 @@
 "use client";
 
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
+import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import EventAvailableRoundedIcon from "@mui/icons-material/EventAvailableRounded";
 import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
 import HelpOutlineRoundedIcon from "@mui/icons-material/HelpOutlineRounded";
@@ -19,10 +19,10 @@ const topics = [
   {
     action: false,
     description: [
-      "Understand property details, photos, address and location setup.",
-      "Elewa taarifa za biashara, picha, anwani na usanidi wa eneo.",
+      "Understand business identity, services, accepted payments, operating times and local address.",
+      "Elewa utambulisho wa biashara, huduma, njia za malipo, muda wa uendeshaji na anwani.",
     ],
-    icon: ApartmentRoundedIcon,
+    icon: BusinessRoundedIcon,
     title: ["Property setup", "Usanidi wa biashara"],
   },
   {
@@ -46,8 +46,8 @@ const topics = [
   {
     action: false,
     description: [
-      "Invite teammates and understand the access available to each property role.",
-      "Alika washiriki na elewa ruhusa zinazopatikana kwa kila jukumu.",
+      "Add teammate email access and understand the permissions available to each role.",
+      "Ongeza ruhusa kwa barua pepe za washiriki na elewa ruhusa za kila jukumu.",
     ],
     icon: GroupsRoundedIcon,
     title: ["Team & access", "Timu na ruhusa"],
