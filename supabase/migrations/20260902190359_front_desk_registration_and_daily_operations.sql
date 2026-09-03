@@ -144,9 +144,10 @@ begin
   if length(coalesce(v_description, '')) > 2000 then
     raise exception using errcode = '22023', message = 'Business description must be 2,000 characters or fewer';
   end if;
-  if case when jsonb_typeof(v_amenities_input) = 'array' then
-       jsonb_array_length(v_amenities_input) > 50
-     else true end then
+  if jsonb_typeof(v_amenities_input) <> 'array' then
+    raise exception using errcode = '22023', message = 'Choose up to 50 services and amenities';
+  end if;
+  if jsonb_array_length(v_amenities_input) > 50 then
     raise exception using errcode = '22023', message = 'Choose up to 50 services and amenities';
   end if;
   if exists (
@@ -156,9 +157,10 @@ begin
   ) then
     raise exception using errcode = '22023', message = 'Services and amenities are invalid';
   end if;
-  if case when jsonb_typeof(v_payments_input) = 'array' then
-       jsonb_array_length(v_payments_input) not between 1 and 6
-     else true end then
+  if jsonb_typeof(v_payments_input) <> 'array' then
+    raise exception using errcode = '22023', message = 'Accepted payment methods are invalid';
+  end if;
+  if jsonb_array_length(v_payments_input) not between 1 and 6 then
     raise exception using errcode = '22023', message = 'Accepted payment methods are invalid';
   end if;
   if exists (
