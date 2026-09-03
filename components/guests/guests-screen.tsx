@@ -18,7 +18,6 @@ import {
   Button,
   Container,
   Divider,
-  Fab,
   IconButton,
   InputAdornment,
   LinearProgress,
@@ -140,9 +139,6 @@ export function GuestsScreen() {
 
   const totalPages = Math.max(1, Math.ceil(directory.total / directory.pageSize));
   const filtered = Boolean(committedQuery) || stayFilter !== "all";
-  const showMobileBookingAction =
-    canCreateBooking && (directory.guests.length > 0 || filtered);
-
   return (
     <Box sx={{ minHeight: "100dvh", pb: { xs: 10, md: 5 } }}>
       <Container maxWidth="xl" sx={{ py: { xs: 1.75, sm: 2.5, lg: 3 } }}>
@@ -167,7 +163,7 @@ export function GuestsScreen() {
                 component={Link}
                 href="/bookings/new"
                 startIcon={<AddRoundedIcon />}
-                sx={{ display: { xs: "none", sm: "inline-flex" }, flexShrink: 0, minHeight: 44 }}
+                sx={{ flexShrink: 0, minHeight: 44, width: { xs: "100%", sm: "auto" } }}
                 variant="contained"
               >
                 {t("New booking", "Uhifadhi mpya")}
@@ -315,26 +311,6 @@ export function GuestsScreen() {
         </Stack>
       </Container>
 
-      {showMobileBookingAction ? (
-        <Fab
-          aria-label={t("New booking", "Uhifadhi mpya")}
-          color="primary"
-          component={Link}
-          href="/bookings/new"
-          variant="extended"
-          sx={{
-            bottom: "calc(76px + env(safe-area-inset-bottom))",
-            display: { xs: "inline-flex", sm: "none" },
-            minHeight: 48,
-            position: "fixed",
-            right: "max(18px, env(safe-area-inset-right))",
-            zIndex: (theme) => theme.zIndex.speedDial,
-          }}
-        >
-          <AddRoundedIcon sx={{ mr: 0.75 }} />
-          {t("New booking", "Uhifadhi mpya")}
-        </Fab>
-      ) : null}
     </Box>
   );
 }

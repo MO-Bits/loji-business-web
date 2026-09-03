@@ -343,18 +343,16 @@ export function StickyMobileActionBar({ children }: { children: ReactNode }) {
     <Paper
       elevation={0}
       sx={{
-        backdropFilter: "blur(18px)",
-        bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 92%, transparent)",
-        border: 1,
-        borderRadius: 3,
+        bgcolor: "background.paper",
+        borderRadius: 0,
+        borderTop: 1,
         borderColor: "divider",
-        bottom: "calc(78px + env(safe-area-inset-bottom))",
-        boxShadow: "0 12px 38px rgba(15, 34, 58, .16)",
+        bottom: "calc(64px + env(safe-area-inset-bottom))",
         display: { xs: "block", md: "none" },
-        left: 10,
-        p: 1,
+        left: 0,
+        p: 1.25,
         position: "fixed",
-        right: 10,
+        right: 0,
         zIndex: (theme) => theme.zIndex.appBar - 1,
       }}
     >

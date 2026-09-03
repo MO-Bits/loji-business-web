@@ -139,18 +139,17 @@ export function MobileNavigation({
       aria-label={t("Primary navigation", "Menyu kuu")}
       elevation={0}
       sx={{
-        backdropFilter: "saturate(150%) blur(20px)",
-        bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 94%, transparent)",
-        border: 1,
+        bgcolor: "background.paper",
+        borderTop: 1,
         borderColor: "divider",
-        borderRadius: 3,
-        bottom: "max(8px, env(safe-area-inset-bottom))",
-        boxShadow: "0 12px 38px rgba(15, 34, 58, .18)",
+        borderRadius: 0,
+        bottom: 0,
         display: { xs: "block", md: "none" },
-        left: 10,
+        left: 0,
         overflow: "hidden",
+        pb: "env(safe-area-inset-bottom)",
         position: "fixed",
-        right: 10,
+        right: 0,
         zIndex: (theme) => theme.zIndex.appBar,
       }}
     >
@@ -166,7 +165,7 @@ export function MobileNavigation({
         }}
         sx={{
           bgcolor: "transparent",
-          height: 62,
+          height: 64,
           px: 0.25,
           "& .MuiBottomNavigationAction-root": {
             color: "text.secondary",

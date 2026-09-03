@@ -20,7 +20,6 @@ import {
   Button,
   Chip,
   Container,
-  Fab,
   IconButton,
   InputAdornment,
   Menu,
@@ -259,7 +258,7 @@ function BookingsWorkspace() {
                     </Button>
                   ) : null}
                   {showGlobalCreateAction ? (
-                    <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", sm: "inline-flex" } }}>
+                    <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ width: { xs: "100%", sm: "auto" } }}>
                       {t("New booking")}
                     </Button>
                   ) : null}
@@ -381,11 +380,6 @@ function BookingsWorkspace() {
         </Stack>
       </Container>
 
-      {showGlobalCreateAction ? (
-        <Fab component={Link} href="/bookings/new" color="primary" aria-label={t("New booking")} sx={{ bottom: "calc(80px + env(safe-area-inset-bottom))", display: { xs: "inline-flex", sm: "none" }, position: "fixed", right: 18 }}>
-          <AddRoundedIcon />
-        </Fab>
-      ) : null}
     </>
   );
 }

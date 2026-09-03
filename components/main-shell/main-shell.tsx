@@ -39,20 +39,6 @@ import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
 const drawerWidth = 248;
 
-const brandedDrawerStyles = {
-  bgcolor: "#0B1F3A",
-  borderColor: "rgba(255,255,255,.09)",
-  color: "#F7FAFF",
-  "--mui-palette-action-hover": "rgba(255,255,255,.07)",
-  "--mui-palette-action-selected": "rgba(56,145,255,.2)",
-  "--mui-palette-background-default": "rgba(255,255,255,.055)",
-  "--mui-palette-background-paper": "#0B1F3A",
-  "--mui-palette-divider": "rgba(255,255,255,.1)",
-  "--mui-palette-primary-main": "#78B8FF",
-  "--mui-palette-text-primary": "#F7FAFF",
-  "--mui-palette-text-secondary": "rgba(231,240,252,.68)",
-} as const;
-
 function getLocationLabel(
   pathname: string,
   translate: (english: string, swahili: string) => string,
@@ -294,10 +280,12 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flexShrink: 0,
           width: drawerWidth,
           "& .MuiDrawer-paper": {
+            bgcolor: "background.paper",
             borderRight: 1,
+            borderColor: "divider",
             boxSizing: "border-box",
+            color: "text.primary",
             width: drawerWidth,
-            ...brandedDrawerStyles,
           },
         }}
       >
@@ -311,9 +299,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": {
+            bgcolor: "background.paper",
             boxSizing: "border-box",
+            color: "text.primary",
             width: "min(90vw, 328px)",
-            ...brandedDrawerStyles,
           },
         }}
       >
@@ -328,26 +317,18 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           flex: 1,
           minWidth: 0,
           overflowX: "clip",
-          pb: { xs: "calc(86px + env(safe-area-inset-bottom))", md: 0 },
+          pb: { xs: "calc(72px + env(safe-area-inset-bottom))", md: 0 },
           pt: { xs: "calc(56px + env(safe-area-inset-top))", md: "60px" },
-          "& .MuiFab-root": {
-            "@media (max-width: 899.95px)": {
-              bottom: "calc(90px + env(safe-area-inset-bottom)) !important",
-            },
-          },
         }}
       >
         <Box
           component="header"
           sx={{
             backdropFilter: "saturate(150%) blur(18px)",
-            bgcolor: {
-              xs: "color-mix(in srgb, #0B1F3A 95%, transparent)",
-              md: "color-mix(in srgb, var(--mui-palette-background-paper) 92%, transparent)",
-            },
+            bgcolor: "color-mix(in srgb, var(--mui-palette-background-paper) 92%, transparent)",
             borderBottom: 1,
-            borderColor: { xs: "rgba(255,255,255,.1)", md: "divider" },
-            color: { xs: "#F7FAFF", md: "text.primary" },
+            borderColor: "divider",
+            color: "text.primary",
             left: { xs: 0, md: `${drawerWidth}px` },
             position: "fixed",
             right: 0,
