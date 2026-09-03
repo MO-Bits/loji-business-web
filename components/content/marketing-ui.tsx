@@ -59,14 +59,13 @@ export function MarketingCard({
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        minHeight: 210,
-        p: { xs: 2.5, sm: 3 },
-        transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+        minHeight: 190,
+        p: { xs: 2, sm: 2.5 },
+        transition: "border-color 160ms ease, background-color 160ms ease",
         "&:hover": {
           borderColor:
             "color-mix(in srgb, var(--mui-palette-primary-main) 45%, var(--mui-palette-divider))",
-          boxShadow: "0 14px 36px rgba(0,122,255,.08)",
-          transform: "translateY(-2px)",
+          bgcolor: "action.hover",
         },
       }}
     >
@@ -76,19 +75,19 @@ export function MarketingCard({
           sx={{
             bgcolor:
               "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
-            borderRadius: 2,
+            borderRadius: 1,
             color: "primary.main",
             display: "grid",
-            height: 44,
+            height: 40,
             placeItems: "center",
-            width: 44,
+            width: 40,
             "& .MuiSvgIcon-root": { fontSize: 23 },
           }}
         >
           {icon}
         </Box>
       ) : null}
-      <Box sx={{ flex: 1, mt: icon ? 2.25 : 0 }}>
+      <Box sx={{ flex: 1, mt: icon ? 1.75 : 0 }}>
         {meta ? (
           <Typography color="primary.main" sx={{ mb: 0.65 }} variant="overline">
             {meta}
@@ -134,7 +133,7 @@ export function MarketingCallout({
           "linear-gradient(135deg, color-mix(in srgb, var(--mui-palette-primary-main) 9%, var(--mui-palette-background-paper)), var(--mui-palette-background-paper))",
         mt: 3,
         overflow: "hidden",
-        p: { xs: 2.5, sm: 3.5 },
+        p: { xs: 2, sm: 3 },
       }}
     >
       <Stack
@@ -176,7 +175,7 @@ export function MarketingStep({
   title: ReactNode;
 }) {
   return (
-    <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
       <Box
         sx={{
           display: "grid",

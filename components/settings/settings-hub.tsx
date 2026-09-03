@@ -220,12 +220,10 @@ function SettingsCard({
         minHeight: 190,
         p: { xs: 2, sm: 2.5 },
         textDecoration: "none",
-        transition:
-          "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+        transition: "background-color 160ms ease, border-color 160ms ease",
         "&:hover": {
+          bgcolor: "action.hover",
           borderColor: "primary.main",
-          boxShadow: "0 10px 28px rgba(0,122,255,.09)",
-          transform: "translateY(-2px)",
         },
         "&:focus-visible": {
           outline: "3px solid var(--mui-palette-primary-main)",
@@ -243,7 +241,7 @@ function SettingsCard({
             alignItems: "center",
             bgcolor:
               "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
-            borderRadius: 2,
+            borderRadius: 1,
             color: "primary.main",
             display: "flex",
             height: 42,

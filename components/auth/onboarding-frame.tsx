@@ -40,15 +40,13 @@ export function OnboardingFrame({
     <Box
       component="main"
       sx={{
-        background:
-          "radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent), transparent 30%)",
         bgcolor: "background.default",
         minHeight: "100dvh",
-        py: { xs: 2, sm: 3, lg: 5 },
+        py: { xs: 1.5, sm: 2.5, lg: 4 },
       }}
     >
       <Container maxWidth="lg">
-        <Stack spacing={{ xs: 2.5, sm: 4 }}>
+        <Stack spacing={{ xs: 2, sm: 3 }}>
           <Stack
             component="header"
             direction="row"
@@ -66,7 +64,7 @@ export function OnboardingFrame({
           <Box
             sx={{
               display: "grid",
-              gap: { xs: 2, md: 4.5, lg: 6 },
+              gap: { xs: 2, md: 4, lg: 5 },
               gridTemplateColumns: {
                 xs: "minmax(0, 1fr)",
                 md: wide
@@ -86,26 +84,21 @@ export function OnboardingFrame({
                 <Typography
                   component="h1"
                   sx={{
-                    fontSize: {
-                      xs: "2rem",
-                      sm: "2.5rem",
-                      md: wide ? "2.25rem" : "2.5rem",
-                      lg: wide ? "2.5rem" : "2.75rem",
-                    },
+                    fontSize: { xs: "1.75rem", sm: "2.125rem", md: "2.25rem" },
                     fontWeight: 700,
                     hyphens: "none",
                     overflowWrap: "normal",
                     wordBreak: "normal",
                     letterSpacing: "-.045em",
                     lineHeight: 1.06,
-                    mt: 0.5,
+                    mt: 0.35,
                   }}
                 >
                   {title}
                 </Typography>
                 <Typography
                   color="text.secondary"
-                  sx={{ lineHeight: 1.7, maxWidth: 460, mt: 1.5 }}
+                  sx={{ lineHeight: 1.65, maxWidth: 460, mt: 1 }}
                 >
                   {description}
                 </Typography>
@@ -168,7 +161,7 @@ export function OnboardingFrame({
               </Stack>
             </Stack>
 
-            <Surface sx={{ alignSelf: "start", p: { xs: 2, sm: 3, lg: 3.5 } }}>
+            <Surface sx={{ alignSelf: "start", p: { xs: 2, sm: 2.5, lg: 3 } }}>
               <Stack spacing={{ xs: 2.25, sm: 2.75 }}>
                 {panelTitle || panelDescription || icon ? (
                   <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>

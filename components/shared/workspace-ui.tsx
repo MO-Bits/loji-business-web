@@ -56,8 +56,8 @@ export function WorkspacePage({
         {
           maxWidth,
           mx: "auto",
-          px: { xs: 2, sm: 3, lg: 4 },
-          py: { xs: 2.5, sm: 3, lg: 4 },
+          px: { xs: 2, sm: 3, lg: 3.5 },
+          py: { xs: 2, sm: 2.5, lg: 3 },
           width: "100%",
         },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
@@ -84,9 +84,9 @@ export function Surface({
         {
           bgcolor: "background.paper",
           borderColor: "divider",
-          borderRadius: 3,
+          borderRadius: 1,
           overflow: "hidden",
-          p: padding ? { xs: 2, sm: 2.5 } : 0,
+          p: padding ? { xs: 1.75, sm: 2 } : 0,
         },
         ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
       ]}
@@ -115,16 +115,16 @@ export function SectionHeading({
   return (
     <Stack
       direction={{ xs: "column", sm: "row" }}
-      spacing={1.5}
-      sx={{ alignItems: { sm: "flex-end" }, justifyContent: "space-between" }}
+      spacing={1.25}
+      sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}
     >
       <Box sx={{ minWidth: 0 }}>
         {localizedEyebrow ? (
-          <Typography color="primary.main" variant="overline">
+          <Typography color="text.secondary" variant="overline">
             {localizedEyebrow}
           </Typography>
         ) : null}
-        <Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
+        <Typography component="h2" variant="h6">
           {localizedTitle}
         </Typography>
         {localizedDescription ? (
@@ -163,11 +163,11 @@ export function MetricCell({
           <Box
             sx={{
               alignItems: "center",
-              borderRadius: 2,
+              borderRadius: 1,
               display: "inline-flex",
-              height: 32,
+              height: 30,
               justifyContent: "center",
-              width: 32,
+              width: 30,
               ...statusToneStyles[tone],
               "& .MuiSvgIcon-root": { fontSize: 18 },
             }}
@@ -205,18 +205,17 @@ export function MetricCell({
       variant="outlined"
       sx={{
         borderColor: "divider",
-        borderRadius: 3,
+        borderRadius: 1,
         color: "inherit",
-        minHeight: 132,
-        p: { xs: 1.75, sm: 2 },
+        minHeight: 118,
+        p: { xs: 1.5, sm: 1.75 },
         textDecoration: "none",
-        transition: "border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+        transition: "border-color 160ms ease, background-color 160ms ease",
         ...(href
           ? {
               "&:hover": {
                 borderColor: "primary.main",
-                boxShadow: "0 8px 26px rgba(0,122,255,.08)",
-                transform: "translateY(-1px)",
+                bgcolor: "action.hover",
               },
             }
           : {}),
@@ -272,19 +271,19 @@ export function EmptyState({
         <Box
           sx={{
             bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
-            borderRadius: "50%",
+            borderRadius: 1,
             color: "primary.main",
             display: "grid",
-            height: 52,
+            height: 44,
             placeItems: "center",
-            width: 52,
+            width: 44,
           }}
         >
           {icon}
         </Box>
       ) : null}
       <Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
           {localizedTitle}
         </Typography>
         <Typography color="text.secondary" sx={{ maxWidth: 440, mt: 0.5 }} variant="body2">
@@ -314,7 +313,7 @@ export function LoadingRows({ rows = 5 }: { rows?: number }) {
           direction="row"
           key={index}
           spacing={2}
-          sx={{ alignItems: "center", minHeight: 72, px: { xs: 2, sm: 2.5 }, py: 1.5 }}
+          sx={{ alignItems: "center", minHeight: 64, px: { xs: 1.75, sm: 2 }, py: 1.25 }}
         >
           <Skeleton height={40} variant="rounded" width={40} />
           <Box sx={{ flex: 1 }}>

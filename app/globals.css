@@ -130,8 +130,6 @@ div {
 
 .surface-hover {
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
     border-color 160ms ease,
     background-color 160ms ease;
 }
@@ -142,14 +140,16 @@ div {
     var(--mui-palette-primary-main) 34%,
     var(--mui-palette-divider)
   );
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  background: color-mix(
+    in srgb,
+    var(--mui-palette-primary-main) 2.5%,
+    var(--mui-palette-background-paper)
+  );
 }
 
 @media (hover: none) {
   .surface-hover:hover {
-    box-shadow: none;
-    transform: none;
+    background: inherit;
   }
 }
 
@@ -157,10 +157,6 @@ div {
   .MuiDialogActions-root > .MuiButton-root {
     flex: 1 1 140px;
   }
-}
-
-[data-mui-color-scheme="dark"] .surface-hover:hover {
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.32);
 }
 
 .MuiButton-root,
@@ -289,11 +285,11 @@ input:-webkit-autofill:focus {
 @keyframes content-enter {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(2px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 

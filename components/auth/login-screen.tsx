@@ -96,7 +96,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
           <Box
             sx={{
               display: "grid",
-              gap: { xs: 0, md: 5 },
+              gap: { xs: 0, md: 4 },
               gridTemplateColumns: { xs: "1fr", md: "minmax(0, .95fr) minmax(360px, .75fr)" },
               maxWidth: 1060,
               overflow: "hidden",
@@ -108,13 +108,13 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
               sx={{
                 background:
                   "radial-gradient(circle at 88% 12%, rgba(100,210,255,.42), transparent 32%), linear-gradient(145deg, #07162C 0%, #0A3B73 58%, #007AFF 150%)",
-                borderRadius: 3,
+                borderRadius: 1.5,
                 color: "#F8FAFC",
                 display: { xs: "none", md: "flex" },
                 justifyContent: "space-between",
-                minHeight: 560,
+                minHeight: 520,
                 overflow: "hidden",
-                p: { md: 5, lg: 6 },
+                p: { md: 4, lg: 5 },
                 position: "relative",
               }}
             >
@@ -134,8 +134,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
                     backdropFilter: "blur(20px)",
                     bgcolor: "rgba(255,255,255,.10)",
                     border: "1px solid rgba(255,255,255,.18)",
-                    borderRadius: 2.5,
-                    boxShadow: "0 24px 56px rgba(0,0,0,.18)",
+                    borderRadius: 1,
                     p: 2,
                   }}
                 >
@@ -183,8 +182,7 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
               backgroundColor: "background.paper",
               border: "1px solid",
               borderColor: "divider",
-              borderRadius: { xs: 2, md: 2 },
-              boxShadow: { md: "0 22px 60px rgba(16,24,40,.09)" },
+              borderRadius: 1,
               maxWidth: { xs: 440, md: "none" },
               p: { xs: 2.5, sm: 3.5, md: 4 },
               textAlign: "left",
@@ -242,12 +240,10 @@ export function LoginScreen({ initialError = null }: { initialError?: string | n
                   fontWeight: 500,
                   minHeight: 48,
                   textTransform: "none",
-                  transition:
-                    "border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+                  transition: "border-color 160ms ease, background-color 160ms ease",
                   "&:hover": {
                     bgcolor: "action.hover",
                     borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 34%, var(--mui-palette-divider))",
-                    boxShadow: "0 8px 24px rgba(15, 23, 42, .07)",
                   },
                 }}
                 variant="outlined"

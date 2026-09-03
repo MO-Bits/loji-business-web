@@ -43,25 +43,24 @@ export function MarketingPageShell({
         <Box
           aria-hidden
           sx={{
-            backgroundImage:
-              "linear-gradient(to right, color-mix(in srgb, var(--mui-palette-divider) 30%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--mui-palette-divider) 30%, transparent) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            inset: 0,
-            maskImage: "linear-gradient(to bottom, rgba(0,0,0,.35), transparent 78%)",
-            opacity: 0.35,
+            background: "linear-gradient(90deg, transparent, color-mix(in srgb, var(--mui-palette-primary-main) 8%, transparent), transparent)",
+            height: 1,
+            left: 0,
             pointerEvents: "none",
             position: "absolute",
+            right: 0,
+            top: 0,
           }}
         />
         <Container maxWidth="lg" sx={{ position: "relative" }}>
-          <Stack spacing={2.25} sx={{ maxWidth: 780, py: { xs: 7, sm: 9, md: 11 } }}>
+          <Stack spacing={2} sx={{ maxWidth: 760, py: { xs: 6, sm: 8, md: 9 } }}>
             <Typography color="primary.main" variant="overline">
               {t(...eyebrow)}
             </Typography>
             <Typography
               component="h1"
               sx={{
-                fontSize: { xs: "2.25rem", sm: "3rem", md: "3.75rem" },
+                fontSize: { xs: "2rem", sm: "2.625rem", md: "3.25rem" },
                 fontWeight: 700,
                 letterSpacing: "-.052em",
                 lineHeight: 1.02,
@@ -97,7 +96,7 @@ export function MarketingPageShell({
       </Box>
 
       <Container maxWidth="lg">
-        <Box sx={{ py: { xs: 5, sm: 6, md: 8 } }}>{children}</Box>
+        <Box sx={{ py: { xs: 4, sm: 5, md: 6 } }}>{children}</Box>
       </Container>
 
       <Box component="footer" sx={{ bgcolor: "background.paper", borderTop: 1, borderColor: "divider", py: 3 }}>

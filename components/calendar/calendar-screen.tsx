@@ -469,7 +469,7 @@ function TimelineBooking({ booking, days }: { booking: CalendarBooking; days: st
         bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 12%, var(--mui-palette-background-paper))",
         border: 1,
         borderColor: "color-mix(in srgb, var(--mui-palette-primary-main) 38%, var(--mui-palette-divider))",
-        borderRadius: 2,
+        borderRadius: 1,
         color: "text.primary",
         gridColumn: `${start + 1} / span ${Math.max(1, end - start)}`,
         gridRow: 1,
@@ -480,7 +480,8 @@ function TimelineBooking({ booking, days }: { booking: CalendarBooking; days: st
         py: 0.8,
         textDecoration: "none",
         zIndex: 1,
-        "&:hover": { borderColor: "primary.main", boxShadow: "0 5px 18px rgba(0,122,255,.12)" },
+        transition: "background-color 150ms ease, border-color 150ms ease",
+        "&:hover": { bgcolor: "action.hover", borderColor: "primary.main" },
       }}
     >
       <Typography noWrap variant="body2" sx={{ fontWeight: 700 }}>{booking.guestName}</Typography>

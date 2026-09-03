@@ -25,7 +25,7 @@ export function PageHeader({
     <Stack
       component="header"
       direction={{ xs: "column", sm: "row" }}
-      spacing={{ xs: 1.5, sm: 3 }}
+      spacing={{ xs: 1.25, sm: 2.5 }}
       sx={{
         alignItems: { sm: "center" },
         justifyContent: "space-between",
@@ -41,7 +41,7 @@ export function PageHeader({
             sx={{
               display: "block",
               fontSize: ".6875rem",
-              fontWeight: 700,
+              fontWeight: 600,
               letterSpacing: ".07em",
               mb: 0.4,
               textTransform: "uppercase",
@@ -54,7 +54,7 @@ export function PageHeader({
         <Typography
           component="h1"
           sx={{
-            fontSize: { xs: "1.5rem", sm: "1.75rem" },
+            fontSize: { xs: "1.375rem", sm: "1.625rem" },
             fontWeight: 700,
             letterSpacing: "-.025em",
             lineHeight: 1.22,
@@ -71,7 +71,7 @@ export function PageHeader({
               fontSize: ".875rem",
               lineHeight: 1.6,
               maxWidth: 680,
-              mt: 0.55,
+              mt: 0.4,
             }}
           >
             {localizedDescription}

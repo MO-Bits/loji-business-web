@@ -554,7 +554,7 @@ function RoomCard({
   const singular = t(definition.inventorySingular[0], definition.inventorySingular[1]);
   const hasInlineBookingAction = canCreateBooking && room.operationalStatus === "ready";
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 3, minWidth: 0, opacity: pending ? 0.55 : 1, overflow: "hidden" }}>
+    <Paper variant="outlined" sx={{ borderRadius: 1, minWidth: 0, opacity: pending ? 0.55 : 1, overflow: "hidden" }}>
       <Box component={Link} href={`/rooms/${room.id}`} sx={{ color: "inherit", display: "block", textDecoration: "none" }}>
         <Stack spacing={1.5} sx={{ p: 2 }}>
           <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>

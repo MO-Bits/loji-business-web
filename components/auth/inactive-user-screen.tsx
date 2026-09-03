@@ -74,7 +74,6 @@ export function InactiveUserScreen() {
         <Paper
           variant="outlined"
           sx={{
-            boxShadow: "0 22px 65px rgba(15,23,42,.08)",
             display: "grid",
             gridTemplateColumns: {
               xs: "minmax(0, 1fr)",

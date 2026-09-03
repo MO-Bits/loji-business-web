@@ -37,7 +37,7 @@ import { SidebarContent } from "./sidebar-content";
 import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 import { getPropertyTypeDefinition } from "@/features/property/property-type";
 
-const drawerWidth = 248;
+const drawerWidth = 236;
 
 function getLocationLabel(
   pathname: string,
@@ -318,7 +318,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
           minWidth: 0,
           overflowX: "clip",
           pb: { xs: "calc(72px + env(safe-area-inset-bottom))", md: 0 },
-          pt: { xs: "calc(56px + env(safe-area-inset-top))", md: "60px" },
+          pt: { xs: "calc(56px + env(safe-area-inset-top))", md: "56px" },
         }}
       >
         <Box
@@ -340,10 +340,10 @@ export function MainShell({ children }: { children: React.ReactNode }) {
             sx={{
               alignItems: "center",
               display: "flex",
-              height: { xs: "calc(56px + env(safe-area-inset-top))", md: 60 },
+              height: { xs: "calc(56px + env(safe-area-inset-top))", md: 56 },
               justifyContent: "space-between",
               pt: { xs: "env(safe-area-inset-top)", md: 0 },
-              px: { xs: 2, sm: 3, md: 3 },
+              px: { xs: 1.5, sm: 2.5, md: 3 },
             }}
           >
             <Stack

@@ -58,9 +58,9 @@ export function DashboardHeader({
       direction={{ xs: "column", sm: "row" }}
       spacing={2}
       sx={{
-        alignItems: { sm: "flex-end" },
+        alignItems: { sm: "center" },
         justifyContent: "space-between",
-        py: { xs: 0.5, sm: 1 },
+        py: { xs: 0.25, sm: 0.5 },
       }}
     >
       <Box sx={{ minWidth: 0 }}>
@@ -74,11 +74,11 @@ export function DashboardHeader({
         <Typography
           component="h1"
           sx={{
-            fontSize: { xs: "1.65rem", sm: "2rem" },
+            fontSize: { xs: "1.5rem", sm: "1.75rem" },
             fontWeight: 700,
             letterSpacing: "-.035em",
             lineHeight: 1.15,
-            mt: 0.5,
+            mt: 0.35,
           }}
         >
           {propertyName || "Loji Business"}
@@ -86,7 +86,7 @@ export function DashboardHeader({
         <Stack
           direction="row"
           spacing={0.75}
-          sx={{ alignItems: "center", flexWrap: "wrap", mt: 1, rowGap: 0.75 }}
+          sx={{ alignItems: "center", flexWrap: "wrap", mt: 0.75, rowGap: 0.75 }}
         >
           <StatusPill label={roleLabel} tone="info" />
           <StatusPill

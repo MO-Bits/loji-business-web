@@ -109,9 +109,9 @@ export function SidebarContent({
           alignItems: "center",
           borderBottom: 1,
           borderColor: "divider",
-          height: { xs: "calc(60px + env(safe-area-inset-top))", md: 60 },
+          height: { xs: "calc(56px + env(safe-area-inset-top))", md: 56 },
           justifyContent: "space-between",
-          px: 1.5,
+          px: 1.25,
           pt: { xs: "env(safe-area-inset-top)", md: 0 },
         }}
       >
@@ -136,7 +136,7 @@ export function SidebarContent({
         </IconButton>
       </Stack>
 
-      <Box sx={{ borderBottom: 1, borderColor: "divider", p: 1.25 }}>
+      <Box sx={{ borderBottom: 1, borderColor: "divider", p: 1 }}>
         <PropertySwitcher
           activePropertyId={activePropertyId}
           memberships={memberships}
@@ -155,8 +155,8 @@ export function SidebarContent({
           flexDirection: "column",
           minHeight: 0,
           overflowY: "auto",
-          px: 1,
-          py: 1.5,
+          px: 0.75,
+          py: 1.25,
         }}
       >
         <NavigationSection
@@ -203,7 +203,7 @@ export function SidebarContent({
         <ListItemButton
           aria-expanded={preferencesOpen}
           onClick={() => setPreferencesOpen((open) => !open)}
-          sx={{ borderRadius: 1, minHeight: { xs: 44, md: 40 }, px: 1.25 }}
+          sx={{ borderRadius: 1, minHeight: { xs: 44, md: 38 }, px: 1.25 }}
         >
           <ListItemIcon sx={{ color: "text.secondary", minWidth: 30 }}>
             <TuneRoundedIcon sx={{ fontSize: 19 }} />
@@ -338,15 +338,15 @@ function NavigationSection({
   pathname: string;
 }) {
   return (
-    <Box sx={{ mb: 1.5 }}>
+    <Box sx={{ mb: 1.25 }}>
       <Typography
         color="text.secondary"
         component="p"
         sx={{
           fontSize: ".6875rem",
-          fontWeight: 700,
+          fontWeight: 600,
           letterSpacing: ".07em",
-          mb: 0.5,
+          mb: 0.35,
           px: 1.25,
           textTransform: "uppercase",
         }}
@@ -388,8 +388,8 @@ function NavigationList({
             sx={{
               borderRadius: 1,
               columnGap: 1.1,
-              mb: 0.2,
-              minHeight: { xs: 44, md: 40 },
+              mb: 0.125,
+              minHeight: { xs: 44, md: 38 },
               overflow: "hidden",
               position: "relative",
               px: 1.25,
@@ -399,11 +399,11 @@ function NavigationList({
                 "&::before": {
                   bgcolor: "primary.main",
                   borderRadius: 999,
-                  bottom: 9,
+                  bottom: 8,
                   content: '\"\"',
                   left: 0,
                   position: "absolute",
-                  top: 9,
+                  top: 8,
                   width: 3,
                 },
                 "&:hover": { bgcolor: "action.selected" },
@@ -429,7 +429,7 @@ function NavigationList({
                 primary: {
                   sx: {
                     fontSize: ".875rem",
-                    fontWeight: selected ? 700 : 500,
+                    fontWeight: selected ? 600 : 500,
                   },
                 },
               }}

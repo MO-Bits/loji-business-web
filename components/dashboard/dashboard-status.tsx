@@ -189,8 +189,8 @@ function PriorityLink({
         px: 1.1,
         py: 0.65,
         textDecoration: "none",
-        transition: "filter 150ms ease, transform 150ms ease",
-        "&:hover": { filter: "brightness(.97)", transform: "translateY(-1px)" },
+        transition: "filter 150ms ease",
+        "&:hover": { filter: "brightness(.97)" },
         "&:focus-visible": { outline: "3px solid", outlineColor: "primary.main", outlineOffset: 2 },
       }}
     >

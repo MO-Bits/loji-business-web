@@ -23,9 +23,9 @@ export const theme = createTheme({
         warning: { main: "#C76A00" },
         error: { main: "#D70015" },
         info: { main: "#007AFF" },
-        background: { default: "#F3F6FA", paper: "#FFFFFF" },
-        text: { primary: "#132238", secondary: "#627086" },
-        divider: "#DEE5EF",
+        background: { default: "#F7F8FA", paper: "#FFFFFF" },
+        text: { primary: "#172033", secondary: "#667085" },
+        divider: "#E6E9EF",
         action: {
           hover: "rgba(0,122,255,.055)",
           selected: "rgba(0,122,255,.105)",
@@ -47,9 +47,9 @@ export const theme = createTheme({
         warning: { main: "#FF9F0A" },
         error: { main: "#FF453A" },
         info: { main: "#64D2FF" },
-        background: { default: "#0B0D10", paper: "#15171B" },
-        text: { primary: "#F5F5F7", secondary: "#A1A1A6" },
-        divider: "#2C2C2E",
+        background: { default: "#0D1117", paper: "#151A22" },
+        text: { primary: "#F4F7FB", secondary: "#98A2B3" },
+        divider: "#29313D",
         action: {
           hover: "rgba(255,255,255,.06)",
           selected: "rgba(10,132,255,.16)",
@@ -59,42 +59,42 @@ export const theme = createTheme({
       },
     },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 8 },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: "clamp(1.75rem, 2.4vw, 2rem)",
+      fontSize: "clamp(1.625rem, 2.4vw, 1.875rem)",
       fontWeight: 700,
       letterSpacing: "-0.03em",
       lineHeight: 1.16,
     },
     h2: {
-      fontSize: "clamp(1.5rem, 2vw, 1.75rem)",
+      fontSize: "clamp(1.375rem, 2vw, 1.625rem)",
       fontWeight: 700,
       letterSpacing: "-0.03em",
       lineHeight: 1.16,
     },
     h3: {
-      fontSize: "clamp(1.375rem, 1.7vw, 1.625rem)",
+      fontSize: "clamp(1.25rem, 1.7vw, 1.5rem)",
       fontWeight: 700,
       letterSpacing: "-0.025em",
       lineHeight: 1.2,
     },
     h4: {
-      fontSize: "clamp(1.25rem, 1.5vw, 1.375rem)",
+      fontSize: "clamp(1.125rem, 1.5vw, 1.25rem)",
       fontWeight: 700,
       letterSpacing: "-0.025em",
       lineHeight: 1.24,
     },
     h5: {
-      fontSize: "1.0625rem",
+      fontSize: "1rem",
       fontWeight: 700,
       letterSpacing: "-0.018em",
       lineHeight: 1.35,
     },
     h6: {
       fontSize: ".9375rem",
-      fontWeight: 500,
+      fontWeight: 600,
       letterSpacing: "-0.01em",
       lineHeight: 1.45,
     },
@@ -104,12 +104,12 @@ export const theme = createTheme({
     body2: { fontSize: ".8125rem", lineHeight: 1.55 },
     caption: { fontSize: ".75rem", lineHeight: 1.45 },
     overline: {
-      fontSize: ".75rem",
-      fontWeight: 700,
-      letterSpacing: ".08em",
+      fontSize: ".6875rem",
+      fontWeight: 600,
+      letterSpacing: ".07em",
       lineHeight: 1.6,
     },
-    button: { fontSize: ".875rem", fontWeight: 500, textTransform: "none" },
+    button: { fontSize: ".8125rem", fontWeight: 600, textTransform: "none" },
   },
   components: {
     MuiButtonBase: {
@@ -126,20 +126,20 @@ export const theme = createTheme({
       defaultProps: { disableElevation: true },
       styleOverrides: {
         root: {
-          borderRadius: 10,
-          minHeight: 40,
-          paddingInline: 16,
+          borderRadius: 8,
+          minHeight: 38,
+          paddingInline: 14,
           transition:
             "transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease",
           letterSpacing: "-.005em",
-          "&:active": { transform: "scale(.985)" },
+          "&:active": { transform: "translateY(1px)" },
           "@media (max-width: 599px)": { minHeight: 44 },
         },
-        sizeLarge: { minHeight: 48, paddingInline: 20 },
+        sizeLarge: { minHeight: 46, paddingInline: 18 },
         contained: {
-          boxShadow: "0 1px 2px rgba(0,122,255,.18)",
+          boxShadow: "0 1px 2px rgba(0,102,204,.18)",
           "&:hover": {
-            boxShadow: "0 6px 18px rgba(0,122,255,.22)",
+            boxShadow: "0 3px 10px rgba(0,102,204,.2)",
           },
         },
       },
@@ -164,17 +164,17 @@ export const theme = createTheme({
       styleOverrides: {
         root: ({ ownerState }) => ({
           backgroundImage: "none",
-          borderRadius: ownerState.square ? 0 : 12,
+          borderRadius: ownerState.square ? 0 : 8,
         }),
-        rounded: { borderRadius: "12px !important" },
+        rounded: { borderRadius: "8px !important" },
         outlined: {
           borderColor: "var(--mui-palette-divider)",
-          boxShadow: "0 1px 2px rgba(15,34,58,.025)",
+          boxShadow: "none",
         },
       },
     },
     MuiCard: {
-      styleOverrides: { root: { borderRadius: "12px !important" } },
+      styleOverrides: { root: { borderRadius: "8px !important" } },
     },
     MuiChip: {
       styleOverrides: {
@@ -206,8 +206,8 @@ export const theme = createTheme({
     MuiIconButton: {
       styleOverrides: {
         root: {
-          minHeight: 40,
-          minWidth: 40,
+          minHeight: 38,
+          minWidth: 38,
           transition: "background-color 150ms ease, transform 150ms ease",
           "&:active": { transform: "scale(.94)" },
           "@media (max-width: 599px)": {
@@ -226,8 +226,8 @@ export const theme = createTheme({
         },
       },
     },
-    MuiAlert: { styleOverrides: { root: { borderRadius: 10 } } },
-    MuiSkeleton: { styleOverrides: { root: { borderRadius: 10 } } },
+    MuiAlert: { styleOverrides: { root: { borderRadius: 8 } } },
+    MuiSkeleton: { styleOverrides: { root: { borderRadius: 7 } } },
     MuiDivider: {
       styleOverrides: { root: { borderColor: "var(--mui-palette-divider)" } },
     },
@@ -245,8 +245,8 @@ export const theme = createTheme({
       styleOverrides: {
         paper: {
           border: "1px solid var(--mui-palette-divider)",
-          borderRadius: 14,
-          boxShadow: "0 24px 80px rgba(0,0,0,.2)",
+          borderRadius: 12,
+          boxShadow: "0 24px 72px rgba(15,23,42,.2)",
         },
       },
     },
@@ -259,7 +259,7 @@ export const theme = createTheme({
     MuiTabs: {
       styleOverrides: {
         root: { minHeight: 44 },
-        indicator: { borderRadius: 4, height: 3 },
+        indicator: { borderRadius: 4, height: 2 },
       },
     },
     MuiTab: {
@@ -306,7 +306,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundImage: "none",
-          borderRadius: "12px !important",
+          borderRadius: "8px !important",
           "&::before": { display: "none" },
         },
       },
@@ -325,8 +325,8 @@ export const theme = createTheme({
         root: {
           borderColor: "var(--mui-palette-divider)",
           fontSize: ".875rem",
-          height: 48,
-          padding: "10px 16px",
+          height: 46,
+          padding: "9px 14px",
         },
       },
     },
@@ -350,8 +350,8 @@ export const theme = createTheme({
           fontSize: ".875rem",
           "&.MuiOutlinedInput-root": {
             backgroundColor: "var(--mui-palette-background-paper)",
-            borderRadius: 10,
-            minHeight: 40,
+            borderRadius: 8,
+            minHeight: 38,
             transition: "box-shadow 150ms ease, border-color 150ms ease",
             "&.Mui-focused": {
               boxShadow: "0 0 0 3px color-mix(in srgb, var(--mui-palette-primary-main) 16%, transparent)",

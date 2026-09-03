@@ -116,17 +116,17 @@ export default function LearnMorePage() {
   return (
     <Box component="main" sx={{ bgcolor: "background.default", minHeight: "100dvh" }}>
       <Container maxWidth="lg">
-        <Stack spacing={{ xs: 8, md: 13 }} sx={{ pb: { xs: 7, md: 11 }, pt: { xs: 6, sm: 8, md: 10 } }}>
+        <Stack spacing={{ xs: 6, md: 9 }} sx={{ pb: { xs: 6, md: 8 }, pt: { xs: 5, sm: 6, md: 8 } }}>
           <Box
             component="section"
             sx={{
               alignItems: "center",
               display: "grid",
-              gap: { xs: 5, md: 8 },
+              gap: { xs: 4, md: 6 },
               gridTemplateColumns: { xs: "1fr", md: "minmax(0,1fr) minmax(380px,.9fr)" },
             }}
           >
-            <Stack spacing={3} sx={{ maxWidth: 650 }}>
+            <Stack spacing={2.25} sx={{ maxWidth: 650 }}>
               <Typography
                 color="primary.main"
                 variant="overline"
@@ -137,10 +137,10 @@ export default function LearnMorePage() {
               <Typography
                 component="h1"
                 sx={{
-                  fontSize: { xs: "2.55rem", sm: "3.65rem", md: "4.3rem" },
+                  fontSize: { xs: "2.25rem", sm: "3rem", md: "3.5rem" },
                   fontWeight: 700,
                   letterSpacing: "-.06em",
-                  lineHeight: .98,
+                  lineHeight: 1.02,
                 }}
               >
                 {t(
@@ -275,10 +275,10 @@ export default function LearnMorePage() {
                         borderRadius: 1,
                         height: "100%",
                         p: { xs: 2.5, sm: 3 },
-                        transition: "border-color 180ms ease, transform 180ms ease",
+                        transition: "background-color 180ms ease, border-color 180ms ease",
                         "&:hover": {
+                          bgcolor: "action.hover",
                           borderColor: "primary.main",
-                          transform: "translateY(-2px)",
                         },
                       }}
                     >

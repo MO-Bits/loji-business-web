@@ -110,11 +110,11 @@ function Questions() {
               borderColor: "divider",
               borderRadius: "10px !important",
               overflow: "hidden",
-              transition: "border-color 180ms ease, box-shadow 180ms ease",
+              transition: "background-color 180ms ease, border-color 180ms ease",
               "&::before": { display: "none" },
               "&.Mui-expanded": {
+                bgcolor: "action.hover",
                 borderColor: "primary.main",
-                boxShadow: "0 10px 28px rgba(15, 23, 42, .06)",
               },
             }}
           >
