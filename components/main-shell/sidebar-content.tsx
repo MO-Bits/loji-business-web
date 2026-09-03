@@ -1,15 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
 import {
   Avatar,
   Box,
-  Collapse,
   Divider,
   IconButton,
   List,
@@ -22,7 +18,6 @@ import {
 } from "@mui/material";
 import { useLanguage } from "@/components/providers/language-provider";
 import { BrandLockup } from "@/components/shared/brand-lockup";
-import { ThemeModeSelect } from "@/components/shared/theme-mode-select";
 import type { Membership, Property } from "@/features/session/models/app-session";
 import type { WorkspaceCapabilities } from "@/features/session/permissions";
 import { getPropertyTypeDefinition } from "@/features/property/property-type";
@@ -37,7 +32,6 @@ import {
   workspaceDestinations,
 } from "./destinations";
 import { PropertySwitcher } from "./property-switcher";
-import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 
 type SidebarContentProps = {
   activePropertyId?: string;
@@ -71,7 +65,6 @@ export function SidebarContent({
   role,
 }: SidebarContentProps) {
   const { t } = useLanguage();
-  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const propertyDefinition = getPropertyTypeDefinition(property?.type);
   const contextualize = (items: MainDestination[]) =>
     items.map((item) =>
@@ -159,34 +152,33 @@ export function SidebarContent({
           py: 1.25,
         }}
       >
-        <NavigationSection
+        <NavigationGroup
           items={contextualize(
             visibleDestinations(workspaceDestinations, capabilities),
           ).filter((item) => item.path !== "/dashboard" || dashboardAllowed)}
-          label={t("Workspace", "Eneo la kazi")}
           onNavigate={onClose}
           pathname={pathname}
         />
         {operations.length ? (
-          <NavigationSection
+          <NavigationGroup
+            divided
             items={operations}
-            label={t("Operations", "Shughuli")}
             onNavigate={onClose}
             pathname={pathname}
           />
         ) : null}
         {business.length ? (
-          <NavigationSection
+          <NavigationGroup
+            divided
             items={business}
-            label={t("Business", "Biashara")}
             onNavigate={onClose}
             pathname={pathname}
           />
         ) : null}
         {management.length ? (
-          <NavigationSection
+          <NavigationGroup
+            divided
             items={management}
-            label={t("Manage", "Usimamizi")}
             onNavigate={onClose}
             pathname={pathname}
           />
@@ -194,72 +186,9 @@ export function SidebarContent({
 
         <Box sx={{ flex: 1, minHeight: 20 }} />
 
-        <NavigationList
-          items={[settingsDestination]}
-          onNavigate={onClose}
-          pathname={pathname}
-        />
+        <NavigationGroup divided items={[settingsDestination]} onNavigate={onClose} pathname={pathname} />
 
-        <ListItemButton
-          aria-expanded={preferencesOpen}
-          onClick={() => setPreferencesOpen((open) => !open)}
-          sx={{ borderRadius: 1, minHeight: { xs: 44, md: 38 }, px: 1.25 }}
-        >
-          <ListItemIcon sx={{ color: "text.secondary", minWidth: 30 }}>
-            <TuneRoundedIcon sx={{ fontSize: 19 }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={t("Preferences", "Mapendeleo")}
-            slotProps={{
-              primary: { sx: { fontSize: ".8125rem", fontWeight: 500 } },
-            }}
-          />
-          <ExpandMoreRoundedIcon
-            sx={{
-              color: "text.secondary",
-              fontSize: 18,
-              transform: preferencesOpen ? "rotate(180deg)" : "none",
-              transition: "transform 160ms ease",
-            }}
-          />
-        </ListItemButton>
-
-        <Collapse in={preferencesOpen} timeout="auto" unmountOnExit>
-          <Stack
-            spacing={1.25}
-            sx={{
-              bgcolor: "background.default",
-              border: 1,
-              borderColor: "divider",
-              borderRadius: 1,
-              mt: 0.5,
-              p: 1.25,
-            }}
-          >
-            <Box>
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ display: "block", fontWeight: 500, mb: 0.6 }}
-              >
-                {t("Appearance", "Mwonekano")}
-              </Typography>
-              <ThemeModeSelect fullWidth />
-            </Box>
-            <Box>
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ display: "block", fontWeight: 500, mb: 0.6 }}
-              >
-                {t("Language", "Lugha")}
-              </Typography>
-              <TopBarLanguageSwitch fullWidth />
-            </Box>
-          </Stack>
-        </Collapse>
-
-        <Divider sx={{ my: 1 }} />
+        <Divider sx={{ my: 0.75 }} />
         <Stack
           direction="row"
           spacing={0.75}
@@ -326,33 +255,20 @@ export function SidebarContent({
   );
 }
 
-function NavigationSection({
+function NavigationGroup({
+  divided = false,
   items,
-  label,
   onNavigate,
   pathname,
 }: {
+  divided?: boolean;
   items: MainDestination[];
-  label: string;
   onNavigate: () => void;
   pathname: string;
 }) {
   return (
-    <Box sx={{ mb: 1.25 }}>
-      <Typography
-        color="text.secondary"
-        component="p"
-        sx={{
-          fontSize: ".6875rem",
-          fontWeight: 600,
-          letterSpacing: ".07em",
-          mb: 0.35,
-          px: 1.25,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </Typography>
+    <Box>
+      {divided ? <Divider sx={{ my: 0.75, mx: 1.25 }} /> : null}
       <NavigationList
         items={items}
         onNavigate={onNavigate}

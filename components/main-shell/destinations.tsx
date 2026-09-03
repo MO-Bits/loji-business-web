@@ -168,7 +168,9 @@ export const settingsDestination: MainDestination = {
   icon: <SettingsOutlinedIcon />,
   activeIcon: <SettingsRoundedIcon />,
   match: (path) =>
-    path.startsWith("/settings"),
+    path === "/settings" ||
+    path.startsWith("/settings/appearance") ||
+    path.startsWith("/settings/security"),
 };
 
 export const accountDestination: MainDestination = {

@@ -120,7 +120,7 @@ function nightCount(checkIn: string, checkOut: string) {
   return Math.max(0, Math.round((end - start) / 86_400_000));
 }
 
-export function NewBookingScreen() {
+export function NewBookingScreen({ presentation = "page", onRequestClose }: { presentation?: "page" | "dialog"; onRequestClose?: () => void }) {
   const { session, loading, error } = useAppSession();
   const { t } = useLanguage();
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
@@ -151,12 +151,14 @@ export function NewBookingScreen() {
         paymentMethods={paymentMethods}
         userId={session.user.id}
         canRecordPayment={capabilities.canRecordPayment}
+        presentation={presentation}
+        onRequestClose={onRequestClose}
       />
     </Suspense>
   );
 }
 
-function BookingWizard({ businessDate, propertyId, propertyType, paymentMethods, userId, canRecordPayment }: { businessDate: string; propertyId: string; propertyType?: string; paymentMethods: AcceptedPaymentMethod[]; userId: string; canRecordPayment: boolean }) {
+function BookingWizard({ businessDate, propertyId, propertyType, paymentMethods, userId, canRecordPayment, presentation, onRequestClose }: { businessDate: string; propertyId: string; propertyType?: string; paymentMethods: AcceptedPaymentMethod[]; userId: string; canRecordPayment: boolean; presentation: "page" | "dialog"; onRequestClose?: () => void }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedGuestId = searchParams.get("guest");
@@ -435,6 +437,7 @@ function BookingWizard({ businessDate, propertyId, propertyType, paymentMethods,
       } else {
         feedback.error(`${bookingMessage} ${t("The automatic SMS could not be delivered.", "SMS ya moja kwa moja haikuweza kufikishwa.")}`);
       }
+      onRequestClose?.();
       router.replace(result.bookingId ? `/bookings/${result.bookingId}` : "/bookings");
       router.refresh();
     } catch (cause) {
@@ -463,11 +466,11 @@ function BookingWizard({ businessDate, propertyId, propertyType, paymentMethods,
       noValidate
       aria-busy={loadingGuest || loadingRooms || submitting}
       onSubmit={handleWizardSubmit}
-      sx={{ minHeight: "100dvh", pb: { xs: 6, md: 5 } }}
+      sx={{ minHeight: presentation === "dialog" ? "100%" : "100dvh", pb: { xs: 6, md: 5 } }}
     >
       <Container maxWidth="xl" sx={{ py: { xs: 1.5, sm: 2.5, lg: 3 } }}>
         <Stack spacing={{ xs: 1.5, md: 2.5 }}>
-          <WizardHeader activeStep={activeStep} inventoryPlural={plural} onBack={() => activeStep ? setActiveStep((value) => value - 1) : router.back()} />
+          <WizardHeader activeStep={activeStep} inventoryPlural={plural} presentation={presentation} onBack={() => activeStep ? setActiveStep((value) => value - 1) : presentation === "dialog" ? onRequestClose?.() : router.back()} />
 
           <Stepper activeStep={activeStep} sx={{ display: { xs: "none", sm: "flex" }, maxWidth: 760, mx: "auto", width: "100%" }}>
             {bookingSteps.map((label, index) => <Step aria-current={index === activeStep ? "step" : undefined} key={label}><StepLabel>{label}</StepLabel></Step>)}
@@ -529,22 +532,22 @@ function BookingWizard({ businessDate, propertyId, propertyType, paymentMethods,
             </Box>
           </Box>
 
-          <WizardActions activeStep={activeStep} busy={loadingGuest || loadingRooms || submitting} checkInNow={isSameDayBooking} onBack={() => setActiveStep((value) => Math.max(0, value - 1))} />
+          <WizardActions activeStep={activeStep} busy={loadingGuest || loadingRooms || submitting} checkInNow={isSameDayBooking} presentation={presentation} onBack={() => setActiveStep((value) => Math.max(0, value - 1))} />
         </Stack>
       </Container>
     </Box>
   );
 }
 
-function WizardHeader({ activeStep, inventoryPlural, onBack }: { activeStep: number; inventoryPlural: string; onBack: () => void }) {
+function WizardHeader({ activeStep, inventoryPlural, presentation, onBack }: { activeStep: number; inventoryPlural: string; presentation: "page" | "dialog"; onBack: () => void }) {
   const { t } = useLanguage();
   return (
     <Stack component="header" direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
       <IconButton aria-label={t("Go back")} type="button" onClick={onBack} sx={{ border: "1px solid", borderColor: "divider" }}><ArrowBackRoundedIcon /></IconButton>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }} variant="overline">{t("Reservations")} · {t(`Step ${activeStep + 1} of ${steps.length}`)}</Typography>
-        <Typography component="h1" sx={{ display: { xs: "none", sm: "block" } }} variant="h3">{t("Create a booking")}</Typography>
-        <Typography color="text.secondary" variant="body2" sx={{ display: { xs: "none", sm: "block" }, mt: 0.35 }}>{t(`Live ${inventoryPlural} availability, guest details and optional payment.`, `Upatikanaji wa ${inventoryPlural}, taarifa za mgeni na malipo ya hiari.`)}</Typography>
+        {presentation === "page" ? <Typography component="h1" sx={{ display: { xs: "none", sm: "block" } }} variant="h3">{t("Create a booking")}</Typography> : null}
+        {presentation === "page" ? <Typography color="text.secondary" variant="body2" sx={{ display: { xs: "none", sm: "block" }, mt: 0.35 }}>{t(`Live ${inventoryPlural} availability, guest details and optional payment.`, `Upatikanaji wa ${inventoryPlural}, taarifa za mgeni na malipo ya hiari.`)}</Typography> : null}
         <Typography color="text.secondary" sx={{ display: { xs: "block", sm: "none" }, fontWeight: 500 }} variant="caption">
           {t(`Step ${activeStep + 1} of ${steps.length}`, `Hatua ya ${activeStep + 1} kati ya ${steps.length}`)}
         </Typography>
@@ -704,10 +707,10 @@ function ReviewRow({ label, value, accent = false }: { label: string; value: str
   return <Box sx={{ alignItems: "baseline", display: "grid", gap: 1.5, gridTemplateColumns: "minmax(84px,auto) minmax(0,1fr)", py: 1.25 }}><Typography color="text.secondary" variant="body2">{label}</Typography><Typography color={accent ? "primary.main" : "text.primary"} variant="body2" sx={{ fontWeight: 700, minWidth: 0, overflowWrap: "anywhere", textAlign: "right" }}>{value || "—"}</Typography></Box>;
 }
 
-function WizardActions({ activeStep, busy, checkInNow, onBack }: { activeStep: number; busy: boolean; checkInNow: boolean; onBack: () => void }) {
+function WizardActions({ activeStep, busy, checkInNow, presentation, onBack }: { activeStep: number; busy: boolean; checkInNow: boolean; presentation: "page" | "dialog"; onBack: () => void }) {
   const { t } = useLanguage();
   return (
-    <Paper elevation={0} sx={{ bgcolor: "background.paper", borderRadius: { xs: 0, md: 1 }, borderTop: { xs: 1, md: 0 }, borderColor: "divider", bottom: { xs: "calc(64px + env(safe-area-inset-bottom))", md: "auto" }, left: { xs: 0, md: "auto" }, p: { xs: 1, md: 1.5 }, position: { xs: "fixed", md: "static" }, right: { xs: 0, md: "auto" }, zIndex: { xs: (theme) => theme.zIndex.appBar - 1, md: "auto" } }}>
+    <Paper elevation={0} sx={{ bgcolor: "background.paper", borderRadius: { xs: 0, md: 1 }, borderTop: { xs: 1, md: 0 }, borderColor: "divider", bottom: { xs: presentation === "dialog" ? 0 : "calc(64px + env(safe-area-inset-bottom))", md: "auto" }, left: { xs: 0, md: "auto" }, pb: { xs: presentation === "dialog" ? "calc(8px + env(safe-area-inset-bottom))" : 1, md: 1.5 }, px: { xs: 1, md: 1.5 }, pt: { xs: 1, md: 1.5 }, position: { xs: "fixed", md: "static" }, right: { xs: 0, md: "auto" }, zIndex: { xs: (theme) => theme.zIndex.modal + 1, md: "auto" } }}>
       <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end", maxWidth: { md: 560 }, ml: { md: "auto" } }}>
         {activeStep > 0 ? <Button disabled={busy} type="button" onClick={onBack} sx={{ flex: { xs: 1, md: "initial" } }}>{t("Back")}</Button> : null}
         <Button disabled={busy} type="submit" endIcon={activeStep < 3 ? <ArrowForwardRoundedIcon /> : undefined} variant="contained" sx={{ flex: { xs: 2, md: "initial" }, minWidth: { md: 180 } }}>{busy ? t("Please wait…") : activeStep === 0 ? t("Check availability", "Kagua upatikanaji") : activeStep === 3 ? (checkInNow ? t("Check in guest", "Mwingize mgeni") : t("Create reservation", "Tengeneza uhifadhi")) : t("Continue")}</Button>

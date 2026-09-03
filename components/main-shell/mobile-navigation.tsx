@@ -1,10 +1,8 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
-import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
-import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
@@ -12,6 +10,7 @@ import FactCheckRoundedIcon from "@mui/icons-material/FactCheckRounded";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import {
   BottomNavigation,
   BottomNavigationAction,
@@ -23,9 +22,9 @@ import type { WorkspaceCapabilities } from "@/features/session/permissions";
 type MobileNavigationProps = {
   capabilities: WorkspaceCapabilities;
   dashboardAllowed: boolean;
-  inventoryLabel: string;
   menuOpen: boolean;
   onNavigate: (path: string) => void;
+  onNewBooking: () => void;
   onOpenMenu: () => void;
   pathname: string;
   role?: string;
@@ -58,9 +57,9 @@ export function getMobileNavigationValue(pathname: string) {
 export function MobileNavigation({
   capabilities,
   dashboardAllowed,
-  inventoryLabel,
   menuOpen,
   onNavigate,
+  onNewBooking,
   onOpenMenu,
   pathname,
   role,
@@ -87,21 +86,12 @@ export function MobileNavigation({
     });
   }
 
-  if (role !== "owner" && capabilities.canViewBookings) {
+  if (role === "receptionist" && capabilities.canViewBookings) {
     items.push({
       activeIcon: <EventNoteRoundedIcon />,
       icon: <EventNoteOutlinedIcon />,
       label: t("Bookings", "Uhifadhi"),
       value: "/bookings",
-    });
-  }
-
-  if (role === "receptionist" && capabilities.canViewRooms) {
-    items.push({
-      activeIcon: <BedRoundedIcon />,
-      icon: <BedOutlinedIcon />,
-      label: inventoryLabel,
-      value: "/rooms",
     });
   }
 
@@ -114,7 +104,7 @@ export function MobileNavigation({
     });
   }
 
-  if (role === "owner" && capabilities.canViewReports) {
+  if (role === "owner" && capabilities.canViewReports && items.length < 3) {
     items.push({
       activeIcon: <AssessmentRoundedIcon />,
       icon: <AssessmentOutlinedIcon />,
@@ -151,6 +141,10 @@ export function MobileNavigation({
             onOpenMenu();
             return;
           }
+          if (value === "new-booking") {
+            onNewBooking();
+            return;
+          }
           onNavigate(String(value));
         }}
         sx={{
@@ -183,13 +177,34 @@ export function MobileNavigation({
           },
         }}
       >
-        {items.map((item) => (
-          <BottomNavigationAction
-            icon={activeValue === item.value ? item.activeIcon : item.icon}
-            key={item.value}
-            label={item.label}
-            value={item.value}
-          />
+        {items.slice(0, capabilities.canCreateBooking ? 3 : 4).map((item, index) => (
+          <Fragment key={item.value}>
+            <BottomNavigationAction
+              icon={activeValue === item.value ? item.activeIcon : item.icon}
+              label={item.label}
+              value={item.value}
+            />
+            {capabilities.canCreateBooking && index === 1 ? (
+              <BottomNavigationAction
+                aria-label={t("New booking", "Uhifadhi mpya")}
+                icon={<AddRoundedIcon />}
+                label={t("New", "Mpya")}
+                sx={{
+                  color: "primary.main!important",
+                  "& .MuiBottomNavigationAction-label": { color: "text.primary", fontWeight: 700 },
+                  "& .MuiSvgIcon-root": {
+                    bgcolor: "primary.main",
+                    borderRadius: 2,
+                    boxShadow: "0 5px 14px color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
+                    color: "primary.contrastText",
+                    fontSize: "30px!important",
+                    p: 0.55,
+                  },
+                }}
+                value="new-booking"
+              />
+            ) : null}
+          </Fragment>
         ))}
         <BottomNavigationAction
           icon={<MoreHorizRoundedIcon />}

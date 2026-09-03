@@ -7,14 +7,18 @@ import {
   type MouseEvent as ReactMouseEvent,
 } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter } from "next/navigation";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LockRoundedIcon from "@mui/icons-material/LockRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import {
   Avatar,
   Box,
   Button,
+  Dialog,
+  DialogContent,
   Drawer,
   IconButton,
   Paper,
@@ -35,6 +39,11 @@ import { MobileNavigation } from "./mobile-navigation";
 import { SidebarContent } from "./sidebar-content";
 import { TopBarLanguageSwitch } from "./top-bar-language-switch";
 import { getPropertyTypeDefinition } from "@/features/property/property-type";
+
+const NewBookingScreen = dynamic(
+  () => import("@/components/bookings/new-booking-screen").then((module) => module.NewBookingScreen),
+  { ssr: false },
+);
 
 const drawerWidth = 236;
 
@@ -91,6 +100,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     requestNavigation,
   } = useDirtyNavigation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
   const requiredCapability = requiredCapabilityForPath(pathname);
   const dashboardAllowed = capabilities.canViewBookings && capabilities.canViewRooms;
@@ -167,11 +177,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const propertyDefinition = getPropertyTypeDefinition(session.property?.type);
-  const inventoryPlural = t(
-    propertyDefinition.inventoryPlural[0],
-    propertyDefinition.inventoryPlural[1],
-  );
   const locationLabel = getLocationLabel(pathname, t, session.property?.type);
   const name = String(
     session.user?.user_metadata?.full_name ??
@@ -418,17 +423,63 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       <MobileNavigation
         capabilities={capabilities}
         dashboardAllowed={dashboardAllowed}
-        inventoryLabel={inventoryPlural}
         menuOpen={mobileOpen}
         onNavigate={(path) => {
           void requestNavigation(() => {
             router.push(path);
           });
         }}
+        onNewBooking={() => setBookingOpen(true)}
         onOpenMenu={() => setMobileOpen(true)}
         pathname={pathname}
         role={session.activeRole}
       />
+
+      <Dialog
+        open={bookingOpen}
+        onClose={() => setBookingOpen(false)}
+        aria-labelledby="new-booking-dialog-title"
+        sx={{
+          "& .MuiDialog-paper": {
+            bgcolor: "background.default",
+            borderRadius: { xs: 0, md: 2 },
+            height: { xs: "100dvh", md: "min(860px, calc(100dvh - 32px))" },
+            m: { xs: 0, md: 2 },
+            maxHeight: { xs: "100dvh", md: "calc(100dvh - 32px)" },
+            maxWidth: { md: 1180 },
+            width: { xs: "100%", md: "calc(100% - 32px)" },
+          },
+        }}
+      >
+        <Stack
+          component="header"
+          direction="row"
+          sx={{
+            alignItems: "center",
+            bgcolor: "background.paper",
+            borderBottom: 1,
+            borderColor: "divider",
+            minHeight: { xs: "calc(56px + env(safe-area-inset-top))", md: 56 },
+            px: { xs: 1.5, md: 2 },
+            pt: { xs: "env(safe-area-inset-top)", md: 0 },
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography id="new-booking-dialog-title" noWrap sx={{ fontSize: ".9375rem", fontWeight: 700 }}>
+              {t("New booking", "Uhifadhi mpya")}
+            </Typography>
+            <Typography color="text.secondary" noWrap variant="caption" sx={{ display: { xs: "none", sm: "block" } }}>
+              {t("Complete the stay, room, guest and payment details.", "Kamilisha ukaaji, chumba, mgeni na taarifa za malipo.")}
+            </Typography>
+          </Box>
+          <IconButton aria-label={t("Close", "Funga")} onClick={() => setBookingOpen(false)}>
+            <CloseRoundedIcon />
+          </IconButton>
+        </Stack>
+        <DialogContent sx={{ minHeight: 0, overflowX: "hidden", p: 0 }}>
+          {bookingOpen ? <NewBookingScreen presentation="dialog" onRequestClose={() => setBookingOpen(false)} /> : null}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
