@@ -1483,6 +1483,11 @@ begin
 end;
 $fn$;
 
+revoke all on function public.get_property_reports(uuid, date, date)
+from public, anon, authenticated;
+grant execute on function public.get_property_reports(uuid, date, date)
+to authenticated;
+
 create or replace function public.list_property_activity(
   p_property_id uuid,
   p_event_type text default null,
@@ -1551,6 +1556,11 @@ begin
   return v_result;
 end;
 $fn$;
+
+revoke all on function public.list_property_activity(uuid, text, integer, integer)
+from public, anon, authenticated;
+grant execute on function public.list_property_activity(uuid, text, integer, integer)
+to authenticated;
 
 create or replace function public.get_front_desk_workspace(p_property_id uuid)
 returns jsonb
