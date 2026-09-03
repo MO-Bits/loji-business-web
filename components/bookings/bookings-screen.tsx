@@ -284,14 +284,14 @@ function BookingsWorkspace() {
 
             <Box
               sx={{
-                display: "grid",
+                alignItems: "center",
+                display: "flex",
+                flexWrap: "nowrap",
                 gap: 1.25,
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2,minmax(0,1fr))",
-                  lg: "minmax(240px,1fr) repeat(2,minmax(150px,200px)) auto",
-                },
+                overflowX: "auto",
                 p: { xs: 1.25, sm: 1.5 },
+                scrollbarWidth: "thin",
+                WebkitOverflowScrolling: "touch",
               }}
             >
               <TextField
@@ -315,7 +315,7 @@ function BookingsWorkspace() {
                     ) : undefined,
                   },
                 }}
-                sx={{ gridColumn: { sm: "1 / -1", lg: "auto" } }}
+                sx={{ flex: { lg: "1 1 280px" }, minWidth: { xs: 250, sm: 300, lg: 240 } }}
               />
               <TextField
                 label={t("From", "Kuanzia")}
@@ -324,6 +324,7 @@ function BookingsWorkspace() {
                 value={from}
                 onChange={(event) => updateUrl({ from: event.target.value })}
                 slotProps={{ inputLabel: { shrink: true } }}
+                sx={{ flex: "0 0 160px" }}
               />
               <TextField
                 label={t("To", "Hadi")}
@@ -332,12 +333,13 @@ function BookingsWorkspace() {
                 value={to}
                 onChange={(event) => updateUrl({ to: event.target.value })}
                 slotProps={{ htmlInput: { min: from || undefined }, inputLabel: { shrink: true } }}
+                sx={{ flex: "0 0 160px" }}
               />
               <Button
                 disabled={!filtersActive}
                 onClick={clearFilters}
                 startIcon={<ClearRoundedIcon />}
-                sx={{ gridColumn: { sm: "1 / -1", lg: "auto" }, justifySelf: { sm: "end", lg: "stretch" } }}
+                sx={{ flex: "0 0 auto", whiteSpace: "nowrap" }}
               >
                 {t("Clear", "Ondoa")}
               </Button>
