@@ -12,6 +12,7 @@ import HomeRoundedIcon from "@mui/icons-material/HomeRounded";
 import MoreHorizRoundedIcon from "@mui/icons-material/MoreHorizRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import {
+  Box,
   BottomNavigation,
   BottomNavigationAction,
   Paper,
@@ -126,7 +127,7 @@ export function MobileNavigation({
         bottom: 0,
         display: { xs: "block", md: "none" },
         left: 0,
-        overflow: "hidden",
+        overflow: "visible",
         pb: "env(safe-area-inset-bottom)",
         position: "fixed",
         right: 0,
@@ -187,19 +188,30 @@ export function MobileNavigation({
             {capabilities.canCreateBooking && index === 1 ? (
               <BottomNavigationAction
                 aria-label={t("New booking", "Uhifadhi mpya")}
-                icon={<AddRoundedIcon />}
+                icon={(
+                  <Box
+                    sx={{
+                      alignItems: "center",
+                      bgcolor: "primary.main",
+                      border: "5px solid",
+                      borderColor: "background.paper",
+                      borderRadius: 2.25,
+                      boxShadow: "0 7px 20px color-mix(in srgb, var(--mui-palette-primary-main) 30%, transparent)",
+                      color: "primary.contrastText",
+                      display: "flex",
+                      height: 50,
+                      justifyContent: "center",
+                      transform: "translateY(-8px)",
+                      width: 50,
+                    }}
+                  >
+                    <AddRoundedIcon sx={{ fontSize: 28 }} />
+                  </Box>
+                )}
                 label={t("New", "Mpya")}
                 sx={{
                   color: "primary.main!important",
                   "& .MuiBottomNavigationAction-label": { color: "text.primary", fontWeight: 700 },
-                  "& .MuiSvgIcon-root": {
-                    bgcolor: "primary.main",
-                    borderRadius: 2,
-                    boxShadow: "0 5px 14px color-mix(in srgb, var(--mui-palette-primary-main) 28%, transparent)",
-                    color: "primary.contrastText",
-                    fontSize: "30px!important",
-                    p: 0.55,
-                  },
                 }}
                 value="new-booking"
               />
