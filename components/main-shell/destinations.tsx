@@ -1,13 +1,13 @@
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
-import ApartmentOutlinedIcon from "@mui/icons-material/ApartmentOutlined";
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
 import BedRoundedIcon from "@mui/icons-material/BedRounded";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
+import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
+import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import EventNoteRoundedIcon from "@mui/icons-material/EventNoteRounded";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
@@ -36,6 +36,7 @@ export type MainDestination = {
   localizedLabel: readonly [english: string, swahili: string];
   match: (pathname: string) => boolean;
   path: string;
+  sidebar?: boolean;
 };
 
 export const workspaceDestinations: MainDestination[] = [
@@ -48,13 +49,13 @@ export const workspaceDestinations: MainDestination[] = [
     match: (path) => path === "/dashboard",
   },
   {
-    label: "Calendar",
-    localizedLabel: ["Calendar", "Kalenda"],
-    path: "/calendar",
-    capability: "canViewCalendar",
-    icon: <CalendarMonthOutlinedIcon />,
-    activeIcon: <CalendarMonthRoundedIcon />,
-    match: (path) => path.startsWith("/calendar"),
+    label: "Front Desk",
+    localizedLabel: ["Front Desk", "Mapokezi"],
+    path: "/front-desk",
+    capability: "canViewOperations",
+    icon: <FactCheckOutlinedIcon />,
+    activeIcon: <FactCheckRoundedIcon />,
+    match: (path) => path.startsWith("/front-desk") || path.startsWith("/operations"),
   },
   {
     label: "Bookings",
@@ -94,15 +95,7 @@ export const operationsDestinations: MainDestination[] = [
     icon: <NotificationsNoneRoundedIcon />,
     activeIcon: <NotificationsRoundedIcon />,
     match: (path) => path.startsWith("/notifications"),
-  },
-  {
-    label: "Operations",
-    localizedLabel: ["Operations", "Shughuli"],
-    path: "/operations",
-    capability: "canViewOperations",
-    icon: <FactCheckOutlinedIcon />,
-    activeIcon: <FactCheckRoundedIcon />,
-    match: (path) => path.startsWith("/operations"),
+    sidebar: false,
   },
   {
     label: "Activity",
@@ -112,10 +105,21 @@ export const operationsDestinations: MainDestination[] = [
     icon: <HistoryOutlinedIcon />,
     activeIcon: <HistoryRoundedIcon />,
     match: (path) => path.startsWith("/activity"),
+    sidebar: false,
   },
 ];
 
 export const businessDestinations: MainDestination[] = [
+  {
+    label: "Calendar",
+    localizedLabel: ["Calendar", "Kalenda"],
+    path: "/calendar",
+    capability: "canViewCalendar",
+    icon: <CalendarMonthOutlinedIcon />,
+    activeIcon: <CalendarMonthRoundedIcon />,
+    match: (path) => path.startsWith("/calendar"),
+    sidebar: false,
+  },
   {
     label: "Finance",
     localizedLabel: ["Finance", "Fedha"],
@@ -142,9 +146,10 @@ export const managementDestinations: MainDestination[] = [
     localizedLabel: ["Property", "Biashara"],
     path: "/settings/property",
     capability: "canManageProperty",
-    icon: <ApartmentOutlinedIcon />,
-    activeIcon: <ApartmentRoundedIcon />,
+    icon: <BusinessOutlinedIcon />,
+    activeIcon: <BusinessRoundedIcon />,
     match: (path) => path.startsWith("/settings/property"),
+    sidebar: false,
   },
   {
     label: "Staff",
@@ -154,6 +159,7 @@ export const managementDestinations: MainDestination[] = [
     icon: <GroupsOutlinedIcon />,
     activeIcon: <GroupsRoundedIcon />,
     match: (path) => path.startsWith("/settings/team"),
+    sidebar: false,
   },
 ];
 
@@ -164,10 +170,7 @@ export const settingsDestination: MainDestination = {
   icon: <SettingsOutlinedIcon />,
   activeIcon: <SettingsRoundedIcon />,
   match: (path) =>
-    path === "/settings" ||
-    path.startsWith("/settings/profile") ||
-    path.startsWith("/settings/appearance") ||
-    path.startsWith("/settings/security"),
+    path.startsWith("/settings"),
 };
 
 export const accountDestination: MainDestination = {

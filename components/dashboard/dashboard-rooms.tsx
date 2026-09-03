@@ -279,7 +279,7 @@ function roomStatus(
   t: (english: string, swahili: string) => string,
 ): { label: string; tone: StatusTone } {
   if (room.operationalStatus === "out_of_service" || room.housekeepingStatus === "out_of_service") {
-    return { label: t("Out of service", "Hakitumiki"), tone: "danger" };
+    return { label: t("Maintenance", "Matengenezo"), tone: "danger" };
   }
   if (room.housekeepingStatus === "cleaning") {
     return { label: t("Cleaning", "Usafi"), tone: "info" };

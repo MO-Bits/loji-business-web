@@ -73,7 +73,11 @@ export type RoomBoard = {
     inventoryType: InventoryType;
     expectedInventoryCount: number;
   };
-  capabilities: { manageRooms: boolean; createBooking: boolean };
+  capabilities: {
+    manageHousekeeping: boolean;
+    manageRooms: boolean;
+    createBooking: boolean;
+  };
   summary: RoomBoardSummary;
   rooms: RoomBoardItem[];
 };
@@ -240,8 +244,13 @@ function parseProperty(input: unknown, fallbackId = ""): RoomBoard["property"] {
 
 function parseCapabilities(input: unknown): RoomBoard["capabilities"] {
   const row = record(input);
+  const manageRooms = booleanValue(row, "manage_rooms", "manageRooms");
   return {
-    manageRooms: booleanValue(row, "manage_rooms", "manageRooms"),
+    manageHousekeeping:
+      row.manage_housekeeping === undefined && row.manageHousekeeping === undefined
+        ? manageRooms
+        : booleanValue(row, "manage_housekeeping", "manageHousekeeping"),
+    manageRooms,
     createBooking: booleanValue(row, "create_booking", "createBooking"),
   };
 }

@@ -39,9 +39,9 @@ const faqs = [
     question: "Can several staff members use the same property?",
     swQuestion: "Je, wafanyakazi wengi wanaweza kutumia biashara moja?",
     answer:
-      "Yes. Owners and managers can invite staff and assign roles so each person sees only the tools and information appropriate to their responsibilities.",
+      "Yes. Owners and managers can add staff email access and assign roles so each person sees only the tools and information appropriate to their responsibilities.",
     swAnswer:
-      "Ndiyo. Wamiliki na mameneja wanaweza kuwaalika wafanyakazi na kuwapa majukumu ili kila mtu aone zana na taarifa zinazolingana na kazi zake.",
+      "Ndiyo. Wamiliki na mameneja wanaweza kuongeza ruhusa kwa barua pepe za wafanyakazi na kuwapa majukumu ili kila mtu aone zana na taarifa zinazolingana na kazi zake.",
   },
   {
     question: "Can I manage more than one property?",
@@ -79,9 +79,9 @@ const faqs = [
     question: "How do I get started?",
     swQuestion: "Ninaanzaje kutumia Loji Business?",
     answer:
-      "Sign in, complete your property setup, add your rooms and invite the staff who need access. After that, your team can start managing daily bookings and operations from the workspace.",
+      "Sign in, complete your property setup, add your rooms and grant access to the staff who need it. After that, your team can start managing daily bookings and operations from the workspace.",
     swAnswer:
-      "Ingia, kamilisha taarifa za biashara yako, ongeza vyumba na waalike wafanyakazi wanaohitaji ufikiaji. Baada ya hapo, timu yako inaweza kuanza kusimamia uhifadhi na shughuli za kila siku.",
+      "Ingia, kamilisha taarifa za biashara yako, ongeza vyumba na wape ruhusa wafanyakazi wanaohitaji. Baada ya hapo, timu yako inaweza kuanza kusimamia uhifadhi na shughuli za kila siku.",
   },
 ];
 

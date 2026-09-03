@@ -1,13 +1,13 @@
+import {
+  hospitalityRoomTypes,
+  isAcceptedPaymentMethod,
+  propertyAmenities,
+  type AcceptedPaymentMethod,
+  type HospitalityRoomType,
+} from "@/features/property/property-catalog";
+
 export type HospitalityBusinessType = "hotel" | "lodge" | "guesthouse";
-export type SetupRoomType =
-  | "standard"
-  | "single"
-  | "double"
-  | "twin"
-  | "triple"
-  | "family"
-  | "suite"
-  | "deluxe";
+export type SetupRoomType = HospitalityRoomType;
 export type SetupStaffRole = "manager" | "receptionist";
 
 export type RoomGroupDraft = {
@@ -31,10 +31,15 @@ export type BusinessSetupDraft = {
   businessName: string;
   businessPhone: string;
   businessEmail: string;
+  description: string;
   region: string;
   district: string;
   ward: string;
   street: string;
+  amenities: string[];
+  paymentMethods: AcceptedPaymentMethod[];
+  checkinTime: string;
+  checkoutTime: string;
   roomCount: number;
   roomGroups: RoomGroupDraft[];
   staff: StaffAccessDraft[];
@@ -52,8 +57,12 @@ export const setupStepSlugs = [
   "type",
   "name",
   "contact",
+  "description",
   "area",
   "address",
+  "offerings",
+  "payments",
+  "schedule",
   "room-count",
   "room-details",
   "staff",
@@ -93,21 +102,7 @@ export const hospitalityBusinessTypes = [
   description: readonly [string, string];
 }>;
 
-export const setupRoomTypes = [
-  { value: "standard", label: ["Standard", "Kawaida"] as const, capacity: 2, beds: 1 },
-  { value: "single", label: ["Single", "Single"] as const, capacity: 1, beds: 1 },
-  { value: "double", label: ["Double", "Double"] as const, capacity: 2, beds: 1 },
-  { value: "twin", label: ["Twin", "Twin"] as const, capacity: 2, beds: 2 },
-  { value: "triple", label: ["Triple", "Triple"] as const, capacity: 3, beds: 3 },
-  { value: "family", label: ["Family", "Familia"] as const, capacity: 4, beds: 2 },
-  { value: "suite", label: ["Suite", "Suite"] as const, capacity: 2, beds: 1 },
-  { value: "deluxe", label: ["Deluxe", "Deluxe"] as const, capacity: 2, beds: 1 },
-] satisfies ReadonlyArray<{
-  value: SetupRoomType;
-  label: readonly [string, string];
-  capacity: number;
-  beds: number;
-}>;
+export const setupRoomTypes = hospitalityRoomTypes;
 
 export const staffRoles = [
   {
@@ -214,10 +209,15 @@ export function createBusinessSetupDraft(
     businessName: "",
     businessPhone: "",
     businessEmail: ownerEmail,
+    description: "",
     region: "",
     district: "",
     ward: "",
     street: "",
+    amenities: [],
+    paymentMethods: ["cash", "mobile_money"],
+    checkinTime: "14:00",
+    checkoutTime: "10:00",
     roomCount: 1,
     roomGroups: [createRoomGroup(1)],
     staff: [],
@@ -280,6 +280,19 @@ function text(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback;
 }
 
+function isTime(value: unknown): value is string {
+  return typeof value === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function knownAmenities(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const known = new Map(propertyAmenities.map((amenity) => [amenity.toLocaleLowerCase(), amenity]));
+  return Array.from(new Set(value.flatMap((item) => {
+    const match = typeof item === "string" ? known.get(item.trim().toLocaleLowerCase()) : undefined;
+    return match ? [match] : [];
+  }))).slice(0, 50);
+}
+
 function integer(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
   return Number.isInteger(parsed) ? Math.max(min, Math.min(max, parsed)) : fallback;
@@ -334,10 +347,17 @@ export function restoreBusinessSetupDraft(
     businessName: text(saved.businessName).slice(0, 120),
     businessPhone: text(saved.businessPhone).slice(0, 32),
     businessEmail: text(saved.businessEmail, ownerEmail).slice(0, 254),
+    description: text(saved.description).slice(0, 2000),
     region,
     district: text(saved.district).slice(0, 120),
     ward: text(saved.ward).slice(0, 120),
     street: text(saved.street).slice(0, 200),
+    amenities: knownAmenities(saved.amenities),
+    paymentMethods: Array.isArray(saved.paymentMethods)
+      ? Array.from(new Set(saved.paymentMethods.filter(isAcceptedPaymentMethod))).slice(0, 6)
+      : fresh.paymentMethods,
+    checkinTime: isTime(saved.checkinTime) ? saved.checkinTime : fresh.checkinTime,
+    checkoutTime: isTime(saved.checkoutTime) ? saved.checkoutTime : fresh.checkoutTime,
     roomCount,
     roomGroups: normalizeRoomGroups(roomGroups, roomCount).map((group) => ({
       ...group,
@@ -372,4 +392,15 @@ export function isEmail(value: string) {
 
 export function setupDraftStorageKey(ownerId: string) {
   return `loji-hospitality-registration:v1:${ownerId}`;
+}
+
+export function clearLegacyPropertySetupDrafts(ownerId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(`loji-property-registration:v3:${ownerId}`);
+    window.localStorage.removeItem("loji-property-registration:v2");
+    window.localStorage.removeItem("loji-property-setup:v1");
+  } catch {
+    // Legacy storage is only a resume convenience.
+  }
 }

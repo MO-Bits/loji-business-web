@@ -24,7 +24,9 @@ function parseStep(value: unknown): AppStep {
     case "property_address":
       return AppStep.PropertyAddress;
     case "invitation":
-      return AppStep.Invitation;
+      // Older sessions may still report this step while email-based access is
+      // being claimed. Keep them in the canonical property setup flow.
+      return AppStep.PropertyBasic;
     case "done":
       return AppStep.Done;
     default:

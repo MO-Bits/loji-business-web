@@ -1,8 +1,8 @@
 "use client";
 
-import CottageRoundedIcon from "@mui/icons-material/CottageRounded";
 import HotelRoundedIcon from "@mui/icons-material/HotelRounded";
-import OtherHousesRoundedIcon from "@mui/icons-material/OtherHousesRounded";
+import LandscapeRoundedIcon from "@mui/icons-material/LandscapeRounded";
+import MeetingRoomRoundedIcon from "@mui/icons-material/MeetingRoomRounded";
 
 import { MarketingPageShell } from "@/components/content/marketing-page-shell";
 import {
@@ -18,7 +18,7 @@ const solutions = [
       "Keep rooms, bookings, arrivals and staff coordinated without relying on scattered notebooks.",
       "Weka vyumba, uhifadhi, wanaowasili na wafanyakazi katika mpangilio bila kutegemea madaftari yaliyotawanyika.",
     ],
-    icon: CottageRoundedIcon,
+    icon: LandscapeRoundedIcon,
     title: ["Lodges", "Loji"],
   },
   {
@@ -26,7 +26,7 @@ const solutions = [
       "Give an independent guesthouse a reliable daily workspace without adding unnecessary complexity.",
       "Ipe nyumba ya wageni inayojitegemea sehemu ya kuaminika ya shughuli za kila siku bila kuongeza ugumu usiohitajika.",
     ],
-    icon: OtherHousesRoundedIcon,
+    icon: MeetingRoomRoundedIcon,
     title: ["Guesthouses", "Nyumba za wageni"],
   },
   {

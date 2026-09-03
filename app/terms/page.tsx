@@ -1,13 +1,13 @@
 import { LegalPage, type LegalSectionData } from "@/components/content/info-page";
 
 const sections: LegalSectionData[] = [
-  { title: "1. Acceptance of Terms", content: `By creating an account, accepting an invitation, accessing, or using Loji Business, you agree to these Terms of Use.
+  { title: "1. Acceptance of Terms", content: `By creating an account, receiving staff access, accessing, or using Loji Business, you agree to these Terms of Use.
 
 Loji Business is a property management platform designed to help accommodation businesses manage rooms, bookings, guests, staff, and daily operations.
 
 If you are a property owner or authorized representative creating a workspace, you confirm that you have permission to manage that business account.
 
-If you are a staff member invited to use Loji Business, you agree to use the platform only according to the permissions assigned to you.
+If you are a staff member given access to Loji Business, you agree to use the platform only according to the permissions assigned to you.
 
 If you do not agree with these terms, you should not use Loji Business.` },
   { title: "2. About Loji Business", content: `Loji Business provides digital tools for hotels, lodges, and guesthouses.
@@ -17,7 +17,7 @@ Features may include property and room management, booking management, guest rec
 Loji Business provides software tools only and does not operate, own, or represent your accommodation business.` },
   { title: "3. Accounts, Roles, and Access", content: `Loji Business supports Property Owners, Managers, Receptionists, and other authorized staff members.
 
-Property owners and administrators are responsible for creating and managing the workspace, inviting staff, assigning permissions, reviewing access, and removing access when necessary.
+Property owners and administrators are responsible for creating and managing the workspace, adding staff access, assigning permissions, reviewing access, and removing access when necessary.
 
 Staff members must use only assigned permissions, protect their account access, enter accurate information, and report unauthorized activity. Each user is responsible for actions performed through their own account.` },
   { title: "4. Property and Business Information", content: `Users may enter property details, rooms, prices, bookings, guest information, and staff information.
@@ -50,7 +50,7 @@ We will make reasonable efforts to restore affected services.` },
   { title: "10. Payments and Subscriptions", content: `Some Loji Business features may require payment or subscriptions. Pricing will be shown before purchase, payments must follow the selected plan, and unpaid accounts may have restricted access.
 
 Subscription plans and pricing may change with reasonable notice.` },
-  { title: "11. Third-Party Services", content: `Loji Business may use authentication providers, cloud infrastructure, storage services, maps and location services, payment providers, and notification services.
+  { title: "11. Third-Party Services", content: `Loji Business may use authentication providers, cloud infrastructure, storage services, payment providers, and notification services.
 
 These services may have their own terms and privacy policies.` },
   { title: "12. Account Suspension and Termination", content: `Property owners may remove staff access from their workspace at any time.
@@ -74,7 +74,7 @@ Phone Number: +255772290005` },
 ];
 
 const swSections: Array<Pick<LegalSectionData, "swTitle" | "swContent">> = [
-  { swTitle: "1. Kukubali Masharti", swContent: "Kwa kufungua akaunti, kukubali mwaliko au kutumia Loji Business, unakubali masharti haya. Wamiliki wanathibitisha kuwa wana mamlaka ya kusimamia biashara, na wafanyakazi watatumia mfumo kulingana na ruhusa walizopewa." },
+  { swTitle: "1. Kukubali Masharti", swContent: "Kwa kufungua akaunti, kupewa ruhusa ya mfanyakazi au kutumia Loji Business, unakubali masharti haya. Wamiliki wanathibitisha kuwa wana mamlaka ya kusimamia biashara, na wafanyakazi watatumia mfumo kulingana na ruhusa walizopewa." },
   { swTitle: "2. Kuhusu Loji Business", swContent: "Loji Business hutoa zana za kidijitali kwa hoteli, loji na nyumba za wageni. Mfumo husaidia kusimamia biashara, vyumba, uhifadhi, wageni, wafanyakazi na shughuli; haumiliki wala kuendesha biashara yako." },
   { swTitle: "3. Akaunti, Majukumu na Ufikiaji", swContent: "Mfumo una majukumu ya Mmiliki, Meneja, Mapokezi na wafanyakazi wengine walioidhinishwa. Wasimamizi wanawajibika kutoa na kuondoa ruhusa. Kila mtumiaji anatakiwa kulinda akaunti yake na anawajibika kwa vitendo vinavyofanywa kupitia akaunti hiyo." },
   { swTitle: "4. Taarifa za Biashara", swContent: "Watumiaji wanaweza kuweka taarifa za biashara, vyumba, bei, uhifadhi, wageni na wafanyakazi. Biashara na watumiaji wake wanawajibika kuhakikisha taarifa hizo ni sahihi." },
@@ -84,7 +84,7 @@ const swSections: Array<Pick<LegalSectionData, "swTitle" | "swContent">> = [
   { swTitle: "8. Matumizi Yanayokubalika", swContent: "Hairuhusiwi kutumia mfumo kwa vitendo haramu, kufikia biashara nyingine bila ruhusa, kushirikisha akaunti na mtu asiyeidhinishwa, kukwepa ulinzi, kupakia programu hatarishi au kutumia vibaya taarifa. Ukiukaji unaweza kusababisha ufikiaji kuzuiwa au kusitishwa." },
   { swTitle: "9. Upatikanaji wa Huduma", swContent: "Tunalenga kuweka Loji Business salama na inayopatikana. Huduma inaweza kusimama kwa muda kutokana na matengenezo, masasisho ya usalama, hitilafu za kiufundi au huduma za washirika. Tutafanya juhudi stahiki kuirejesha." },
   { swTitle: "10. Malipo na Usajili", swContent: "Baadhi ya huduma zinaweza kuhitaji malipo au usajili. Bei itaonyeshwa kabla ya ununuzi. Akaunti yenye deni inaweza kuwekewa mipaka, na bei zinaweza kubadilishwa kwa taarifa ya kutosha." },
-  { swTitle: "11. Huduma za Watoa Huduma Wengine", swContent: "Loji Business inaweza kutumia watoa huduma za uthibitishaji, wingu, hifadhi, ramani, malipo na arifa. Huduma hizo zinaweza kuwa na masharti na sera zao." },
+  { swTitle: "11. Huduma za Watoa Huduma Wengine", swContent: "Loji Business inaweza kutumia watoa huduma za uthibitishaji, wingu, hifadhi, malipo na arifa. Huduma hizo zinaweza kuwa na masharti na sera zao." },
   { swTitle: "12. Kusimamisha au Kufunga Akaunti", swContent: "Mmiliki anaweza kuondoa ufikiaji wa mfanyakazi wakati wowote. Loji Business inaweza kusimamisha akaunti inayokiuka masharti, kuhatarisha usalama, kufanya udanganyifu au kujaribu ufikiaji usioidhinishwa." },
   { swTitle: "13. Kikomo cha Dhima", swContent: "Loji Business ni zana ya kusaidia shughuli za malazi. Hatuwajibiki kwa mapato yaliyopotea, uhifadhi uliokosekana, taarifa zisizo sahihi zilizoingizwa na watumiaji, maamuzi ya biashara au matatizo ya huduma za nje. Biashara inabaki kuwajibika kwa shughuli zake." },
   { swTitle: "14. Mabadiliko ya Masharti", swContent: "Tunaweza kusasisha masharti haya kadiri huduma inavyokua. Mabadiliko muhimu yanaweza kutangazwa kupitia programu au njia rasmi. Kuendelea kutumia huduma kunamaanisha umekubali masharti yaliyosasishwa." },
@@ -94,4 +94,4 @@ const swSections: Array<Pick<LegalSectionData, "swTitle" | "swContent">> = [
 
 const localizedSections = sections.map((section, index) => ({ ...section, ...swSections[index] }));
 
-export default function TermsPage() { return <LegalPage kind="terms" title="Terms of Use" introTitle="Loji Business Agreement" intro="Please read these terms carefully before creating an account, accepting an invitation, or using Loji Business." sections={localizedSections} swTitle="Masharti ya Matumizi" swIntroTitle="Makubaliano ya Loji Business" swIntro="Soma masharti haya kwa makini kabla ya kufungua akaunti, kukubali mwaliko au kutumia Loji Business." />; }
+export default function TermsPage() { return <LegalPage kind="terms" title="Terms of Use" introTitle="Loji Business Agreement" intro="Please read these terms carefully before creating an account, receiving staff access, or using Loji Business." sections={localizedSections} swTitle="Masharti ya Matumizi" swIntroTitle="Makubaliano ya Loji Business" swIntro="Soma masharti haya kwa makini kabla ya kufungua akaunti, kupewa ruhusa ya mfanyakazi au kutumia Loji Business." />; }

@@ -10,6 +10,9 @@ const asNumber = (value: Json | undefined) => {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed : 0;
 };
+const asBoolean = (value: Json | undefined) => value === true;
+const asTextList = (value: Json | undefined) =>
+  Array.isArray(value) ? value.map(asText).filter(Boolean) : [];
 
 export type ReportSummary = {
   roomRevenue: number;
@@ -20,6 +23,19 @@ export type ReportSummary = {
   roomNights: number;
   bookings: number;
   cancellations: number;
+  availableRoomNights: number;
+  availabilityDenominatorEstimated: boolean;
+};
+
+export type ReportMethodology = {
+  metricBasis: string;
+  stayStatuses: string[];
+  revenueBasis: string;
+  bookingCohort: string;
+  cancellationCohort: string;
+  availabilityDenominator: string;
+  availabilityHistoryAvailable: boolean;
+  denominatorLimitation: string;
 };
 
 export type ReportDay = {
@@ -49,6 +65,7 @@ export type PropertyReport = {
   businessDate: string;
   timezone: string;
   summary: ReportSummary;
+  methodology: ReportMethodology;
   daily: ReportDay[];
   rooms: RoomPerformance[];
   sources: BookingSourcePerformance[];
@@ -58,6 +75,7 @@ export function parsePropertyReport(value: Json): PropertyReport {
   const root = asObject(value);
   const property = asObject(root.property);
   const summary = asObject(root.summary);
+  const methodology = asObject(root.methodology);
 
   return {
     businessDate: asText(property.business_date ?? root.business_date),
@@ -73,6 +91,22 @@ export function parsePropertyReport(value: Json): PropertyReport {
       roomNights: asNumber(summary.room_nights),
       bookings: asNumber(summary.bookings),
       cancellations: asNumber(summary.cancellations),
+      availableRoomNights: asNumber(summary.available_room_nights),
+      availabilityDenominatorEstimated: asBoolean(
+        summary.availability_denominator_estimated,
+      ),
+    },
+    methodology: {
+      metricBasis: asText(methodology.metric_basis),
+      stayStatuses: asTextList(methodology.stay_statuses),
+      revenueBasis: asText(methodology.revenue_basis),
+      bookingCohort: asText(methodology.booking_cohort),
+      cancellationCohort: asText(methodology.cancellation_cohort),
+      availabilityDenominator: asText(methodology.availability_denominator),
+      availabilityHistoryAvailable: asBoolean(
+        methodology.availability_history_available,
+      ),
+      denominatorLimitation: asText(methodology.denominator_limitation),
     },
     daily: Array.isArray(root.daily)
       ? root.daily.map(asObject).map((item) => ({

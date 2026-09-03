@@ -1,13 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import BadgeOutlinedIcon from "@mui/icons-material/BadgeOutlined";
+import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import ImageOutlinedIcon from "@mui/icons-material/ImageOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
@@ -30,6 +28,12 @@ function titleCase(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function propertyTypeLabel(value: string, t: (english: string, swahili: string) => string) {
+  return ["hotel", "lodge", "guesthouse"].includes(value.trim().toLowerCase())
+    ? titleCase(value)
+    : t("Protected existing property", "Biashara iliyopo iliyolindwa");
+}
+
 export function PropertySettingsScreen() {
   const { t } = useLanguage();
   const { error, loading, refresh, workspace } = usePropertySettings();
@@ -48,7 +52,7 @@ export function PropertySettingsScreen() {
     locationReady,
     operationsReady,
     property.amenities.length > 0,
-    property.images.length > 0,
+    property.paymentMethods.length > 0,
   ];
   const completed = setupChecks.filter(Boolean).length;
   const progress = Math.round((completed / setupChecks.length) * 100);
@@ -58,25 +62,23 @@ export function PropertySettingsScreen() {
     <Stack spacing={{ xs: 2.5, sm: 3 }}>
       <SettingsPageHeader
         action={canUpdate ? <Button component={Link} href="/settings/property/profile" startIcon={<EditRoundedIcon />} variant="contained">{t("Edit property", "Hariri biashara")}</Button> : undefined}
-        description={t("Control the business identity, guest-facing content, location, gallery, and operating rules for this workspace.", "Dhibiti utambulisho wa biashara, taarifa za wageni, eneo, picha na kanuni za uendeshaji.")}
+        description={t("Control the business identity, local address, services, accepted payments and operating rules for this workspace.", "Dhibiti utambulisho wa biashara, anwani, huduma, njia za malipo na kanuni za uendeshaji.")}
         eyebrow={t("Workspace administration", "Usimamizi wa biashara")}
-        icon={<ApartmentRoundedIcon />}
+        icon={<BusinessRoundedIcon />}
         title={t("Property settings", "Mipangilio ya biashara")}
       />
 
       {error ? <PropertySettingsError message={error} onRetry={() => void refresh()} /> : null}
 
       <Surface padding={false}>
-        <Box sx={{ bgcolor: "#0B2948", color: "white", minHeight: { xs: 250, sm: 310 }, overflow: "hidden", position: "relative" }}>
-          {property.images[0] ? <Image alt={property.name} fill priority sizes="(max-width: 900px) 100vw, 900px" src={property.images[0]} style={{ objectFit: "cover", opacity: 0.55 }} /> : null}
-          <Box aria-hidden="true" sx={{ background: "linear-gradient(90deg, rgba(5,27,52,.96) 0%, rgba(5,35,67,.8) 58%, rgba(5,35,67,.25) 100%)", inset: 0, position: "absolute" }} />
-          <Stack spacing={1.25} sx={{ alignItems: "flex-start", justifyContent: "flex-end", minHeight: { xs: 250, sm: 310 }, p: { xs: 2.5, sm: 3.5 }, position: "relative" }}>
+        <Box sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+          <Stack spacing={1.25} sx={{ alignItems: "flex-start" }}>
             <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap" }}>
-              <Chip label={titleCase(property.propertyType)} size="small" sx={{ bgcolor: "rgba(255,255,255,.16)", color: "white" }} />
-              <Chip label={property.isActive ? t("Active property", "Biashara inatumika") : t("Property hidden", "Biashara imefichwa")} size="small" sx={{ bgcolor: property.isActive ? "rgba(53,199,89,.2)" : "rgba(255,159,10,.22)", color: "white" }} />
+              <Chip label={propertyTypeLabel(property.propertyType, t)} size="small" variant="outlined" />
+              <Chip color={property.isActive ? "success" : "warning"} label={property.isActive ? t("Active property", "Biashara inatumika") : t("Property hidden", "Biashara imefichwa")} size="small" variant="outlined" />
             </Stack>
-            <Typography component="h2" sx={{ fontSize: { xs: "1.75rem", sm: "2.35rem" }, fontWeight: 700, letterSpacing: "-.035em", lineHeight: 1.1 }}>{property.name}</Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: "flex-start", color: "rgba(255,255,255,.78)", maxWidth: 760 }}><PlaceOutlinedIcon fontSize="small" /><Typography variant="body2">{address || t("Location not configured", "Eneo halijawekwa")}</Typography></Stack>
+            <Typography component="h2" variant="h3">{property.name}</Typography>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "flex-start", color: "text.secondary", maxWidth: 760 }}><PlaceOutlinedIcon fontSize="small" /><Typography variant="body2">{address || t("Location not configured", "Eneo halijawekwa")}</Typography></Stack>
           </Stack>
         </Box>
       </Surface>
@@ -84,7 +86,7 @@ export function PropertySettingsScreen() {
       <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", lg: "repeat(4,minmax(0,1fr))" } }}>
         <MetricCell caption={t(`${completed} of ${setupChecks.length} areas complete`, `Sehemu ${completed} kati ya ${setupChecks.length} zimekamilika`)} icon={<TuneRoundedIcon />} label={t("Profile readiness", "Utayari wa wasifu")} tone={progress === 100 ? "success" : "info"} value={`${progress}%`} />
         <MetricCell caption={property.amenities.length ? t("Guest-facing facilities", "Huduma za wageni") : t("Add your facilities", "Ongeza huduma zako")} icon={<LocalOfferOutlinedIcon />} label={t("Amenities", "Huduma")} value={property.amenities.length} />
-        <MetricCell caption={property.images.length ? t("First photo is the cover", "Picha ya kwanza ni jalada") : t("Add a property cover", "Ongeza picha ya jalada")} icon={<ImageOutlinedIcon />} label={t("Gallery photos", "Picha za biashara")} value={property.images.length} />
+        <MetricCell caption={t("Accepted at the front desk", "Zinazokubaliwa mapokezi")} icon={<PublicOutlinedIcon />} label={t("Payment methods", "Njia za malipo")} value={property.paymentMethods.length} />
         <MetricCell caption={`${property.checkinTime} → ${property.checkoutTime}`} icon={<ScheduleOutlinedIcon />} label={t("Guest schedule", "Ratiba ya wageni")} tone="info" value={property.timezone.split("/").at(-1)?.replaceAll("_", " ") ?? property.timezone} />
       </Box>
 
@@ -93,10 +95,9 @@ export function PropertySettingsScreen() {
           <SettingsSection description={t("Every section opens a focused editor and saves independently.", "Kila sehemu hufungua ukurasa wake na kuhifadhi kivyake.")} title={t("Business configuration", "Mpangilio wa biashara")}>
             <Stack divider={<Divider flexItem />}>
               <PropertySettingLink description={t("Name, description, property type, phone and email", "Jina, maelezo, aina, simu na barua pepe")} href={canUpdate ? "/settings/property/profile" : undefined} icon={<BadgeOutlinedIcon />} meta={property.phone || t("Phone required", "Simu inahitajika")} title={t("Identity and contact", "Utambulisho na mawasiliano")} />
-              <PropertySettingLink description={t("Address, administrative area and map coordinates", "Anwani, eneo la utawala na viwianishi vya ramani")} href={canUpdate ? "/settings/property/location" : undefined} icon={<PlaceOutlinedIcon />} meta={address || t("Not configured", "Haijawekwa")} title={t("Location", "Eneo")} />
-              <PropertySettingLink description={t("Property timezone and standard guest arrival/departure times", "Saa za eneo na muda wa kawaida wa wageni kuingia na kutoka")} href={canUpdate ? "/settings/property/operations" : undefined} icon={<ScheduleOutlinedIcon />} meta={`${property.checkinTime} ${t("check-in", "kuingia")} · ${property.checkoutTime} ${t("checkout", "kutoka")}`} title={t("Operating schedule", "Ratiba ya uendeshaji")} />
+              <PropertySettingLink description={t("Tanzania region, district, ward and local street or landmark", "Mkoa, wilaya, kata na mtaa au alama ya karibu Tanzania")} href={canUpdate ? "/settings/property/location" : undefined} icon={<PlaceOutlinedIcon />} meta={address || t("Not configured", "Haijawekwa")} title={t("Location", "Eneo")} />
+              <PropertySettingLink description={t("Guest arrival/departure times and accepted payment methods", "Muda wa wageni kuingia/kutoka na njia za malipo")} href={canUpdate ? "/settings/property/operations" : undefined} icon={<ScheduleOutlinedIcon />} meta={`${property.checkinTime} ${t("check-in", "kuingia")} · ${property.checkoutTime} ${t("checkout", "kutoka")}`} title={t("Operations and payments", "Uendeshaji na malipo")} />
               <PropertySettingLink description={t("Facilities and services shown across the business workspace", "Huduma zinazoonyeshwa katika mfumo wa biashara")} href={canUpdate ? "/settings/property/amenities" : undefined} icon={<LocalOfferOutlinedIcon />} meta={t(`${property.amenities.length} selected`, `${property.amenities.length} zimechaguliwa`)} title={t("Amenities", "Huduma")} />
-              <PropertySettingLink description={t("Cover photo and property gallery order", "Picha ya jalada na mpangilio wa picha za biashara")} href={canUpdate ? "/settings/property/gallery" : undefined} icon={<ImageOutlinedIcon />} meta={t(`${property.images.length} of 8 photos`, `Picha ${property.images.length} kati ya 8`)} title={t("Gallery", "Picha")} />
               <PropertySettingLink description={t("Control whether the property is active and visible to booking flows", "Dhibiti kama biashara inatumika na inaonekana kwenye utaratibu wa uhifadhi")} href={capabilities.changeVisibility ? "/settings/property/visibility" : undefined} icon={<PublicOutlinedIcon />} meta={property.isActive ? t("Active", "Inatumika") : t("Hidden", "Imefichwa")} title={t("Status and visibility", "Hali na mwonekano")} />
             </Stack>
           </SettingsSection>
@@ -116,7 +117,7 @@ export function PropertySettingsScreen() {
               <SummaryLine icon={<EmailOutlinedIcon />} label={t("Email", "Barua pepe")} value={property.email} />
               <SummaryLine icon={<PlaceOutlinedIcon />} label={t("Address", "Anwani")} value={address} />
               <SummaryLine icon={<ScheduleOutlinedIcon />} label={t("Timezone", "Saa za eneo")} value={property.timezone} />
-              <SummaryLine icon={<ApartmentRoundedIcon />} label={t("Role", "Jukumu")} value={titleCase(role)} />
+              <SummaryLine icon={<BusinessRoundedIcon />} label={t("Role", "Jukumu")} value={titleCase(role)} />
             </Stack>
           </SettingsSection>
 
@@ -127,7 +128,6 @@ export function PropertySettingsScreen() {
             </Stack>
           </Surface>
 
-          {property.images.length > 1 ? <SettingsSection title={t("Gallery preview", "Muonekano wa picha")}><Box sx={{ display: "grid", gap: 0.75, gridTemplateColumns: "repeat(2,minmax(0,1fr))", p: 1.5 }}>{property.images.slice(0, 4).map((url, index) => <Box key={url} sx={{ aspectRatio: index === 0 ? "16/10" : "4/3", borderRadius: 2, gridColumn: index === 0 ? "1/-1" : "auto", overflow: "hidden", position: "relative" }}><Image alt={`${property.name} ${index + 1}`} fill sizes="(max-width: 900px) 50vw, 240px" src={url} style={{ objectFit: "cover" }} /></Box>)}</Box></SettingsSection> : null}
         </Stack>
       </Box>
     </Stack>

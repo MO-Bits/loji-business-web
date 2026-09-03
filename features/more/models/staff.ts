@@ -2,7 +2,7 @@ import { parseDatabaseDate } from "@/lib/date-time";
 
 export type TeamRole = "owner" | "manager" | "receptionist" | "member";
 export type TeamMemberStatus = "active" | "suspended";
-export type TeamInvitationStatus =
+export type PendingAccessStatus =
   "pending" | "accepted" | "expired" | "revoked" | "cancelled";
 
 export type StaffMember = {
@@ -27,26 +27,24 @@ export type StaffMember = {
   };
 };
 
-export type StaffInvitation = {
+export type PendingStaffAccess = {
   id: string;
   email: string;
-  code: string;
   role: TeamRole;
-  status: TeamInvitationStatus;
+  status: PendingAccessStatus;
   createdAt: Date | null;
   expiresAt: Date | null;
-  invitedByName: string;
+  addedByName: string;
   allowedActions: {
-    resend: boolean;
-    revoke: boolean;
+    remove: boolean;
   };
 };
 
 export type TeamAccessCapabilities = {
-  inviteStaff: boolean;
-  manageInvitations: boolean;
+  addStaffAccess: boolean;
+  managePendingAccess: boolean;
   manageMembers: boolean;
-  inviteRoles: TeamRole[];
+  assignableRoles: TeamRole[];
 };
 
 export type TeamAccessWorkspace = {
@@ -58,10 +56,10 @@ export type TeamAccessWorkspace = {
     total: number;
     active: number;
     suspended: number;
-    pendingInvitations: number;
+    pendingAccess: number;
   };
   members: StaffMember[];
-  invitations: StaffInvitation[];
+  pendingAccess: PendingStaffAccess[];
 };
 
 type Row = Record<string, unknown>;
@@ -93,12 +91,12 @@ function memberStatus(value: unknown): TeamMemberStatus {
   return text(value).trim().toLowerCase() === "active" ? "active" : "suspended";
 }
 
-function invitationStatus(value: unknown): TeamInvitationStatus {
+function pendingAccessStatus(value: unknown): PendingAccessStatus {
   const status = text(value).trim().toLowerCase();
   return ["pending", "accepted", "expired", "revoked", "cancelled"].includes(
     status,
   )
-    ? (status as TeamInvitationStatus)
+    ? (status as PendingAccessStatus)
     : "pending";
 }
 
@@ -147,23 +145,21 @@ function parseMember(value: unknown): StaffMember {
   };
 }
 
-function parseInvitation(value: unknown): StaffInvitation {
+function parsePendingAccess(value: unknown): PendingStaffAccess {
   const item = row(value);
   const allowed = stringList(item.allowed_actions);
   return {
     id: text(item.id ?? item.invitation_id),
     email: text(item.email),
-    code: text(item.code),
     role: teamRole(item.role),
-    status: invitationStatus(item.status),
+    status: pendingAccessStatus(item.status),
     createdAt: date(item.created_at),
     expiresAt: date(item.expires_at),
-    invitedByName:
+    addedByName:
       text(item.invited_by_name ?? item.created_by_name).trim() ||
       "Team administrator",
     allowedActions: {
-      resend: allowed.includes("resend"),
-      revoke: allowed.includes("revoke") || allowed.includes("cancel"),
+      remove: allowed.includes("revoke") || allowed.includes("cancel"),
     },
   };
 }
@@ -174,17 +170,27 @@ export function parseTeamAccessWorkspace(value: unknown): TeamAccessWorkspace {
   const capabilities = row(root.capabilities);
   const summary = row(root.summary);
   const members = rows(root.members ?? root.staff).map(parseMember);
-  const invitations = rows(root.invitations).map(parseInvitation);
+  // The database currently returns `invitations`; keep accepting it while the
+  // product presents this workflow as code-free pending email access.
+  const pendingAccess = rows(root.pending_access ?? root.invitations).map(
+    parsePendingAccess,
+  );
 
   return {
     propertyId: text(property.id ?? root.property_id),
     propertyName: text(property.name ?? root.property_name),
     role: teamRole(root.role),
     capabilities: {
-      inviteStaff: bool(capabilities.invite_staff),
-      manageInvitations: bool(capabilities.manage_invitations),
+      addStaffAccess: bool(
+        capabilities.add_staff_access ?? capabilities.invite_staff,
+      ),
+      managePendingAccess: bool(
+        capabilities.manage_pending_access ?? capabilities.manage_invitations,
+      ),
       manageMembers: bool(capabilities.manage_members),
-      inviteRoles: roleList(capabilities.invite_roles),
+      assignableRoles: roleList(
+        capabilities.assignable_roles ?? capabilities.invite_roles,
+      ),
     },
     summary: {
       total: number(summary.total) || members.length,
@@ -194,13 +200,12 @@ export function parseTeamAccessWorkspace(value: unknown): TeamAccessWorkspace {
       suspended:
         number(summary.suspended) ||
         members.filter((member) => member.status === "suspended").length,
-      pendingInvitations:
-        number(summary.pending_invitations) ||
-        invitations.filter((invitation) => invitation.status === "pending")
-          .length,
+      pendingAccess:
+        number(summary.pending_access ?? summary.pending_invitations) ||
+        pendingAccess.filter((access) => access.status === "pending").length,
     },
     members,
-    invitations,
+    pendingAccess,
   };
 }
 
@@ -213,9 +218,9 @@ export function canManageStaff(
   return Object.values(member.allowedActions).some(Boolean);
 }
 
-export function canDeleteInvitation(
+export function canRemovePendingAccess(
   _currentRole: string,
-  invitation: StaffInvitation,
+  access: PendingStaffAccess,
 ) {
-  return invitation.allowedActions.revoke;
+  return access.allowedActions.remove;
 }

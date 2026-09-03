@@ -20,8 +20,8 @@ const updates = [
   {
     date: ["August 2026", "Agosti 2026"],
     description: [
-      "Property setup now keeps an incomplete property and retries its photo upload safely instead of creating duplicates.",
-      "Usanidi wa biashara sasa huhifadhi biashara ambayo haijakamilika na kujaribu kupakia picha tena bila kutengeneza nakala.",
+      "Property setup now saves incomplete progress and resumes safely after an interruption without creating duplicate workspaces.",
+      "Usanidi wa biashara sasa huhifadhi hatua ambazo hazijakamilika na kuendelea salama baada ya kukatizwa bila kutengeneza sehemu za kazi mara mbili.",
     ],
     title: ["Resumable property setup", "Usanidi wa biashara unaoendelea"],
   },

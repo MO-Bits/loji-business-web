@@ -9,7 +9,10 @@ import {
   useState,
 } from "react";
 
-import { translateToSwahili } from "@/components/providers/global-translations";
+import {
+  normalizeEnglishProductCopy,
+  translateToSwahili,
+} from "@/components/providers/global-translations";
 
 export type AppLanguage = "en" | "sw";
 
@@ -66,7 +69,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       t: (english, swahili) =>
         language === "sw"
           ? swahili ?? translateToSwahili(english)
-          : english,
+          : normalizeEnglishProductCopy(english),
     }),
     [language, setLanguage],
   );

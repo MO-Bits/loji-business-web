@@ -32,9 +32,13 @@ import {
   TableHead,
   TableRow,
   TextField,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import { PageHeader } from "@/components/shared/page-header";
+import { CashierClosePanel } from "@/components/finance/cashier-close-panel";
+import { OutstandingBalancesPanel } from "@/components/finance/outstanding-balances-panel";
 import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import {
   EmptyState,
@@ -51,6 +55,7 @@ import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { getWorkspaceCapabilities } from "@/features/session/permissions";
 import type { PaymentLedgerItem } from "@/features/finance/models/finance";
 import {
+  getOutstandingBalances,
   getPropertyFinanceDashboard,
   listPropertyPayments,
   reverseBookingPayment,
@@ -122,7 +127,9 @@ const financeLabel = (value: string) =>
     .replaceAll("_", " ")
     .replace(/\b\w/g, (character) => character.toUpperCase());
 
-export function FinanceScreen() {
+type FinanceSection = "today" | "outstanding" | "payments" | "cashier";
+
+export function FinanceScreen({ initialSection = "today" }: { initialSection?: FinanceSection }) {
   const { loading: sessionLoading, session } = useAppSession();
   const { language, t } = useLanguage();
   const feedback = useAppFeedback();
@@ -149,10 +156,12 @@ export function FinanceScreen() {
   const [method, setMethod] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
+  const [section, setSection] = useState<FinanceSection>(initialSection);
   const [financeState, setFinanceState] = useState<{
     propertyId: string;
     dashboard: Awaited<ReturnType<typeof getPropertyFinanceDashboard>>;
     ledger: Awaited<ReturnType<typeof listPropertyPayments>>;
+    outstanding: Awaited<ReturnType<typeof getOutstandingBalances>>;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorState, setErrorState] = useState<{ propertyId: string; message: string } | null>(null);
@@ -174,6 +183,9 @@ export function FinanceScreen() {
     : null;
   const ledger = financeState && financeState.propertyId === propertyId
     ? financeState.ledger
+    : null;
+  const outstanding = financeState && financeState.propertyId === propertyId
+    ? financeState.outstanding
     : null;
   const error = errorState && errorState.propertyId === propertyId
     ? errorState.message
@@ -204,7 +216,7 @@ export function FinanceScreen() {
     setFinanceState((current) => current?.propertyId === requestPropertyId ? current : null);
     let awaitingAlignedReload = false;
     try {
-      const [nextDashboard, nextLedger] = await Promise.all([
+      const [nextDashboard, nextLedger, nextOutstanding] = await Promise.all([
         getPropertyFinanceDashboard(supabase, requestPropertyId, from, to),
         listPropertyPayments(supabase, {
           propertyId: requestPropertyId,
@@ -216,6 +228,7 @@ export function FinanceScreen() {
           limit: PAGE_SIZE,
           offset: (page - 1) * PAGE_SIZE,
         }),
+        getOutstandingBalances(supabase, requestPropertyId),
       ]);
       if (requestId.current === currentRequest) {
         const businessDate = isDateKey(nextDashboard.businessDate)
@@ -243,6 +256,7 @@ export function FinanceScreen() {
           propertyId: requestPropertyId,
           dashboard: nextDashboard,
           ledger: nextLedger,
+          outstanding: nextOutstanding,
         });
       }
     } catch (caught) {
@@ -383,7 +397,16 @@ export function FinanceScreen() {
           action={capabilities.canViewReports ? <Button component={Link} href="/reports" startIcon={<QueryStatsRoundedIcon />} variant="outlined">{t("Reports", "Ripoti")}</Button> : undefined}
         />
 
-        <Surface sx={{ p: { xs: 1.5, sm: 2 } }}>
+        <Box sx={{ overflowX: "auto" }}>
+          <ToggleButtonGroup exclusive onChange={(_, value: typeof section | null) => value && setSection(value)} size="small" sx={{ minWidth: "max-content" }} value={section}>
+            <ToggleButton value="today">{t("Today & trends", "Leo na mwenendo")}</ToggleButton>
+            <ToggleButton value="outstanding">{t("Outstanding", "Yanayodaiwa")} · {outstanding?.totalCount ?? 0}</ToggleButton>
+            <ToggleButton value="payments">{t("Payments", "Malipo")}</ToggleButton>
+            <ToggleButton value="cashier">{t("Cashier close", "Funga kaunta")}</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {section !== "cashier" ? <Surface sx={{ p: { xs: 1.5, sm: 2 } }}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { sm: "center" }, width: { xs: "100%", sm: "auto" } }}>
               <TextField fullWidth label={t("From", "Kuanzia")} onChange={(event) => { if (!propertyId) return; customizedPropertyId.current = propertyId; setRangeState({ propertyId, from: event.target.value, to }); setPage(1); }} type="date" value={from} slotProps={{ htmlInput: { max: to }, inputLabel: { shrink: true } }} />
@@ -391,22 +414,22 @@ export function FinanceScreen() {
             </Stack>
             {dashboard?.timezone ? <StatusPill label={dashboard.timezone} /> : null}
           </Stack>
-        </Surface>
+        </Surface> : null}
 
         {invalidRange ? <Alert severity="warning">{t("Choose a valid finance range of one year or less.", "Chagua kipindi sahihi cha fedha cha mwaka mmoja au chini.")}</Alert> : null}
 
         {error ? <Alert action={<Button onClick={() => void load()}>{t("Retry", "Jaribu tena")}</Button>} severity="error">{error}</Alert> : null}
 
-        <Box sx={{ display: "grid", gap: { xs: 1.5, sm: 2 }, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" } }}>
+        {section === "today" ? <Box sx={{ display: "grid", gap: { xs: 1.5, sm: 2 }, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))", lg: "repeat(4, minmax(0, 1fr))" } }}>
           <MetricCell caption={t("Payments less refunds and voids", "Malipo baada ya marejesho na yaliyobatilishwa")} icon={<PaymentsRoundedIcon />} label={t("Net collected", "Jumla halisi")} tone="success" value={dataLoading && !dashboard ? "—" : money(summary?.collected ?? 0)} />
           <MetricCell caption={t("Open booking balances", "Salio la uhifadhi ambalo halijalipwa")} icon={<SavingsRoundedIcon />} label={t("Outstanding", "Yanayodaiwa")} tone="warning" value={dataLoading && !dashboard ? "—" : money(summary?.outstanding ?? 0)} />
-          <MetricCell caption={t("Payment entries", "Miamala ya malipo")} icon={<ReceiptLongRoundedIcon />} label={t("Transactions", "Miamala")} tone="info" value={dataLoading && !dashboard ? "—" : summary?.transactions ?? 0} />
+          <MetricCell caption={t(`${summary?.transactions ?? 0} payment entries`, `Miamala ${summary?.transactions ?? 0} ya malipo`)} icon={<ReceiptLongRoundedIcon />} label={t("Gross collected", "Jumla kabla ya marejesho")} tone="info" value={dataLoading && !dashboard ? "—" : money(summary?.grossCollected ?? 0)} />
           <MetricCell caption={t("Refunds and voids in period", "Marejesho na yaliyobatilishwa katika kipindi")} icon={<ReplayRoundedIcon />} label={t("Reversed", "Yaliyorejeshwa")} tone="danger" value={dataLoading && !dashboard ? "—" : money((summary?.refunds ?? 0) + (summary?.voids ?? 0))} />
-        </Box>
+        </Box> : null}
 
-        <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.45fr) minmax(280px, .55fr)" } }}>
+        {section === "today" ? <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1.45fr) minmax(280px, .55fr)" } }}>
           <Surface>
-            <SectionHeading description={t("Actual completed collections, not projected revenue.", "Makusanyo halisi yaliyokamilika, si makadirio.")} title={t("Collection trend", "Mwenendo wa makusanyo")} />
+            <SectionHeading description={t("Gross completed payments; use the net metric above after refunds and voids.", "Malipo ghafi yaliyokamilika; tumia jumla halisi hapo juu baada ya marejesho na yaliyobatilishwa.")} title={t("Gross collection trend", "Mwenendo wa makusanyo ghafi")} />
             {dataLoading && !dashboard ? (
               <Stack direction="row" spacing={0.75} sx={{ alignItems: "flex-end", height: 210, mt: 3, pb: 1 }}>
                 {Array.from({ length: 12 }, (_, index) => (
@@ -453,9 +476,13 @@ export function FinanceScreen() {
               }) : <Typography color="text.secondary" variant="body2">{t("No completed payments in this period.", "Hakuna malipo yaliyokamilika katika kipindi hiki.")}</Typography>}
             </Stack>
           </Surface>
-        </Box>
+        </Box> : null}
 
-        <Surface padding={false}>
+        {section === "outstanding" ? (dataLoading && !outstanding ? <Surface padding={false}><LoadingRows rows={7} /></Surface> : <OutstandingBalancesPanel data={outstanding} />) : null}
+
+        {section === "cashier" && propertyId ? <CashierClosePanel propertyId={propertyId} /> : null}
+
+        {section === "payments" ? <Surface padding={false}>
           <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
             <SectionHeading action={<Button disabled={!ledger?.items.length} onClick={exportLedger} startIcon={<DownloadRoundedIcon />} size="small">{t("Export page", "Pakua ukurasa")}</Button>} description={t("Search by guest, booking or transaction reference.", "Tafuta kwa mgeni, namba ya uhifadhi au kumbukumbu ya muamala.")} title={t("Payment ledger", "Daftari la malipo")} />
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ mt: 2.5 }}>
@@ -466,6 +493,8 @@ export function FinanceScreen() {
                 <MenuItem value="mobile_money">{t("Mobile money", "Pesa ya simu")}</MenuItem>
                 <MenuItem value="card">{t("Card", "Kadi")}</MenuItem>
                 <MenuItem value="bank_transfer">{t("Bank transfer", "Benki")}</MenuItem>
+                <MenuItem value="cheque">{t("Cheque", "Hundi")}</MenuItem>
+                <MenuItem value="other">{t("Other", "Nyingine")}</MenuItem>
               </Select>
               <Select displayEmpty value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} sx={{ minWidth: { sm: 160 } }}>
                 <MenuItem value="">{t("All statuses", "Hali zote")}</MenuItem>
@@ -494,7 +523,7 @@ export function FinanceScreen() {
               {ledger.total > PAGE_SIZE ? <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}><Pagination count={Math.ceil(ledger.total / PAGE_SIZE)} onChange={(_, value) => setPage(value)} page={page} /></Box> : null}
             </>
           )}
-        </Surface>
+        </Surface> : null}
       </Stack>
       <PaymentReversalModal
         reversal={activeReversal}

@@ -69,7 +69,6 @@ const translations: Record<string, string> = {
   Confirmed: "Imethibitishwa",
   Continue: "Endelea",
   "Continue with Google": "Endelea na Google",
-  Cover: "Jalada",
   Create: "Tengeneza",
   "Create a booking": "Tengeneza uhifadhi",
   "Create booking": "Tengeneza uhifadhi",
@@ -78,7 +77,6 @@ const translations: Record<string, string> = {
   Dark: "Giza",
   Dates: "Tarehe",
   Delete: "Futa",
-  "Delete invitation": "Futa mwaliko",
   Deposit: "Amana",
   "Deposit amount": "Kiasi cha amana",
   Direct: "Moja kwa moja",
@@ -116,12 +114,11 @@ const translations: Record<string, string> = {
   ID: "Kitambulisho",
   "ID number": "Namba ya kitambulisho",
   "ID type": "Aina ya kitambulisho",
-  Images: "Picha",
   Inactive: "Kimezimwa",
   "In house": "Waliopo",
   "Initial payment": "Malipo ya awali",
   "Arriving today": "Wanaowasili leo",
-  Invitations: "Mialiko",
+  Invitations: "Ruhusa zinazosubiri",
   Language: "Lugha",
   "Last name": "Jina la mwisho",
   "Lead guest": "Mgeni mkuu",
@@ -184,7 +181,6 @@ const translations: Record<string, string> = {
   "Permission summary": "Muhtasari wa ruhusa",
   "Personal information": "Taarifa binafsi",
   Phone: "Simu",
-  Photos: "Picha",
   Policies: "Sera",
   Preferences: "Mapendeleo",
   Pricing: "Bei",
@@ -192,7 +188,7 @@ const translations: Record<string, string> = {
   Property: "Biashara",
   "Property details": "Maelezo ya biashara",
   "Property information": "Taarifa za biashara",
-  "Property invitation": "Mwaliko wa biashara",
+  "Property invitation": "Ruhusa ya biashara",
   "Property role": "Jukumu",
   "Property setup": "Usanidi wa biashara",
   "Property workspace": "Eneo la biashara",
@@ -206,7 +202,6 @@ const translations: Record<string, string> = {
   Refunded: "Imerejeshwa",
   Refresh: "Onyesha upya",
   Remove: "Ondoa",
-  "Remove image": "Ondoa picha",
   "Remove staff": "Ondoa mfanyakazi",
   Reservations: "Uhifadhi",
   Reserved: "Imehifadhiwa",
@@ -231,13 +226,11 @@ const translations: Record<string, string> = {
   Selected: "Kimechaguliwa",
   Settled: "Imekamilika",
   "Select property": "Chagua biashara",
-  "Send invitation": "Tuma mwaliko",
   "Set up your property": "Sanidi biashara yako",
   "Sign out": "Ondoka",
   Source: "Chanzo",
   Staff: "Wafanyakazi",
   "Staff activated": "Mfanyakazi amewashwa",
-  "Staff invited": "Mfanyakazi amealikwa",
   "Staff removed": "Mfanyakazi ameondolewa",
   "Staff role changed": "Jukumu la mfanyakazi limebadilishwa",
   "Staff suspended": "Mfanyakazi amesimamishwa",
@@ -269,7 +262,6 @@ const translations: Record<string, string> = {
   "What should I do?": "Nifanye nini?",
   "Why am I seeing this?": "Kwa nini ninaona hii?",
   "Access Restricted": "Ufikiaji umezuiwa",
-  "Accept invitation": "Kubali mwaliko",
   "Add room": "Ongeza chumba",
   "Basic information": "Taarifa za msingi",
   "Check in guest": "Ingiza mgeni",
@@ -282,14 +274,10 @@ const translations: Record<string, string> = {
   "Current Staff": "Wafanyakazi",
   "Draft restored": "Rasimu imerejeshwa",
   "Draft saved": "Rasimu imehifadhiwa",
-  "Invite staff": "Alika mfanyakazi",
-  "Invite staff member": "Alika mfanyakazi",
-  "Invitation code": "Namba ya mwaliko",
   "Mark available": "Weka kinapatikana",
   "Mark inactive": "Weka kimezimwa",
   "No active rooms found.": "Hakuna vyumba vinavyotumika.",
   "No rooms match these filters.": "Hakuna vyumba vinavyolingana na vichujio hivi.",
-  "No staff invitations found": "Hakuna mialiko",
   "No staff members found": "Hakuna wafanyakazi",
   "Occupancy rate": "Kiwango cha matumizi ya vyumba",
   "Please wait…": "Tafadhali subiri…",
@@ -316,15 +304,14 @@ const translations: Record<string, string> = {
   "Payment refunded": "Malipo yamerejeshwa",
   "Payment voided": "Malipo yamebatilishwa",
   "Property amenities updated": "Huduma za biashara zimesasishwa",
-  "Property gallery updated": "Picha za biashara zimesasishwa",
   "Property location updated": "Eneo la biashara limesasishwa",
   "Property onboarding location completed": "Eneo la biashara limekamilishwa",
   "Property onboarding saved": "Usanidi wa biashara umehifadhiwa",
   "Property operations updated": "Mipangilio ya uendeshaji imesasishwa",
   "Property profile updated": "Wasifu wa biashara umesasishwa",
   "Property visibility updated": "Mwonekano wa biashara umesasishwa",
-  "Staff invitation resent": "Mwaliko wa mfanyakazi umetumwa tena",
-  "Staff invitation revoked": "Mwaliko wa mfanyakazi umebatilishwa",
+  "Staff invitation resent": "Barua ya ruhusa ya mfanyakazi imetumwa tena",
+  "Staff invitation revoked": "Ruhusa ya mfanyakazi imebatilishwa",
   High: "Juu",
   Normal: "Kawaida",
   Urgent: "Dharura",
@@ -374,6 +361,32 @@ const caseInsensitiveTranslations = new Map(
   ]),
 );
 
+const compatibilityEnglishLabels: Record<string, string> = {
+  Invitations: "Pending access",
+  "Property invitation": "Property access",
+  "Staff invitation resent": "Staff access email resent",
+  "Staff invitation revoked": "Staff access revoked",
+};
+
+const caseInsensitiveCompatibilityEnglishLabels = new Map(
+  Object.entries(compatibilityEnglishLabels).map(([legacy, current]) => [
+    legacy.toLocaleLowerCase("en"),
+    current,
+  ]),
+);
+
+export function normalizeEnglishProductCopy(value: string) {
+  const direct = compatibilityEnglishLabels[value];
+  if (direct) return direct;
+
+  const normalizedValue = value.trim().toLocaleLowerCase("en");
+  const caseInsensitive = caseInsensitiveCompatibilityEnglishLabels.get(normalizedValue);
+  if (caseInsensitive) return caseInsensitive;
+
+  const count = value.match(/^Invitations \((\d+)\)$/i)?.[1];
+  return count ? `Pending access (${count})` : value;
+}
+
 export function translateToSwahili(value: string) {
   const direct = translations[value];
   if (direct) return direct;
@@ -390,14 +403,13 @@ export function translateToSwahili(value: string) {
     [/^(\d+) guests?$/, (count) => `${count} wageni`],
     [/^(\d+) nights?$/, (count) => `Usiku ${count}`],
     [/^(\d+) of (\d+)$/, (count, total) => `${count} kati ya ${total}`],
-    [/^(\d+) photos?$/, (count) => `${count} picha`],
     [/^(\d+) properties$/, (count) => `${count} biashara`],
     [/^(\d+) selected$/, (count) => `${count} zimechaguliwa`],
     [/^Actions for (.+)$/, (name) => `Vitendo vya ${name}`],
     [/^Business date · (.+)$/, (date) => `Tarehe ya biashara · ${date}`],
     [/^Booking (.+) was created\.$/, (booking) => `Uhifadhi ${booking} umetengenezwa.`],
     [/^Booking (.+) is now (.+)\.$/, (booking, status) => `Uhifadhi ${booking} sasa ni ${translateToSwahili(status)}.`],
-    [/^Invitations \((\d+)\)$/, (count) => `Mialiko (${count})`],
+    [/^Invitations \((\d+)\)$/, (count) => `Ruhusa zinazosubiri (${count})`],
     [/^Show all (\d+) rooms$/, (count) => `Onyesha vyumba vyote ${count}`],
     [/^Staff \((\d+)\)$/, (count) => `Wafanyakazi (${count})`],
     [/^Step (\d+) of (\d+)$/, (step, total) => `Hatua ${step} kati ya ${total}`],

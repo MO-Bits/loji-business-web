@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
@@ -65,6 +65,11 @@ import { formatLocalDate, formatLocalDateTime, localDateKey } from "@/lib/date-t
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { getPropertyTypeDefinition } from "@/features/property/property-type";
+import {
+  acceptedPaymentMethods,
+  normalizeAcceptedPaymentMethods,
+  type AcceptedPaymentMethod,
+} from "@/features/property/property-catalog";
 
 const money = new Intl.NumberFormat("en-TZ", {
   style: "currency",
@@ -100,11 +105,15 @@ function statusTone(status: string): StatusTone {
 
 export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { session, loading: sessionLoading, error: sessionError } = useAppSession();
   const client = useMemo(() => createClient(), []);
   const feedback = useAppFeedback();
   const { t } = useLanguage();
   const propertyId = session?.activePropertyId;
+  const propertyPaymentMethods = normalizeAcceptedPaymentMethods(
+    session?.property?.payment_methods ?? session?.property?.paymentMethods,
+  );
   const propertyDefinition = getPropertyTypeDefinition(session?.property?.type);
   const inventorySingular = t(
     propertyDefinition.inventorySingular[0],
@@ -121,6 +130,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
   const [amendOpen, setAmendOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const requestId = useRef(0);
+  const handledRequestedAction = useRef<string | null>(null);
   const activePropertyId = useRef<string | undefined>(undefined);
   const workspace = workspaceState && workspaceState.propertyId === propertyId ? workspaceState : null;
   const error = errorState && errorState.propertyId === propertyId ? errorState.message : null;
@@ -177,6 +187,27 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
     };
   }, [refresh]);
 
+  useEffect(() => {
+    const requestedAction = searchParams.get("action");
+    if (!workspace || !requestedAction || handledRequestedAction.current === requestedAction) return;
+    handledRequestedAction.current = requestedAction;
+    const timer = window.setTimeout(() => {
+      if (requestedAction === "payment" && workspace.allowedActions.recordPayment) {
+        setPaymentOpen(true);
+      } else if (requestedAction === "checkout" && workspace.allowedActions.checkOut) {
+        if (workspace.requiresSettlement && !localCapabilities.canCheckoutWithBalance) {
+          if (workspace.allowedActions.recordPayment) setPaymentOpen(true);
+        } else {
+          setSelectedAction("check_out");
+        }
+      } else if (requestedAction === "checkin" && workspace.allowedActions.checkIn) {
+        setSelectedAction("check_in");
+      }
+    }, 0);
+    router.replace(`/bookings/${bookingId}`, { scroll: false });
+    return () => window.clearTimeout(timer);
+  }, [bookingId, localCapabilities.canCheckoutWithBalance, router, searchParams, workspace]);
+
   if (sessionLoading) return <BookingDetailsSkeleton />;
   if (sessionError || !propertyId) {
     return <ErrorState actionLabel={t("Back")} message={sessionError?.message ?? t("Select an active property to view this booking.", "Chagua biashara inayotumika ili kuona uhifadhi huu.")} onRetry={() => router.back()} />;
@@ -189,7 +220,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
     ? actionDefinitions.confirm
     : workspace.allowedActions.checkIn
       ? actionDefinitions.check_in
-      : workspace.allowedActions.checkOut
+      : workspace.allowedActions.checkOut && (!workspace.requiresSettlement || localCapabilities.canCheckoutWithBalance)
         ? actionDefinitions.check_out
         : workspace.allowedActions.reinstate
           ? actionDefinitions.reinstate
@@ -227,7 +258,9 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
       return;
     }
     if (selectedAction === "check_out" && workspace.requiresSettlement && !allowBalance) {
-      setErrorState({ propertyId, message: t("Resolve the balance or explicitly approve checkout with an outstanding balance.", "Lipa salio au thibitisha wazi kumtoa mgeni akiwa na salio.") });
+      setErrorState({ propertyId, message: localCapabilities.canCheckoutWithBalance
+        ? t("Resolve the balance or explicitly approve checkout with an outstanding balance.", "Lipa salio au thibitisha wazi kumtoa mgeni akiwa na salio.")
+        : t("Record the outstanding balance before checkout.", "Rekodi salio linalodaiwa kabla ya kumtoa mgeni.") });
       return;
     }
 
@@ -334,6 +367,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
       <LifecycleModal
         action={selectedAction}
         allowBalance={allowBalance}
+        canCheckoutWithBalance={localCapabilities.canCheckoutWithBalance}
         error={error}
         reason={reason}
         requiresSettlement={workspace.requiresSettlement}
@@ -347,6 +381,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
       <PaymentModal
         booking={booking}
         open={paymentOpen}
+        paymentMethods={propertyPaymentMethods}
         propertyId={propertyId}
         onClose={() => setPaymentOpen(false)}
         onSaved={async () => {
@@ -401,15 +436,28 @@ function BookingHeader({ booking, primaryAction, secondaryActions, canAmend, onB
 
 function LifecycleStrip({ booking }: { booking: Booking }) {
   const { t } = useLanguage();
-  const order = ["pending", "confirmed", "checked_in", "checked_out"];
-  const current = booking.status === "reserved" ? 0 : order.indexOf(booking.status);
   const closed = ["cancelled", "no_show"].includes(booking.status);
+  const current = booking.status === "pending" || booking.status === "reserved"
+    ? 0
+    : booking.status === "confirmed"
+      ? 1
+      : booking.status === "checked_in"
+        ? 2
+        : booking.status === "checked_out" || closed
+          ? 3
+          : 0;
+  const finalLabel = booking.status === "cancelled"
+    ? "Cancelled"
+    : booking.status === "no_show"
+      ? "No-show"
+      : "Checked out";
+  const stages = ["Reserved", "Confirmed", "Checked in", finalLabel];
   return (
     <Paper variant="outlined" sx={{ overflowX: "auto", p: { xs: 1.25, sm: 1.5 } }}>
       <Stack direction="row" sx={{ minWidth: 540 }}>
-        {["Created", "Confirmed", "Checked in", "Checked out"].map((label, index) => {
-          const done = !closed && index <= current;
-          const active = !closed && index === current;
+        {stages.map((label, index) => {
+          const done = closed ? index === 3 : index <= current;
+          const active = index === current;
           return <Stack key={label} direction="row" sx={{ alignItems: "center", flex: index < 3 ? 1 : "initial" }}><Box sx={{ bgcolor: done ? "primary.main" : "background.paper", border: "2px solid", borderColor: done ? "primary.main" : "divider", borderRadius: "50%", height: 14, width: 14 }} /><Typography color={active ? "text.primary" : "text.secondary"} variant="caption" sx={{ fontWeight: active ? 700 : 500, ml: 0.75 }}>{t(label)}</Typography>{index < 3 ? <Box sx={{ bgcolor: done && index < current ? "primary.main" : "divider", height: 2, flex: 1, mx: 1 }} /> : null}</Stack>;
         })}
       </Stack>
@@ -470,7 +518,7 @@ function ReservationFacts({ booking }: { booking: Booking }) {
   return <Paper variant="outlined" sx={{ p: 2 }}><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><ReceiptLongRoundedIcon color="primary" /><Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("Reservation record", "Kumbukumbu ya uhifadhi")}</Typography></Stack><Stack divider={<Divider flexItem />} spacing={0} sx={{ mt: 1 }}><DetailRow label={t("Created")} value={formatLocalDateTime(booking.createdAt)} /><DetailRow label={t("Checked in", "Aliingia")} value={booking.checkedInAt ? formatLocalDateTime(booking.checkedInAt) : t("Not yet")} /><DetailRow label={t("Checked out", "Alitoka")} value={booking.checkedOutAt ? formatLocalDateTime(booking.checkedOutAt) : t("Not yet")} /></Stack></Paper>;
 }
 
-function LifecycleModal(props: { action: BookingLifecycleAction | null; allowBalance: boolean; error: string | null; inventorySingular: string; reason: string; requiresSettlement: boolean; working: boolean; onAllowBalance: (value: boolean) => void; onClose: () => void; onConfirm: () => void; onReason: (value: string) => void }) {
+function LifecycleModal(props: { action: BookingLifecycleAction | null; allowBalance: boolean; canCheckoutWithBalance: boolean; error: string | null; inventorySingular: string; reason: string; requiresSettlement: boolean; working: boolean; onAllowBalance: (value: boolean) => void; onClose: () => void; onConfirm: () => void; onReason: (value: string) => void }) {
   const { t } = useLanguage();
   if (!props.action) return null;
   const definition = actionDefinitions[props.action];
@@ -489,8 +537,8 @@ function LifecycleModal(props: { action: BookingLifecycleAction | null; allowBal
     <ResponsiveModal open onClose={props.onClose} maxWidth="xs">
       <DialogTitle>{t(definition.title)}</DialogTitle>
       <Box aria-busy={props.working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); props.onConfirm(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}>
-        <DialogContent><Typography color="text.secondary">{actionDescription}</Typography>{balanceAction ? <Alert severity="warning" sx={{ mt: 2 }}>{t("This stay has an outstanding balance. Resolve it first or explicitly approve checkout with a balance.", "Ukaaji huu una salio. Lipa kwanza au thibitisha wazi kumtoa mgeni akiwa na salio.")}</Alert> : null}{balanceAction ? <FormControlLabel control={<Checkbox checked={props.allowBalance} onChange={(event) => props.onAllowBalance(event.target.checked)} />} label={t("Approve checkout with outstanding balance", "Thibitisha kutoka akiwa na salio")} sx={{ alignItems: "flex-start", mt: 1 }} /> : null}{needsReason ? <TextField autoFocus fullWidth label={t("Reason", "Sababu")} multiline minRows={3} value={props.reason} onChange={(event) => props.onReason(event.target.value)} sx={{ mt: 1.5 }} /> : null}{props.error ? <Alert severity="error" sx={{ mt: 1.5 }}>{props.error}</Alert> : null}</DialogContent>
-        <DialogActions><Button disabled={props.working} onClick={props.onClose}>{t("Back")}</Button><Button color={definition.dangerous ? "error" : "primary"} disabled={props.working || (needsReason && !props.reason.trim()) || (balanceAction && !props.allowBalance)} type="submit" variant="contained">{props.working ? t("Please wait…") : t(definition.label)}</Button></DialogActions>
+        <DialogContent><Typography color="text.secondary">{actionDescription}</Typography>{balanceAction ? <Alert severity={props.canCheckoutWithBalance ? "warning" : "info"} sx={{ mt: 2 }}>{props.canCheckoutWithBalance ? t("This stay has an outstanding balance. Resolve it first or explicitly approve checkout with a balance.", "Ukaaji huu una salio. Lipa kwanza au thibitisha wazi kumtoa mgeni akiwa na salio.") : t("Record the outstanding balance before checkout.", "Rekodi salio linalodaiwa kabla ya kumtoa mgeni.")}</Alert> : null}{balanceAction && props.canCheckoutWithBalance ? <FormControlLabel control={<Checkbox checked={props.allowBalance} onChange={(event) => props.onAllowBalance(event.target.checked)} />} label={t("Approve checkout with outstanding balance", "Thibitisha kutoka akiwa na salio")} sx={{ alignItems: "flex-start", mt: 1 }} /> : null}{needsReason ? <TextField autoFocus fullWidth label={t("Reason", "Sababu")} multiline minRows={3} value={props.reason} onChange={(event) => props.onReason(event.target.value)} sx={{ mt: 1.5 }} /> : null}{props.error ? <Alert severity="error" sx={{ mt: 1.5 }}>{props.error}</Alert> : null}</DialogContent>
+        <DialogActions><Button disabled={props.working} onClick={props.onClose}>{t("Back")}</Button><Button color={definition.dangerous ? "error" : "primary"} disabled={props.working || (needsReason && !props.reason.trim()) || (balanceAction && (!props.canCheckoutWithBalance || !props.allowBalance))} type="submit" variant="contained">{props.working ? t("Please wait…") : t(definition.label)}</Button></DialogActions>
       </Box>
     </ResponsiveModal>
   );
@@ -614,12 +662,12 @@ function AmendBookingModal({ booking, businessDate, inventorySingular, propertyI
   );
 }
 
-function PaymentModal({ booking, open, propertyId, onClose, onSaved }: { booking: Booking; open: boolean; propertyId: string; onClose: () => void; onSaved: () => Promise<void> }) {
+function PaymentModal({ booking, open, paymentMethods, propertyId, onClose, onSaved }: { booking: Booking; open: boolean; paymentMethods: AcceptedPaymentMethod[]; propertyId: string; onClose: () => void; onSaved: () => Promise<void> }) {
   const client = useMemo(() => createClient(), []);
   const { t } = useLanguage();
   const idempotencyKey = useRef(crypto.randomUUID());
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState("cash");
+  const [method, setMethod] = useState<AcceptedPaymentMethod>(paymentMethods[0] ?? "cash");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [working, setWorking] = useState(false);
@@ -661,7 +709,7 @@ function PaymentModal({ booking, open, propertyId, onClose, onSaved }: { booking
     }
   };
 
-  return <ResponsiveModal open={open} onClose={working ? undefined : onClose} maxWidth="xs"><DialogTitle>{t("Record payment")}</DialogTitle><Box aria-busy={working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void save(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}><DialogContent><Alert severity="info" sx={{ mb: 2 }}>{t("Outstanding balance", "Salio")}: {money.format(balance)}</Alert><Stack spacing={1.5}><TextField autoFocus disabled={working} label={t("Amount")} type="number" value={amount} onChange={(event) => changeAttempt(() => setAmount(event.target.value))} slotProps={{ input: { startAdornment: <Typography color="text.secondary" sx={{ mr: 1 }}>TZS</Typography> }, htmlInput: { min: 1, max: balance } }} /><TextField disabled={working} select label={t("Method")} value={method} onChange={(event) => changeAttempt(() => setMethod(event.target.value))}><MenuItem value="cash">{t("Cash")}</MenuItem><MenuItem value="mobile_money">{t("Mobile money")}</MenuItem><MenuItem value="card">{t("Card")}</MenuItem><MenuItem value="bank_transfer">{t("Bank transfer")}</MenuItem><MenuItem value="cheque">{t("Cheque")}</MenuItem><MenuItem value="other">{t("Other")}</MenuItem></TextField><TextField disabled={working} label={t("Reference (optional)", "Kumbukumbu (hiari)")} value={reference} onChange={(event) => changeAttempt(() => setReference(event.target.value))} /><TextField disabled={working} label={t("Notes (optional)", "Maelezo (hiari)")} multiline minRows={2} value={notes} onChange={(event) => changeAttempt(() => setNotes(event.target.value))} />{error ? <Alert severity="error">{error}</Alert> : null}</Stack></DialogContent><DialogActions><Button disabled={working} onClick={onClose}>{t("Cancel")}</Button><Button disabled={working || !validAmount} type="submit" variant="contained">{working ? t("Recording…") : t("Record payment")}</Button></DialogActions></Box></ResponsiveModal>;
+  return <ResponsiveModal open={open} onClose={working ? undefined : onClose} maxWidth="xs"><DialogTitle>{t("Record payment")}</DialogTitle><Box aria-busy={working} component="form" onSubmit={(event: FormEvent) => { event.preventDefault(); void save(); }} sx={{ display: "flex", flex: 1, flexDirection: "column", minHeight: 0 }}><DialogContent><Alert severity="info" sx={{ mb: 2 }}>{t("Outstanding balance", "Salio")}: {money.format(balance)}</Alert><Stack spacing={1.5}><TextField autoFocus disabled={working} label={t("Amount")} type="number" value={amount} onChange={(event) => changeAttempt(() => setAmount(event.target.value))} slotProps={{ input: { startAdornment: <Typography color="text.secondary" sx={{ mr: 1 }}>TZS</Typography> }, htmlInput: { min: 1, max: balance } }} /><TextField disabled={working} select label={t("Method")} value={method} onChange={(event) => changeAttempt(() => setMethod(event.target.value as AcceptedPaymentMethod))}>{paymentMethods.map((value) => { const option = acceptedPaymentMethods.find((item) => item.value === value); return option ? <MenuItem key={value} value={value}>{t(option.label[0], option.label[1])}</MenuItem> : null; })}</TextField><TextField disabled={working} label={t("Reference (optional)", "Kumbukumbu (hiari)")} value={reference} onChange={(event) => changeAttempt(() => setReference(event.target.value))} /><TextField disabled={working} label={t("Notes (optional)", "Maelezo (hiari)")} multiline minRows={2} value={notes} onChange={(event) => changeAttempt(() => setNotes(event.target.value))} />{error ? <Alert severity="error">{error}</Alert> : null}</Stack></DialogContent><DialogActions><Button disabled={working} onClick={onClose}>{t("Cancel")}</Button><Button disabled={working || !validAmount} type="submit" variant="contained">{working ? t("Recording…") : t("Record payment")}</Button></DialogActions></Box></ResponsiveModal>;
 }
 
 function BookingDetailsSkeleton() {

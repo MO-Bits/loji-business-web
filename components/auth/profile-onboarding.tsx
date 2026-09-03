@@ -1,11 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
 import { Alert, LinearProgress, Stack, TextField } from "@mui/material";
 
 import { SetupShell } from "@/components/onboarding/setup-shell";
 import { useLanguage } from "@/components/providers/language-provider";
+import { FullPageLoader } from "@/components/shared/full-page-loader";
+import { SessionErrorScreen } from "@/components/shared/session-error-screen";
+import { setupStepSlugs } from "@/features/onboarding/models/business-setup";
+import { useAppSession } from "@/features/session/hooks/use-app-session";
+import { AppStatus, AppStep } from "@/features/session/models/app-status";
+import { normalizeWorkspaceRole } from "@/features/session/permissions";
 import {
   getMyProfile,
   updateMyProfile,
@@ -13,6 +20,8 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 export function ProfileOnboarding() {
+  const router = useRouter();
+  const sessionState = useAppSession();
   const { t } = useLanguage();
   const supabase = useMemo(() => createClient(), []);
   const [displayName, setDisplayName] = useState("");
@@ -22,8 +31,34 @@ export function ProfileOnboarding() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const session = sessionState.session;
+  const profileSetupAllowed = session?.status === AppStatus.Onboarding &&
+    session.step === AppStep.Profile && Boolean(session.user);
 
   useEffect(() => {
+    if (sessionState.loading || sessionState.error || profileSetupAllowed) return;
+    if (!session?.user || session.status === AppStatus.Unauthenticated) {
+      router.replace("/login");
+      return;
+    }
+    if (session.status === AppStatus.Inactive) {
+      router.replace("/inactive");
+      return;
+    }
+    if (session.status === AppStatus.Ready) {
+      const role = normalizeWorkspaceRole(session.activeRole);
+      router.replace(role === "owner" ? "/dashboard" : role === "manager" || role === "receptionist" ? "/front-desk" : "/settings/profile");
+      return;
+    }
+    router.replace(
+      session.step === AppStep.PropertyBasic || session.step === AppStep.PropertyAddress
+        ? "/onboarding/property"
+        : "/",
+    );
+  }, [profileSetupAllowed, router, session, sessionState.error, sessionState.loading]);
+
+  useEffect(() => {
+    if (!profileSetupAllowed) return;
     let active = true;
     const timer = window.setTimeout(() => {
       Promise.all([getMyProfile(supabase), supabase.auth.getUser()])
@@ -36,7 +71,7 @@ export function ProfileOnboarding() {
               user?.email?.split("@")[0] ??
               "",
           );
-          setDisplayName(profile.displayName || fallbackName);
+          setDisplayName((profile.displayName || fallbackName).slice(0, 100));
           setPhone(profile.phone);
           setBio(profile.bio);
           setEmail(profile.email || user?.email || "");
@@ -58,7 +93,7 @@ export function ProfileOnboarding() {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [supabase, t]);
+  }, [profileSetupAllowed, supabase, t]);
 
   const save = async () => {
     const name = displayName.trim();
@@ -95,6 +130,11 @@ export function ProfileOnboarding() {
     window.location.replace("/login");
   };
 
+  if (sessionState.error) {
+    return <SessionErrorScreen error={sessionState.error} onRetry={() => void sessionState.refresh()} />;
+  }
+  if (sessionState.loading || !profileSetupAllowed) return <FullPageLoader />;
+
   return (
     <SetupShell
       description={t(
@@ -108,7 +148,7 @@ export function ProfileOnboarding() {
       onSignOut={() => void signOut()}
       step={1}
       title={t("What should your team call you?", "Timu yako ikuitaje?")}
-      totalSteps={10}
+      totalSteps={setupStepSlugs.length + 1}
     >
       <Stack
         component="form"
@@ -127,11 +167,11 @@ export function ProfileOnboarding() {
           fullWidth
           label={t("Your name", "Jina lako")}
           onChange={(event) => {
-            setDisplayName(event.target.value.slice(0, 120));
+            setDisplayName(event.target.value.slice(0, 100));
             setError(null);
           }}
           required
-          slotProps={{ htmlInput: { maxLength: 120 } }}
+          slotProps={{ htmlInput: { maxLength: 100 } }}
           value={displayName}
         />
         <TextField

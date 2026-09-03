@@ -6,12 +6,11 @@ Loji Business is a responsive hospitality operations application built with Next
 
 - Node.js 20.9 or newer
 - A Supabase project
-- Google Maps and Places API keys for property location selection
 
 ## Local setup
 
 1. Copy `.env.example` to `.env.local`.
-2. Add your Supabase and Google API values.
+2. Add your Supabase values.
 3. Install and run the application:
 
 ```bash

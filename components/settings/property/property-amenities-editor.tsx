@@ -12,7 +12,8 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { SettingsSection } from "@/components/settings/settings-shared";
 import { Surface } from "@/components/shared/workspace-ui";
 import { usePropertySettings } from "@/features/settings/property/hooks/use-property-settings";
-import { propertyAmenities, type PropertySettingsWorkspace } from "@/features/settings/property/models/property-settings";
+import { propertyOfferings } from "@/features/property/property-catalog";
+import { type PropertySettingsWorkspace } from "@/features/settings/property/models/property-settings";
 import { notifyPropertySettingsChanged, updatePropertyAmenities } from "@/features/settings/property/services/property-settings-service";
 import {
   EditorSaveBar,
@@ -54,8 +55,8 @@ function AmenitiesForm({ client, propertyId, workspace }: { client: ReturnType<t
   const dirty = JSON.stringify(selected) !== JSON.stringify(initial);
   const visible = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
-    return propertyAmenities.filter((amenity) =>
-      !term || `${amenity} ${t(amenity)}`.toLocaleLowerCase().includes(term),
+    return propertyOfferings.filter((offering) =>
+      !term || `${offering.value} ${t(offering.label[0], offering.label[1])}`.toLocaleLowerCase().includes(term),
     );
   }, [query, t]);
 
@@ -107,9 +108,9 @@ function AmenitiesForm({ client, propertyId, workspace }: { client: ReturnType<t
         <Stack spacing={2} sx={{ p: { xs: 2, sm: 2.5 } }}>
           <TextField label={t("Find an amenity", "Tafuta huduma")} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search facilities", "Tafuta huduma")} size="small" slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRoundedIcon fontSize="small" /></InputAdornment> } }} value={query} />
           <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" } }}>
-            {visible.map((amenity) => {
-              const active = selected.some((value) => value.toLocaleLowerCase() === amenity.toLocaleLowerCase());
-              return <Button aria-pressed={active} color={active ? "primary" : "inherit"} key={amenity} onClick={() => toggle(amenity)} startIcon={active ? <CheckRoundedIcon /> : <AddRoundedIcon />} sx={{ justifyContent: "flex-start" }} variant={active ? "contained" : "outlined"}>{t(amenity)}</Button>;
+            {visible.map((offering) => {
+              const active = selected.some((value) => value.toLocaleLowerCase() === offering.value.toLocaleLowerCase());
+              return <Button aria-pressed={active} color={active ? "primary" : "inherit"} key={offering.value} onClick={() => toggle(offering.value)} startIcon={active ? <CheckRoundedIcon /> : <AddRoundedIcon />} sx={{ justifyContent: "flex-start" }} variant={active ? "contained" : "outlined"}>{t(offering.label[0], offering.label[1])}</Button>;
             })}
           </Box>
         </Stack>

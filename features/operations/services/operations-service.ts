@@ -13,7 +13,7 @@ export async function getPropertyOperationsBoard(
   propertyId: string,
 ): Promise<OperationsBoard> {
   const call = client.rpc.bind(client) as unknown as JsonRpc;
-  const { data, error } = await call("get_property_operations_board", {
+  const { data, error } = await call("get_front_desk_workspace", {
     p_property_id: propertyId,
   });
   if (error) throw new Error(error.message);

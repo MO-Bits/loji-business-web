@@ -1,5 +1,5 @@
-import { OperationsScreen } from "@/components/operations/operations-screen";
+import { redirect } from "next/navigation";
 
 export default function OperationsPage() {
-  return <OperationsScreen />;
+  redirect("/front-desk");
 }

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
 import PublicRoundedIcon from "@mui/icons-material/PublicRounded";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
-import { Alert, Box, InputAdornment, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import { Alert, Box, ButtonBase, InputAdornment, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { useAppFeedback } from "@/components/providers/feedback-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { SettingsSection } from "@/components/settings/settings-shared";
@@ -20,17 +21,10 @@ import {
   PropertySettingsError,
   PropertySettingsLoading,
 } from "./property-settings-shared";
+import { acceptedPaymentMethods } from "@/features/property/property-catalog";
 
 const commonTimezones = [
   "Africa/Dar_es_Salaam",
-  "Africa/Nairobi",
-  "Africa/Kampala",
-  "Africa/Kigali",
-  "Africa/Bujumbura",
-  "Africa/Maputo",
-  "Africa/Johannesburg",
-  "Africa/Lusaka",
-  "UTC",
 ];
 
 export function PropertyOperationsEditor() {
@@ -50,13 +44,14 @@ function OperationsForm({ client, propertyId, workspace }: { client: ReturnType<
     timezone: workspace.property.timezone,
     checkinTime: workspace.property.checkinTime,
     checkoutTime: workspace.property.checkoutTime,
+    paymentMethods: workspace.property.paymentMethods.length ? workspace.property.paymentMethods : ["cash", "mobile_money"],
   };
   const [form, setForm] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timezoneOptions = useMemo(() => commonTimezones.includes(form.timezone) ? commonTimezones : [form.timezone, ...commonTimezones], [form.timezone]);
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
-  const invalid = !form.timezone || !/^\d{2}:\d{2}$/.test(form.checkinTime) || !/^\d{2}:\d{2}$/.test(form.checkoutTime);
+  const invalid = !form.timezone || !/^\d{2}:\d{2}$/.test(form.checkinTime) || !/^\d{2}:\d{2}$/.test(form.checkoutTime) || form.checkinTime === form.checkoutTime || !form.paymentMethods.length;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -94,6 +89,14 @@ function OperationsForm({ client, propertyId, workspace }: { client: ReturnType<
         <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" }, p: { xs: 2, sm: 2.5 } }}>
           <TextField helperText={t("When rooms normally become available.", "Muda ambao vyumba huwa tayari kwa kawaida.")} label={t("Standard check-in time", "Muda wa kawaida wa kuingia")} onChange={(event) => setForm((current) => ({ ...current, checkinTime: event.target.value }))} slotProps={{ htmlInput: { step: 300 }, input: { startAdornment: <InputAdornment position="start"><AccessTimeRoundedIcon fontSize="small" /></InputAdornment> }, inputLabel: { shrink: true } }} type="time" value={form.checkinTime} />
           <TextField helperText={t("When departing guests should release rooms.", "Muda ambao wageni wanaotoka wanapaswa kuacha vyumba.")} label={t("Standard checkout time", "Muda wa kawaida wa kutoka")} onChange={(event) => setForm((current) => ({ ...current, checkoutTime: event.target.value }))} slotProps={{ htmlInput: { step: 300 }, input: { startAdornment: <InputAdornment position="start"><AccessTimeRoundedIcon fontSize="small" /></InputAdornment> }, inputLabel: { shrink: true } }} type="time" value={form.checkoutTime} />
+        </Box>
+      </SettingsSection>
+      <SettingsSection description={t("Choose every method staff may record when collecting guest payments.", "Chagua kila njia ambayo wafanyakazi wanaweza kurekodi wanapokusanya malipo ya wageni.")} title={t("Accepted payment methods", "Njia za malipo zinazokubaliwa")}>
+        <Box sx={{ display: "grid", gap: 1, gridTemplateColumns: { xs: "1fr", sm: "repeat(2,minmax(0,1fr))" }, p: { xs: 2, sm: 2.5 } }}>
+          {acceptedPaymentMethods.map((method) => {
+            const selected = form.paymentMethods.includes(method.value);
+            return <ButtonBase aria-pressed={selected} key={method.value} onClick={() => setForm((current) => ({ ...current, paymentMethods: selected ? current.paymentMethods.filter((value) => value !== method.value) : [...current.paymentMethods, method.value] }))} sx={{ alignItems: "center", border: "1px solid", borderColor: selected ? "primary.main" : "divider", borderRadius: 2, display: "flex", gap: 1, justifyContent: "flex-start", minHeight: 58, p: 1.25, textAlign: "left" }}><Box sx={{ bgcolor: selected ? "primary.main" : "action.selected", borderRadius: "50%", color: selected ? "primary.contrastText" : "text.disabled", display: "grid", flexShrink: 0, height: 24, placeItems: "center", width: 24 }}><CheckRoundedIcon sx={{ fontSize: 17 }} /></Box><Box><Typography sx={{ fontWeight: 700 }} variant="body2">{t(method.label[0], method.label[1])}</Typography><Typography color="text.secondary" variant="caption">{t(method.description[0], method.description[1])}</Typography></Box></ButtonBase>;
+          })}
         </Box>
       </SettingsSection>
       <EditorSaveBar dirty={dirty && !invalid} saving={saving} />

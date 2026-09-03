@@ -38,6 +38,7 @@ type PropertyRow = {
   checkin_time: string;
   checkout_time: string;
   amenities: Json | null;
+  payment_methods: Json;
   images: Json | null;
   onboarding_request_key: string | null;
   created_at: string | null;
@@ -185,6 +186,22 @@ type PropertyInvitationRow = {
   rejected_by: string | null;
 };
 
+type CashierClosingRow = {
+  id: string;
+  property_id: string;
+  business_date: string;
+  cashier_id: string;
+  request_key: string;
+  request_fingerprint: string;
+  opening_float: number;
+  expected_cash: number;
+  counted_cash: number;
+  variance: number;
+  notes: string | null;
+  closed_at: string;
+  created_at: string;
+};
+
 type NotificationType =
   | "booking_created"
   | "booking_cancelled"
@@ -218,6 +235,7 @@ export type Database = {
       property_users: DbTable<PropertyUserRow>;
       user_profiles: DbTable<UserProfileRow>;
       property_invitations: DbTable<PropertyInvitationRow>;
+      cashier_closings: DbTable<CashierClosingRow>;
       notifications: DbTable<{
         id: string;
         user_id: string;
@@ -366,6 +384,7 @@ export type Database = {
       get_room_workspace: { Args: { p_property_id: string; p_room_id: string }; Returns: Json };
       get_property_inventory_setup: { Args: { p_property_id: string }; Returns: Json };
       get_property_operations_board: { Args: { p_property_id: string }; Returns: Json };
+      get_front_desk_workspace: { Args: { p_property_id: string }; Returns: Json };
       create_inventory_unit: {
         Args: { p_property_id: string; p_unit_id: string; p_name: string; p_space_type: string; p_inventory_type: string; p_is_active: boolean; p_price_per_night: number; p_capacity: number; p_bed_count: number; p_bedroom_count: number; p_bathroom_count: number; p_description: string | null; p_amenities: string[]; p_images: Json };
         Returns: Json;
@@ -445,6 +464,9 @@ export type Database = {
       get_property_calendar: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
       get_owner_finance_dashboard: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
       get_property_finance_dashboard: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
+      get_finance_outstanding_balances: { Args: { p_property_id: string }; Returns: Json };
+      get_cashier_close_workspace: { Args: { p_property_id: string }; Returns: Json };
+      close_cashier_day: { Args: { p_property_id: string; p_request_key: string; p_opening_float: number; p_counted_cash: number; p_notes?: string | null }; Returns: Json };
       list_property_payments: { Args: { p_property_id: string; p_from?: string | null; p_to?: string | null; p_status?: string | null; p_search?: string | null; p_method?: string | null; p_limit?: number; p_offset?: number }; Returns: Json };
       list_property_finance_entries: { Args: { p_property_id: string; p_from?: string | null; p_to?: string | null; p_status?: string | null; p_search?: string | null; p_method?: string | null; p_limit?: number; p_offset?: number }; Returns: Json };
       reverse_booking_payment: { Args: { p_property_id: string; p_payment_id: string; p_action: string; p_reason: string; p_idempotency_key: string }; Returns: Json };
@@ -470,6 +492,8 @@ export type Database = {
       get_property_settings: { Args: { p_property_id: string }; Returns: Json };
       update_property_profile: { Args: { p_property_id: string; p_name: string; p_description?: string | null; p_property_type?: string | null; p_phone?: string | null; p_email?: string | null }; Returns: Json };
       update_property_operational_settings: { Args: { p_property_id: string; p_timezone: string; p_checkin_time: string; p_checkout_time: string }; Returns: Json };
+      update_property_operations_and_payments: { Args: { p_property_id: string; p_timezone: string; p_checkin_time: string; p_checkout_time: string; p_payment_methods: string[] }; Returns: Json };
+      update_property_payment_methods: { Args: { p_property_id: string; p_payment_methods: string[] }; Returns: Json };
       update_property_amenities: { Args: { p_property_id: string; p_amenities: string[] }; Returns: Json };
       update_property_location: { Args: { p_property_id: string; p_country?: string | null; p_region?: string | null; p_district?: string | null; p_ward?: string | null; p_street?: string | null; p_formatted_address?: string | null; p_place_id?: string | null; p_latitude?: number | null; p_longitude?: number | null }; Returns: Json };
       update_property_gallery: { Args: { p_property_id: string; p_images: string[] }; Returns: Json };
