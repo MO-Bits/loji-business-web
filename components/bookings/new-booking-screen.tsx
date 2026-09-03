@@ -433,7 +433,7 @@ function BookingWizard({ businessDate, propertyId, propertyType, paymentMethods,
       if (smsSent) {
         feedback.success(`${bookingMessage} ${t("SMS sent.", "SMS imetumwa.")}`);
       } else {
-        feedback.error(`${bookingMessage} ${t("SMS could not be sent; open the booking to try again.", "SMS haikutumwa; fungua uhifadhi ujaribu tena.")}`);
+        feedback.error(`${bookingMessage} ${t("The automatic SMS could not be delivered.", "SMS ya moja kwa moja haikuweza kufikishwa.")}`);
       }
       router.replace(result.bookingId ? `/bookings/${result.bookingId}` : "/bookings");
       router.refresh();
@@ -542,9 +542,12 @@ function WizardHeader({ activeStep, inventoryPlural, onBack }: { activeStep: num
     <Stack component="header" direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>
       <IconButton aria-label={t("Go back")} type="button" onClick={onBack} sx={{ border: "1px solid", borderColor: "divider" }}><ArrowBackRoundedIcon /></IconButton>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography color="text.secondary" variant="overline">{t("Reservations")} · {t(`Step ${activeStep + 1} of ${steps.length}`)}</Typography>
-        <Typography component="h1" variant="h3">{t("Create a booking")}</Typography>
+        <Typography color="text.secondary" sx={{ display: { xs: "none", sm: "block" } }} variant="overline">{t("Reservations")} · {t(`Step ${activeStep + 1} of ${steps.length}`)}</Typography>
+        <Typography component="h1" sx={{ display: { xs: "none", sm: "block" } }} variant="h3">{t("Create a booking")}</Typography>
         <Typography color="text.secondary" variant="body2" sx={{ display: { xs: "none", sm: "block" }, mt: 0.35 }}>{t(`Live ${inventoryPlural} availability, guest details and optional payment.`, `Upatikanaji wa ${inventoryPlural}, taarifa za mgeni na malipo ya hiari.`)}</Typography>
+        <Typography color="text.secondary" sx={{ display: { xs: "block", sm: "none" }, fontWeight: 500 }} variant="caption">
+          {t(`Step ${activeStep + 1} of ${steps.length}`, `Hatua ya ${activeStep + 1} kati ya ${steps.length}`)}
+        </Typography>
         <LinearProgress aria-label={t("Booking progress")} value={((activeStep + 1) / steps.length) * 100} variant="determinate" sx={{ display: { xs: "block", sm: "none" }, height: 4, mt: 1.25 }} />
       </Box>
     </Stack>

@@ -23,7 +23,6 @@ import {
   Typography,
 } from "@mui/material";
 import { FullPageLoader } from "@/components/shared/full-page-loader";
-import { BrandSymbol } from "@/components/shared/brand-symbol";
 import { SessionErrorScreen } from "@/components/shared/session-error-screen";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { AppStatus } from "@/features/session/models/app-status";
@@ -56,6 +55,7 @@ function getLocationLabel(
   if (pathname.endsWith("/edit") && pathname.startsWith("/rooms/")) return translate(`Edit ${singular}`, `Hariri ${singular}`);
   if (pathname.startsWith("/rooms/")) return translate(`${singular} details`, `Maelezo ya ${singular}`);
   if (pathname === "/rooms") return plural;
+  if (pathname.endsWith("/edit") && pathname.startsWith("/guests/")) return translate("Edit guest", "Hariri mgeni");
   if (pathname.startsWith("/guests/")) return translate("Guest profile", "Taarifa za mgeni");
   if (pathname.startsWith("/guests")) return translate("Guests", "Wageni");
   if (pathname.startsWith("/operations")) return translate("Operations", "Shughuli");
@@ -64,7 +64,13 @@ function getLocationLabel(
   if (pathname.startsWith("/reports")) return translate("Reports", "Ripoti");
   if (pathname.startsWith("/activity")) return translate("Activity", "Matukio");
   if (pathname.startsWith("/notifications")) return translate("Notifications", "Arifa");
-  if (pathname.startsWith("/settings/property")) return translate("Property", "Biashara");
+  if (pathname.startsWith("/settings/property/photos")) return translate("Property photos", "Picha za biashara");
+  if (pathname.startsWith("/settings/property/amenities")) return translate("Services & amenities", "Huduma na vistawishi");
+  if (pathname.startsWith("/settings/property/location")) return translate("Property address", "Anwani ya biashara");
+  if (pathname.startsWith("/settings/property/operations")) return translate("Booking preferences", "Mipangilio ya uhifadhi");
+  if (pathname.startsWith("/settings/property/visibility")) return translate("Property status", "Hali ya biashara");
+  if (pathname.startsWith("/settings/property/profile")) return translate("Property information", "Taarifa za biashara");
+  if (pathname.startsWith("/settings/property")) return translate("Property settings", "Mipangilio ya biashara");
   if (pathname.startsWith("/settings/team")) return translate("Team & access", "Timu na ruhusa");
   if (pathname.startsWith("/settings")) return translate("Settings", "Mipangilio");
   if (pathname === "/more/property") return translate("Property", "Biashara");
@@ -87,15 +93,12 @@ export function MainShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
   const requiredCapability = requiredCapabilityForPath(pathname);
-  const dashboardAllowed =
-    session?.activeRole === "owner" && capabilities.canViewBookings && capabilities.canViewRooms;
+  const dashboardAllowed = capabilities.canViewBookings && capabilities.canViewRooms;
   const routeAllowed =
     pathname === "/dashboard"
       ? dashboardAllowed
       : !requiredCapability || capabilities[requiredCapability];
-  const homePath = session?.activeRole === "receptionist" || session?.activeRole === "manager"
-    ? "/front-desk"
-    : dashboardAllowed ? "/dashboard" : "/settings/profile";
+  const homePath = dashboardAllowed ? "/dashboard" : "/settings/profile";
 
   const guardInternalLink = (event: ReactMouseEvent<HTMLElement>) => {
     if (
@@ -206,20 +209,12 @@ export function MainShell({ children }: { children: React.ReactNode }) {
       );
       const nextRole = nextMembership?.role;
       const nextCapabilities = getWorkspaceCapabilities(nextRole);
-      const nextDashboardAllowed =
-        nextRole === "owner" &&
-        nextCapabilities.canViewBookings &&
-        nextCapabilities.canViewRooms;
+      const nextDashboardAllowed = nextCapabilities.canViewBookings && nextCapabilities.canViewRooms;
       const nextRouteAllowed =
         pathname === "/dashboard"
           ? nextDashboardAllowed
           : !requiredCapability || nextCapabilities[requiredCapability];
-      const nextHomePath =
-        nextRole === "manager" || nextRole === "receptionist"
-          ? "/front-desk"
-          : nextDashboardAllowed
-            ? "/dashboard"
-            : "/settings/profile";
+      const nextHomePath = nextDashboardAllowed ? "/dashboard" : "/settings/profile";
 
       await switchProperty(propertyId);
       clearDrafts();
@@ -356,23 +351,6 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                 minWidth: 0,
               }}
             >
-              <Box
-                component={Link}
-                href={homePath}
-                aria-label={homePath === "/settings/profile"
-                  ? t("Open my account", "Fungua akaunti yangu")
-                  : t("Loji Business home", "Nyumbani Loji Business")}
-                sx={{
-                  alignItems: "center",
-                  display: "inline-flex",
-                  flexShrink: 0,
-                  justifyContent: "center",
-                  minHeight: 44,
-                  minWidth: 44,
-                }}
-              >
-                <BrandSymbol priority size={30} />
-              </Box>
               <Typography noWrap sx={{ fontSize: ".9375rem", fontWeight: 700 }}>{locationLabel}</Typography>
             </Stack>
 

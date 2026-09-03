@@ -182,27 +182,6 @@ export const theme = createTheme({
         sizeSmall: { height: 24 },
       },
     },
-    MuiFab: {
-      defaultProps: { disableRipple: false },
-      styleOverrides: {
-        root: {
-          boxShadow: "0 8px 24px rgba(0,122,255,.24)",
-          minHeight: 48,
-          textTransform: "none",
-          "&:hover": {
-            boxShadow: "0 12px 30px rgba(0,122,255,.3)",
-            transform: "translateY(-1px)",
-          },
-          "&:active": { transform: "scale(.98)" },
-        },
-        extended: {
-          borderRadius: 999,
-          fontSize: ".875rem",
-          fontWeight: 700,
-          paddingInline: 20,
-        },
-      },
-    },
     MuiIconButton: {
       styleOverrides: {
         root: {

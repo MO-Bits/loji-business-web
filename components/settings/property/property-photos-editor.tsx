@@ -5,7 +5,10 @@ import Image from "next/image";
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import AddPhotoAlternateRoundedIcon from "@mui/icons-material/AddPhotoAlternateRounded";
+import ArrowDownwardRoundedIcon from "@mui/icons-material/ArrowDownwardRounded";
+import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import FindReplaceRoundedIcon from "@mui/icons-material/FindReplaceRounded";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import StarOutlineRoundedIcon from "@mui/icons-material/StarOutlineRounded";
@@ -156,6 +159,48 @@ function PhotosForm({
       previewUrls.current.delete(item.url);
     }
     setItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    setMenuAnchor(null);
+    setMenuPhotoId(null);
+  };
+
+  const movePhoto = (index: number, direction: -1 | 1) => {
+    const destination = index + direction;
+    if (index < 0 || destination < 0 || destination >= items.length) return;
+    setItems((current) => {
+      const next = [...current];
+      [next[index], next[destination]] = [next[destination], next[index]];
+      return next;
+    });
+    setMenuAnchor(null);
+    setMenuPhotoId(null);
+  };
+
+  const replacePhoto = (event: ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || index < 0 || index >= items.length) return;
+    if (
+      !ACCEPTED_PHOTO_TYPES.has(file.type)
+      || !file.size
+      || file.size > MAX_PROPERTY_PHOTO_BYTES
+    ) {
+      setError(t(
+        `${file.name} must be a JPG, PNG or WebP image under 5 MB.`,
+        `${file.name} lazima iwe JPG, PNG au WebP chini ya MB 5.`,
+      ));
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    previewUrls.current.add(url);
+    setItems((current) => current.map((item, itemIndex) => {
+      if (itemIndex !== index) return item;
+      if (item.kind === "file") {
+        URL.revokeObjectURL(item.url);
+        previewUrls.current.delete(item.url);
+      }
+      return { file, id: crypto.randomUUID(), kind: "file", url };
+    }));
+    setError(null);
     setMenuAnchor(null);
     setMenuPhotoId(null);
   };
@@ -456,6 +501,30 @@ function PhotosForm({
           <MenuItem onClick={() => makeCover(menuIndex)} sx={{ minHeight: 48 }}>
             <ListItemIcon><StarOutlineRoundedIcon fontSize="small" /></ListItemIcon>
             <ListItemText>{t("Make cover", "Weka jalada")}</ListItemText>
+          </MenuItem>
+        ) : null}
+        {menuIndex >= 0 ? (
+          <MenuItem component="label" sx={{ minHeight: 48 }}>
+            <ListItemIcon><FindReplaceRoundedIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t("Replace photo", "Badilisha picha")}</ListItemText>
+            <input
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              onChange={(event) => replacePhoto(event, menuIndex)}
+              type="file"
+            />
+          </MenuItem>
+        ) : null}
+        {menuIndex > 0 ? (
+          <MenuItem onClick={() => movePhoto(menuIndex, -1)} sx={{ minHeight: 48 }}>
+            <ListItemIcon><ArrowUpwardRoundedIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t("Move earlier", "Sogeza mbele")}</ListItemText>
+          </MenuItem>
+        ) : null}
+        {menuIndex >= 0 && menuIndex < items.length - 1 ? (
+          <MenuItem onClick={() => movePhoto(menuIndex, 1)} sx={{ minHeight: 48 }}>
+            <ListItemIcon><ArrowDownwardRoundedIcon fontSize="small" /></ListItemIcon>
+            <ListItemText>{t("Move later", "Sogeza nyuma")}</ListItemText>
           </MenuItem>
         ) : null}
         {menuIndex >= 0 ? (

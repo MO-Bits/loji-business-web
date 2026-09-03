@@ -27,7 +27,7 @@ export function SettingsPageHeader({
       spacing={2}
       sx={{ alignItems: { sm: "flex-start" }, justifyContent: "space-between" }}
     >
-      <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", minWidth: 0 }}>
+      <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", display: { xs: "none", sm: "flex" }, minWidth: 0 }}>
         {icon ? (
           <Box
             aria-hidden="true"

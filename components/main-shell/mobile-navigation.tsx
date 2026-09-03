@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
 import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import BedOutlinedIcon from "@mui/icons-material/BedOutlined";
@@ -70,7 +69,7 @@ export function MobileNavigation({
   const activeValue = getMobileNavigationValue(pathname);
   const items: MobileNavigationItem[] = [];
 
-  if (role === "owner" && dashboardAllowed) {
+  if (dashboardAllowed) {
     items.push({
       activeIcon: <HomeRoundedIcon />,
       icon: <HomeOutlinedIcon />,
@@ -97,16 +96,7 @@ export function MobileNavigation({
     });
   }
 
-  if (role === "receptionist" && capabilities.canCreateBooking) {
-    items.push({
-      activeIcon: <AddRoundedIcon />,
-      icon: <AddRoundedIcon />,
-      label: t("New", "Mpya"),
-      value: "/bookings/new",
-    });
-  }
-
-  if (role !== "owner" && capabilities.canViewRooms) {
+  if (role === "receptionist" && capabilities.canViewRooms) {
     items.push({
       activeIcon: <BedRoundedIcon />,
       icon: <BedOutlinedIcon />,

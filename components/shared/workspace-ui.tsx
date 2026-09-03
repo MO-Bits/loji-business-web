@@ -157,7 +157,7 @@ export function MetricCell({
   const localizedCaption = typeof caption === "string" ? t(caption) : caption;
   const localizedLabel = typeof label === "string" ? t(label) : label;
   const content = (
-    <Stack spacing={1.25} sx={{ height: "100%" }}>
+    <Stack spacing={1.25} sx={{ height: "100%", minWidth: 0 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
         {icon ? (
           <Box
@@ -175,17 +175,19 @@ export function MetricCell({
             {icon}
           </Box>
         ) : null}
-        <Typography color="text.secondary" variant="body2" sx={{ fontWeight: 500 }}>
+        <Typography color="text.secondary" variant="body2" sx={{ fontWeight: 500, minWidth: 0, overflowWrap: "anywhere" }}>
           {localizedLabel}
         </Typography>
       </Stack>
       <Typography
         sx={{
-          fontSize: { xs: "1.5rem", sm: "1.75rem" },
+          fontSize: { xs: "clamp(1.125rem, 5vw, 1.5rem)", sm: "1.75rem" },
           fontVariantNumeric: "tabular-nums",
           fontWeight: 700,
           letterSpacing: "-.035em",
           lineHeight: 1.05,
+          minWidth: 0,
+          overflowWrap: "anywhere",
         }}
       >
         {value}

@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import AddBusinessRoundedIcon from "@mui/icons-material/AddBusinessRounded";
 import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
@@ -11,7 +9,6 @@ import {
   Box,
   ButtonBase,
   CircularProgress,
-  Divider,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -47,13 +44,10 @@ export function PropertySwitcher({
   const { t } = useLanguage();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [switchingId, setSwitchingId] = useState<string | null>(null);
-  const membershipIds = useMemo(
-    () =>
-      memberships
-        .map((membership) => membership.property_id)
-        .filter((id): id is string => Boolean(id)),
-    [memberships],
+  const activeMembership = memberships.find(
+    (membership) => membership.property_id === activePropertyId,
   );
+  const isOwner = activeMembership?.role?.trim().toLowerCase() === "owner";
 
   const options = useMemo<PropertyOption[]>(
     () =>
@@ -78,14 +72,11 @@ export function PropertySwitcher({
   );
 
   const propertyName = String(property?.name ?? t("Property", "Biashara"));
-  const visibleOptions = options.filter((option) => membershipIds.includes(option.id));
-  const canSwitch = visibleOptions.length > 1;
-  const canAddProperty = memberships.some(
-    (membership) =>
-      membership.property_id === activePropertyId &&
-      membership.role?.trim().toLowerCase() === "owner",
+  const visibleOptions = options.filter(
+    (option) => option.role?.trim().toLowerCase() === "owner",
   );
-  const canOpenMenu = canSwitch || canAddProperty;
+  const canSwitch = isOwner && visibleOptions.length > 1;
+  const canOpenMenu = canSwitch;
   const sidebar = placement === "sidebar";
 
   const handleSwitch = async (propertyId: string) => {
@@ -234,25 +225,6 @@ export function PropertySwitcher({
             </MenuItem>
           );
         })}
-        {canAddProperty ? (
-          <>
-            <Divider sx={{ my: 0.75 }} />
-            <MenuItem
-              component={Link}
-              href="/properties/new"
-              onClick={() => setAnchorEl(null)}
-              sx={{ minHeight: 48 }}
-            >
-              <ListItemIcon>
-                <AddBusinessRoundedIcon color="primary" fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary={t("Add another property", "Ongeza biashara nyingine")}
-                slotProps={{ primary: { sx: { fontWeight: 700 } } }}
-              />
-            </MenuItem>
-          </>
-        ) : null}
       </Menu>
     </>
   );

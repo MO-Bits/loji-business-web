@@ -47,7 +47,7 @@ export function ProfileOnboarding() {
     }
     if (session.status === AppStatus.Ready) {
       const role = normalizeWorkspaceRole(session.activeRole);
-      router.replace(role === "owner" ? "/dashboard" : role === "manager" || role === "receptionist" ? "/front-desk" : "/settings/profile");
+      router.replace(role === "member" ? "/settings/profile" : "/dashboard");
       return;
     }
     router.replace(

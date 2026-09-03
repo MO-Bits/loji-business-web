@@ -161,8 +161,7 @@ div {
 
 .MuiButton-root,
 .MuiIconButton-root,
-.MuiListItemButton-root,
-.MuiFab-root {
+.MuiListItemButton-root {
   touch-action: manipulation;
 }
 

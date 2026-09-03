@@ -74,6 +74,7 @@ export function DashboardHeader({
         <Typography
           component="h1"
           sx={{
+            display: { xs: "none", sm: "block" },
             fontSize: { xs: "1.5rem", sm: "1.75rem" },
             fontWeight: 700,
             letterSpacing: "-.035em",
@@ -86,7 +87,7 @@ export function DashboardHeader({
         <Stack
           direction="row"
           spacing={0.75}
-          sx={{ alignItems: "center", flexWrap: "wrap", mt: 0.75, rowGap: 0.75 }}
+          sx={{ alignItems: "center", display: { xs: "none", sm: "flex" }, flexWrap: "wrap", mt: 0.75, rowGap: 0.75 }}
         >
           <StatusPill label={roleLabel} tone="info" />
           <StatusPill

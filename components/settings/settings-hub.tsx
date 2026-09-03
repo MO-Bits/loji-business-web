@@ -3,13 +3,14 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
+import AddBusinessRoundedIcon from "@mui/icons-material/AddBusinessRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import BusinessOutlinedIcon from "@mui/icons-material/BusinessOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import TuneRoundedIcon from "@mui/icons-material/TuneRounded";
-import { Avatar, Box, Chip, Paper, Stack, Typography } from "@mui/material";
+import { Avatar, Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 
 import { useLanguage } from "@/components/providers/language-provider";
 import { Surface } from "@/components/shared/workspace-ui";
@@ -141,19 +142,24 @@ export function SettingsHub() {
 
       {capabilities.canManageProperty || capabilities.canManageStaff ? (
         <Box>
-          <Typography component="h3" variant="h5">
-            {t("Workspace administration", "Usimamizi wa biashara")}
-          </Typography>
-          <Typography
-            color="text.secondary"
-            sx={{ mt: 0.4, mb: 1.5 }}
-            variant="body2"
-          >
-            {t(
-              "These options are shown because of your role in this workspace.",
-              "Chaguo hizi zinaonekana kulingana na jukumu lako kwenye biashara hii.",
-            )}
-          </Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ alignItems: { sm: "flex-end" }, justifyContent: "space-between", mb: 1.5 }}>
+            <Box>
+              <Typography component="h3" variant="h5">
+                {t("Workspace administration", "Usimamizi wa biashara")}
+              </Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.4 }} variant="body2">
+                {t(
+                  "These options are shown because of your role in this workspace.",
+                  "Chaguo hizi zinaonekana kulingana na jukumu lako kwenye biashara hii.",
+                )}
+              </Typography>
+            </Box>
+            {role === "owner" ? (
+              <Button component={Link} href="/properties/new" startIcon={<AddBusinessRoundedIcon />} variant="outlined">
+                {t("Add property", "Ongeza biashara")}
+              </Button>
+            ) : null}
+          </Stack>
           <Box
             sx={{
               display: "grid",

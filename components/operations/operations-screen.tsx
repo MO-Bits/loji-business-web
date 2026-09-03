@@ -227,14 +227,10 @@ export function OperationsScreen() {
             display: "grid",
             gap: { xs: 1.25, sm: 1.5 },
             gridTemplateColumns: {
-              xs: "repeat(6,minmax(180px,72vw))",
+              xs: "repeat(2,minmax(0,1fr))",
               sm: "repeat(3,minmax(0,1fr))",
               lg: "repeat(6,minmax(0,1fr))",
             },
-            overflowX: { xs: "auto", sm: "visible" },
-            pb: { xs: 0.5, sm: 0 },
-            scrollSnapType: { xs: "x proximity", sm: "none" },
-            "& > *": { scrollSnapAlign: "start" },
           }}
         >
           <MetricCell caption={summary?.overdueArrivals ? t(`${summary.overdueArrivals} overdue`, `${summary.overdueArrivals} wamechelewa`) : t("Expected today", "Wanatarajiwa leo")} icon={<FlightLandRoundedIcon />} label={t("Arrivals", "Wanaowasili")} tone={summary?.overdueArrivals ? "warning" : "info"} value={summary?.arrivalsDue ?? 0} />

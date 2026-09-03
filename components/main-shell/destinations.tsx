@@ -149,7 +149,6 @@ export const managementDestinations: MainDestination[] = [
     icon: <BusinessOutlinedIcon />,
     activeIcon: <BusinessRoundedIcon />,
     match: (path) => path.startsWith("/settings/property"),
-    sidebar: false,
   },
   {
     label: "Staff",
@@ -159,7 +158,6 @@ export const managementDestinations: MainDestination[] = [
     icon: <GroupsOutlinedIcon />,
     activeIcon: <GroupsRoundedIcon />,
     match: (path) => path.startsWith("/settings/team"),
-    sidebar: false,
   },
 ];
 

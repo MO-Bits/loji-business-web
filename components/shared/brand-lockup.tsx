@@ -1,6 +1,4 @@
-import { Stack, Typography, type SxProps, type Theme } from "@mui/material";
-
-import { BrandSymbol } from "@/components/shared/brand-symbol";
+import { Typography, type SxProps, type Theme } from "@mui/material";
 
 type BrandLockupProps = {
   color?: string;
@@ -12,39 +10,30 @@ type BrandLockupProps = {
 
 export function BrandLockup({
   color,
-  priority = false,
-  symbolSize = 32,
+  priority: _priority = false,
+  symbolSize: _symbolSize = 32,
   textSize = "1rem",
   sx,
 }: BrandLockupProps) {
   return (
-    <Stack
+    <Typography
       aria-label="Loji Business"
       component="span"
-      direction="row"
-      spacing={1}
+      data-priority={_priority ? "true" : undefined}
+      data-symbol-size={_symbolSize}
+      noWrap
       sx={{
-        alignItems: "center",
+        color: color ?? "text.primary",
         display: "inline-flex",
+        fontSize: textSize,
+        fontWeight: 700,
+        letterSpacing: "-.025em",
+        lineHeight: 1,
         minWidth: 0,
         ...sx,
       }}
     >
-      <BrandSymbol priority={priority} size={symbolSize} />
-      <Typography
-        component="span"
-        noWrap
-        sx={{
-          color: color ?? "text.primary",
-          fontSize: textSize,
-          fontWeight: 700,
-          letterSpacing: "-.025em",
-          lineHeight: 1,
-          transform: "translateY(-.5px)",
-        }}
-      >
-        Loji Business
-      </Typography>
-    </Stack>
+      Loji Business
+    </Typography>
   );
 }
