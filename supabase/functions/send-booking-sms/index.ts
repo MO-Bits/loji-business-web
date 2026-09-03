@@ -44,6 +44,30 @@ function moneyLabel(value: number) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
 }
 
+const wait = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+async function sendWithRetry(url: string, init: RequestInit, maximumAttempts = 3) {
+  let lastResponse: Response | null = null;
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+    try {
+      const response = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
+      lastResponse = response;
+      if (response.ok || (response.status < 500 && response.status !== 429) || attempt === maximumAttempts) {
+        return { response, attempt };
+      }
+    } catch (error) {
+      lastError = error;
+      if (attempt === maximumAttempts) throw error;
+    }
+    await wait(350 * (2 ** (attempt - 1)));
+  }
+
+  if (lastResponse) return { response: lastResponse, attempt: maximumAttempts };
+  throw lastError ?? new Error("The SMS provider did not respond.");
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json({ success: false, error: "Method not allowed." }, 405);
@@ -111,32 +135,76 @@ Deno.serve(async (request) => {
     const senderId = Deno.env.get("BEEM_SENDER_ID");
     if (!apiKey || !beemSecret || !senderId) throw new Error("Beem credentials are missing.");
 
-    const { error: claimError } = await admin.from("booking_sms_deliveries").insert({
-      booking_id: booking.id,
-      property_id: booking.property_id,
-      status: "sending",
-    });
-    if (claimError) {
-      if (claimError.code === "23505") {
-        return json({ success: true, alreadySent: true });
+    const { data: existingDelivery, error: deliveryLookupError } = await admin
+      .from("booking_sms_deliveries")
+      .select("status, claimed_at, attempt_count")
+      .eq("booking_id", booking.id)
+      .maybeSingle();
+    if (deliveryLookupError) throw new Error("Unable to check the automatic SMS delivery.");
+    if (existingDelivery?.status === "sent") return json({ success: true, alreadySent: true });
+
+    const claimedAt = new Date().toISOString();
+    if (existingDelivery) {
+      const staleSending = existingDelivery.status === "sending"
+        && Date.now() - new Date(existingDelivery.claimed_at).getTime() >= 60_000;
+      if (existingDelivery.status === "sending" && !staleSending) {
+        return json({ success: false, retryable: true, error: "The automatic SMS is already being sent." }, 409);
       }
-      throw new Error("Unable to reserve the automatic SMS delivery.");
+      const { data: reclaimed, error: reclaimError } = await admin
+        .from("booking_sms_deliveries")
+        .update({
+          attempt_count: Number(existingDelivery.attempt_count ?? 0) + 1,
+          claimed_at: claimedAt,
+          completed_at: null,
+          last_error: null,
+          provider_status: null,
+          status: "sending",
+        })
+        .eq("booking_id", booking.id)
+        .eq("claimed_at", existingDelivery.claimed_at)
+        .select("booking_id")
+        .maybeSingle();
+      if (reclaimError || !reclaimed) {
+        return json({ success: false, retryable: true, error: "The automatic SMS is already being retried." }, 409);
+      }
+    } else {
+      const { error: claimError } = await admin.from("booking_sms_deliveries").insert({
+        booking_id: booking.id,
+        property_id: booking.property_id,
+        status: "sending",
+      });
+      if (claimError) {
+        if (claimError.code === "23505") {
+          return json({ success: false, retryable: true, error: "The automatic SMS is already being sent." }, 409);
+        }
+        throw new Error("Unable to reserve the automatic SMS delivery.");
+      }
     }
 
-    const response = await fetch("https://apisms.beem.africa/v1/send", {
-      method: "POST",
-      signal: AbortSignal.timeout(15_000),
-      headers: {
-        Authorization: `Basic ${btoa(`${apiKey}:${beemSecret}`)}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        source_addr: senderId,
-        encoding: 0,
-        message,
-        recipients: [{ recipient_id: "1", dest_addr: recipient }],
-      }),
-    });
+    let providerResult: Awaited<ReturnType<typeof sendWithRetry>>;
+    try {
+      providerResult = await sendWithRetry("https://apisms.beem.africa/v1/send", {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(`${apiKey}:${beemSecret}`)}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          source_addr: senderId,
+          encoding: 0,
+          message,
+          recipients: [{ recipient_id: "1", dest_addr: recipient }],
+        }),
+      });
+    } catch (providerError) {
+      await admin.from("booking_sms_deliveries").update({
+        completed_at: new Date().toISOString(),
+        last_error: providerError instanceof Error ? providerError.message : "The SMS provider did not respond.",
+        status: "failed",
+      }).eq("booking_id", booking.id);
+      throw providerError;
+    }
+    const { response, attempt } = providerResult;
     const responseText = await response.text();
     let provider: unknown = responseText;
     try { provider = JSON.parse(responseText); } catch { /* Keep non-JSON provider response for diagnostics. */ }
@@ -147,7 +215,7 @@ Deno.serve(async (request) => {
         provider_status: response.status,
         status: "failed",
       }).eq("booking_id", booking.id);
-      console.error("booking_sms_provider_failed", { bookingId: booking.id, status: response.status, provider });
+      console.error("booking_sms_provider_failed", { attempt, bookingId: booking.id, status: response.status, provider });
       return json({ success: false, error: "The SMS provider rejected the message." }, 502);
     }
 
@@ -157,7 +225,7 @@ Deno.serve(async (request) => {
       status: "sent",
     }).eq("booking_id", booking.id);
 
-    console.log("booking_sms_sent", { bookingId: booking.id, propertyId: booking.property_id, recipient: recipient.slice(-4) });
+    console.log("booking_sms_sent", { attempt, bookingId: booking.id, propertyId: booking.property_id, recipient: recipient.slice(-4) });
     return json({ success: true, phone: recipient });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to send booking SMS.";
