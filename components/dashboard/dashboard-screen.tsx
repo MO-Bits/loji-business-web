@@ -1,16 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { Alert, Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
 
 import { useLanguage } from "@/components/providers/language-provider";
-import {
-  StickyMobileActionBar,
-  Surface,
-  WorkspacePage,
-} from "@/components/shared/workspace-ui";
+import { Surface, WorkspacePage } from "@/components/shared/workspace-ui";
 import { useHomeDashboard } from "@/features/dashboard/hooks/use-home-dashboard";
 import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { normalizeWorkspaceRole } from "@/features/session/permissions";
@@ -57,10 +52,8 @@ export function DashboardScreen() {
   }
 
   const role = normalizeWorkspaceRole(dashboard.role);
-  const canCreateBooking = dashboard.capabilities.createBooking;
-
   return (
-    <Box sx={{ minHeight: "100dvh", pb: { xs: canCreateBooking ? 11 : 0, md: 0 } }}>
+    <Box sx={{ minHeight: "100dvh" }}>
       <WorkspacePage>
         <Stack spacing={{ xs: 2, sm: 2.5 }}>
           {loading ? (
@@ -119,19 +112,6 @@ export function DashboardScreen() {
         </Stack>
       </WorkspacePage>
 
-      {canCreateBooking && role !== "member" ? (
-        <StickyMobileActionBar>
-          <Button
-            component={Link}
-            fullWidth
-            href="/bookings/new"
-            startIcon={<AddRoundedIcon />}
-            variant="contained"
-          >
-            {t("New booking", "Uhifadhi mpya")}
-          </Button>
-        </StickyMobileActionBar>
-      ) : null}
     </Box>
   );
 }

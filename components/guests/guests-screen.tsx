@@ -163,7 +163,7 @@ export function GuestsScreen() {
                 component={Link}
                 href="/bookings/new"
                 startIcon={<AddRoundedIcon />}
-                sx={{ flexShrink: 0, minHeight: 44, width: { xs: "100%", sm: "auto" } }}
+                sx={{ display: { xs: "none", md: "inline-flex" }, flexShrink: 0, minHeight: 44 }}
                 variant="contained"
               >
                 {t("New booking", "Uhifadhi mpya")}
@@ -678,7 +678,7 @@ function GuestEmptyState({
           </Button>
         ) : null}
         {!filtered && canCreateBooking ? (
-          <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained">
+          <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", md: "inline-flex" } }}>
             {t("Create first booking", "Tengeneza uhifadhi wa kwanza")}
           </Button>
         ) : null}

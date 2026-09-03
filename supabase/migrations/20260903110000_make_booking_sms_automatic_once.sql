@@ -12,6 +12,7 @@ create table if not exists public.booking_sms_deliveries (
 
 alter table public.booking_sms_deliveries enable row level security;
 revoke all on table public.booking_sms_deliveries from anon, authenticated;
+grant all on table public.booking_sms_deliveries to service_role;
 
 create index if not exists booking_sms_deliveries_property_idx
   on public.booking_sms_deliveries (property_id, claimed_at desc);

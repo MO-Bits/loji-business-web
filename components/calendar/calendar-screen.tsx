@@ -292,7 +292,7 @@ export function CalendarScreen() {
             `Angalia upatikanaji wa ${inventoryPlural}, wanaowasili na waliopo kwa tarehe.`,
           )}
           action={canCreateBooking ? (
-            <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained">
+            <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", md: "inline-flex" } }}>
               {t("New booking", "Uhifadhi mpya")}
             </Button>
           ) : undefined}

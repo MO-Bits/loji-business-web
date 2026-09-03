@@ -214,7 +214,7 @@ export function OperationsScreen() {
     <WorkspacePage>
       <Stack spacing={{ xs: 2.25, sm: 3 }}>
         <PageHeader
-          action={canCreateBooking ? <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained">{t("New booking", "Uhifadhi mpya")}</Button> : undefined}
+          action={canCreateBooking ? <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", md: "inline-flex" } }}>{t("New booking", "Uhifadhi mpya")}</Button> : undefined}
           description={board?.property.businessDate
             ? t(`Arrivals, departures, current stays, balances and room readiness for ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`, `Wanaowasili, wanaotoka, waliopo, salio na utayari wa vyumba kwa ${formatLocalDate(board.property.businessDate, { weekday: "long", day: "numeric", month: "long" })}.`)
             : t("Run the whole guest day from one workspace.", "Endesha siku nzima ya wageni kutoka sehemu moja.")}

@@ -576,7 +576,7 @@ function RoomCard({
       <Divider />
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", px: 1.5, py: 1 }}>
         {hasInlineBookingAction ? (
-          <Button component={Link} href={`/bookings/new?room=${room.id}`} size="small" startIcon={<CalendarMonthRoundedIcon />}>{t(`Book ${singular}`, `Hifadhi ${singular}`)}</Button>
+          <Button component={Link} href={`/bookings/new?room=${room.id}`} size="small" startIcon={<CalendarMonthRoundedIcon />} sx={{ display: { xs: "none", md: "inline-flex" } }}>{t(`Book ${singular}`, `Hifadhi ${singular}`)}</Button>
         ) : <Box />}
         <RoomActions canCreateBooking={canCreateBooking} canManageHousekeeping={canManageHousekeeping} canManageInventory={canManageInventory} disabled={pending} hideCreateBooking={hasInlineBookingAction} onActive={onActive} onHousekeeping={onHousekeeping} room={room} />
       </Stack>
@@ -642,7 +642,7 @@ function RoomActions({
       </Tooltip>
       <Menu anchorEl={anchor} onClose={() => setAnchor(null)} open={Boolean(anchor)}>
         <MenuItem component={Link} href={`/rooms/${room.id}`} onClick={() => setAnchor(null)}>{t(`Open ${singular} workspace`, `Fungua eneo la ${singular}`)}</MenuItem>
-        {canCreateBooking && room.isActive && !hideCreateBooking ? <MenuItem component={Link} href={`/bookings/new?room=${room.id}`} onClick={() => setAnchor(null)}>{t("Create booking", "Tengeneza uhifadhi")}</MenuItem> : null}
+        {canCreateBooking && room.isActive && !hideCreateBooking ? <MenuItem component={Link} href={`/bookings/new?room=${room.id}`} onClick={() => setAnchor(null)} sx={{ display: { xs: "none", md: "flex" } }}>{t("Create booking", "Tengeneza uhifadhi")}</MenuItem> : null}
         {canManageInventory ? <MenuItem component={Link} href={`/rooms/${room.id}/edit`} onClick={() => setAnchor(null)}>{t(`Edit ${singular}`, `Hariri ${singular}`)}</MenuItem> : null}
         {canManageHousekeeping && room.isActive && !["occupied", "checking_out_today"].includes(room.operationalStatus)
           ? housekeepingOptions.map((option) => (

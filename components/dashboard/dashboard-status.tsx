@@ -318,7 +318,7 @@ export function RoleQuickActions({
               borderColor: "divider",
               borderRadius: 2,
               color: "inherit",
-              display: "grid",
+              display: { xs: action.href === "/bookings/new" ? "none" : "grid", md: "grid" },
               gap: 1,
               gridTemplateColumns: "36px minmax(0,1fr) 20px",
               minWidth: 0,

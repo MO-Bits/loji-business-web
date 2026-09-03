@@ -42,7 +42,6 @@ import {
   EmptyState,
   MetricCell,
   SectionHeading,
-  StickyMobileActionBar,
   Surface,
   WorkspacePage,
 } from "@/components/shared/workspace-ui";
@@ -121,10 +120,8 @@ export function GuestDetailsScreen({ guestId }: { guestId: string }) {
   }
 
   const bookingHref = `/bookings/new?guest=${encodeURIComponent(workspace.guest.id)}`;
-  const canCreateBooking = workspace.capabilities.createBooking;
-
   return (
-    <Box sx={{ minHeight: "100dvh", pb: { xs: canCreateBooking ? 12 : 3, md: 0 } }}>
+    <Box sx={{ minHeight: "100dvh" }}>
       <WorkspacePage>
         <Stack spacing={{ xs: 2, lg: 2.5 }}>
           <GuestHeader
@@ -207,19 +204,6 @@ export function GuestDetailsScreen({ guestId }: { guestId: string }) {
         </Stack>
       </WorkspacePage>
 
-      {canCreateBooking ? (
-        <StickyMobileActionBar>
-          <Button
-            component={Link}
-            fullWidth
-            href={bookingHref}
-            startIcon={<AddRoundedIcon />}
-            variant="contained"
-          >
-            {t("New booking for guest", "Uhifadhi mpya kwa mgeni")}
-          </Button>
-        </StickyMobileActionBar>
-      ) : null}
     </Box>
   );
 }

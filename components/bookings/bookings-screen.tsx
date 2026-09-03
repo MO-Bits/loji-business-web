@@ -258,7 +258,7 @@ function BookingsWorkspace() {
                     </Button>
                   ) : null}
                   {showGlobalCreateAction ? (
-                    <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ width: { xs: "100%", sm: "auto" } }}>
+                    <Button component={Link} href="/bookings/new" startIcon={<AddRoundedIcon />} variant="contained" sx={{ display: { xs: "none", md: "inline-flex" } }}>
                       {t("New booking")}
                     </Button>
                   ) : null}
@@ -552,7 +552,7 @@ function EmptyBookings({ filtered, canCreate, inventorySingular, onClear }: { fi
       <Typography color="text.secondary" variant="body2" sx={{ maxWidth: 420, mx: "auto", mt: 0.5 }}>{filtered ? t("Clear or adjust the current filters to see more reservations.", "Ondoa au badili vichujio ili kuona uhifadhi zaidi.") : t(`New reservations will appear here with their ${inventorySingular}, stay and operational status.`, `Uhifadhi mpya utaonekana hapa pamoja na ${inventorySingular}, muda wa ukaaji na hali yake.`)}</Typography>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ justifyContent: "center", mt: 2 }}>
         {filtered ? <Button onClick={onClear} variant="outlined">{t("Clear filters")}</Button> : null}
-        {!filtered && canCreate ? <Button component={Link} href="/bookings/new" variant="contained">{t("Create first booking")}</Button> : null}
+        {!filtered && canCreate ? <Button component={Link} href="/bookings/new" variant="contained" sx={{ display: { xs: "none", md: "inline-flex" } }}>{t("Create first booking")}</Button> : null}
       </Stack>
     </Paper>
   );

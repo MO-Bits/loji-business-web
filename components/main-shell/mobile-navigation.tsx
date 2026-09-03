@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import AccountBalanceWalletRoundedIcon from "@mui/icons-material/AccountBalanceWalletRounded";
 import AssessmentOutlinedIcon from "@mui/icons-material/AssessmentOutlined";
@@ -178,14 +178,17 @@ export function MobileNavigation({
           },
         }}
       >
-        {items.slice(0, capabilities.canCreateBooking ? 3 : 4).map((item, index) => (
-          <Fragment key={item.value}>
+        {items.slice(0, capabilities.canCreateBooking ? 3 : 4).flatMap((item, index) => {
+          const actions = [
             <BottomNavigationAction
               icon={activeValue === item.value ? item.activeIcon : item.icon}
+              key={item.value}
               label={item.label}
               value={item.value}
-            />
-            {capabilities.canCreateBooking && index === 1 ? (
+            />,
+          ];
+          if (capabilities.canCreateBooking && index === 1) {
+            actions.push(
               <BottomNavigationAction
                 aria-label={t("New booking", "Uhifadhi mpya")}
                 icon={(
@@ -208,16 +211,18 @@ export function MobileNavigation({
                     <AddRoundedIcon sx={{ fontSize: 28 }} />
                   </Box>
                 )}
+                key="new-booking"
                 label={t("New", "Mpya")}
                 sx={{
                   color: "primary.main!important",
                   "& .MuiBottomNavigationAction-label": { color: "text.primary", fontWeight: 700 },
                 }}
                 value="new-booking"
-              />
-            ) : null}
-          </Fragment>
-        ))}
+              />,
+            );
+          }
+          return actions;
+        })}
         <BottomNavigationAction
           icon={<MoreHorizRoundedIcon />}
           label={t("More", "Zaidi")}

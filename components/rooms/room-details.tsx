@@ -170,7 +170,7 @@ export function RoomDetails({ roomId }: { roomId: string }) {
               )}
               action={(
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
-                  {canCreateBooking && room.isActive ? <Button component={Link} href={`/bookings/new?room=${room.id}`} startIcon={<CalendarMonthRoundedIcon />} variant="contained">{t("New booking", "Uhifadhi mpya")}</Button> : null}
+                  {canCreateBooking && room.isActive ? <Button component={Link} href={`/bookings/new?room=${room.id}`} startIcon={<CalendarMonthRoundedIcon />} variant="contained" sx={{ display: { xs: "none", md: "inline-flex" } }}>{t("New booking", "Uhifadhi mpya")}</Button> : null}
                   {canManageInventory ? <Button component={Link} href={`/rooms/${room.id}/edit`} startIcon={<EditRoundedIcon />} variant="outlined">{t(`Edit ${singular}`, `Hariri ${singular}`)}</Button> : null}
                 </Stack>
               )}

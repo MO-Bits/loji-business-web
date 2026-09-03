@@ -378,7 +378,7 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                   href="/bookings/new"
                   size="small"
                   startIcon={<AddRoundedIcon />}
-                  sx={{ display: { xs: "none", sm: "inline-flex" } }}
+                  sx={{ display: { xs: "none", md: "inline-flex" } }}
                   variant="contained"
                 >
                   {t("New booking", "Uhifadhi mpya")}
