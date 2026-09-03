@@ -108,8 +108,8 @@ export function AddTeamMemberAccessModal({
           <Stack spacing={2.25} sx={{ pt: 0.75 }}>
             <Typography color="text.secondary" variant="body2">
               {t(
-                "Add their exact email and role. Existing Loji accounts activate immediately; otherwise they must sign in within 30 days.",
-                "Weka barua pepe yao sahihi na jukumu. Akaunti zilizopo za Loji huwashwa mara moja; vinginevyo lazima waingie ndani ya siku 30.",
+                "Use their exact email and role. A staff email can belong to one property only. Existing Loji accounts activate immediately; others must sign in within 30 days.",
+                "Tumia barua pepe yao sahihi na jukumu. Barua pepe ya mfanyakazi inaweza kuwa ya biashara moja tu. Akaunti zilizopo huwashwa mara moja; wengine lazima waingie ndani ya siku 30.",
               )}
             </Typography>
             <TextField

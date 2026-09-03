@@ -8,6 +8,7 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LocalOfferOutlinedIcon from "@mui/icons-material/LocalOfferOutlined";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
+import PhotoLibraryOutlinedIcon from "@mui/icons-material/PhotoLibraryOutlined";
 import PlaceOutlinedIcon from "@mui/icons-material/PlaceOutlined";
 import PublicOutlinedIcon from "@mui/icons-material/PublicOutlined";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
@@ -17,6 +18,7 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { SettingsPageHeader, SettingsSection } from "@/components/settings/settings-shared";
 import { MetricCell, Surface } from "@/components/shared/workspace-ui";
 import { usePropertySettings } from "@/features/settings/property/hooks/use-property-settings";
+import { MAX_PROPERTY_PHOTOS } from "@/features/settings/property/services/property-settings-service";
 import { formatLocalDateTime } from "@/lib/date-time";
 import {
   PropertySettingLink,
@@ -53,6 +55,7 @@ export function PropertySettingsScreen() {
     operationsReady,
     property.amenities.length > 0,
     property.paymentMethods.length > 0,
+    property.images.length > 0,
   ];
   const completed = setupChecks.filter(Boolean).length;
   const progress = Math.round((completed / setupChecks.length) * 100);
@@ -61,8 +64,12 @@ export function PropertySettingsScreen() {
   return (
     <Stack spacing={{ xs: 2.5, sm: 3 }}>
       <SettingsPageHeader
-        action={canUpdate ? <Button component={Link} href="/settings/property/profile" startIcon={<EditRoundedIcon />} variant="contained">{t("Edit property", "Hariri biashara")}</Button> : undefined}
-        description={t("Control the business identity, local address, services, accepted payments and operating rules for this workspace.", "Dhibiti utambulisho wa biashara, anwani, huduma, njia za malipo na kanuni za uendeshaji.")}
+        action={canUpdate ? (
+          <Button component={Link} href="/settings/property/profile" startIcon={<EditRoundedIcon />} variant="contained">
+            {t("Edit property", "Hariri biashara")}
+          </Button>
+        ) : undefined}
+        description={t("Control the business identity, photos, local address, services, accepted payments and operating rules for this workspace.", "Dhibiti utambulisho wa biashara, picha, anwani, huduma, njia za malipo na kanuni za uendeshaji.")}
         eyebrow={t("Workspace administration", "Usimamizi wa biashara")}
         icon={<BusinessRoundedIcon />}
         title={t("Property settings", "Mipangilio ya biashara")}
@@ -77,13 +84,27 @@ export function PropertySettingsScreen() {
               <Chip label={propertyTypeLabel(property.propertyType, t)} size="small" variant="outlined" />
               <Chip color={property.isActive ? "success" : "warning"} label={property.isActive ? t("Active property", "Biashara inatumika") : t("Property hidden", "Biashara imefichwa")} size="small" variant="outlined" />
             </Stack>
-            <Typography component="h2" variant="h3">{property.name}</Typography>
+            <Typography component="h2" sx={{ overflowWrap: "anywhere" }} variant="h3">{property.name}</Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "flex-start", color: "text.secondary", maxWidth: 760 }}><PlaceOutlinedIcon fontSize="small" /><Typography variant="body2">{address || t("Location not configured", "Eneo halijawekwa")}</Typography></Stack>
           </Stack>
         </Box>
       </Surface>
 
-      <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", lg: "repeat(4,minmax(0,1fr))" } }}>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 1.5,
+          gridTemplateColumns: {
+            xs: "repeat(4,minmax(220px,78vw))",
+            sm: "repeat(2,minmax(0,1fr))",
+            lg: "repeat(4,minmax(0,1fr))",
+          },
+          overflowX: { xs: "auto", sm: "visible" },
+          pb: { xs: 0.5, sm: 0 },
+          scrollSnapType: { xs: "x proximity", sm: "none" },
+          "& > *": { scrollSnapAlign: "start" },
+        }}
+      >
         <MetricCell caption={t(`${completed} of ${setupChecks.length} areas complete`, `Sehemu ${completed} kati ya ${setupChecks.length} zimekamilika`)} icon={<TuneRoundedIcon />} label={t("Profile readiness", "Utayari wa wasifu")} tone={progress === 100 ? "success" : "info"} value={`${progress}%`} />
         <MetricCell caption={property.amenities.length ? t("Guest-facing facilities", "Huduma za wageni") : t("Add your facilities", "Ongeza huduma zako")} icon={<LocalOfferOutlinedIcon />} label={t("Amenities", "Huduma")} value={property.amenities.length} />
         <MetricCell caption={t("Accepted at the front desk", "Zinazokubaliwa mapokezi")} icon={<PublicOutlinedIcon />} label={t("Payment methods", "Njia za malipo")} value={property.paymentMethods.length} />
@@ -98,6 +119,7 @@ export function PropertySettingsScreen() {
               <PropertySettingLink description={t("Tanzania region, district, ward and local street or landmark", "Mkoa, wilaya, kata na mtaa au alama ya karibu Tanzania")} href={canUpdate ? "/settings/property/location" : undefined} icon={<PlaceOutlinedIcon />} meta={address || t("Not configured", "Haijawekwa")} title={t("Location", "Eneo")} />
               <PropertySettingLink description={t("Guest arrival/departure times and accepted payment methods", "Muda wa wageni kuingia/kutoka na njia za malipo")} href={canUpdate ? "/settings/property/operations" : undefined} icon={<ScheduleOutlinedIcon />} meta={`${property.checkinTime} ${t("check-in", "kuingia")} · ${property.checkoutTime} ${t("checkout", "kutoka")}`} title={t("Operations and payments", "Uendeshaji na malipo")} />
               <PropertySettingLink description={t("Facilities and services shown across the business workspace", "Huduma zinazoonyeshwa katika mfumo wa biashara")} href={canUpdate ? "/settings/property/amenities" : undefined} icon={<LocalOfferOutlinedIcon />} meta={t(`${property.amenities.length} selected`, `${property.amenities.length} zimechaguliwa`)} title={t("Amenities", "Huduma")} />
+              <PropertySettingLink description={t("Cover and property photos used across the workspace", "Jalada na picha za biashara zinazotumika kwenye mfumo")} href={canUpdate ? "/settings/property/photos" : undefined} icon={<PhotoLibraryOutlinedIcon />} meta={property.images.length ? t("The first photo is the cover", "Picha ya kwanza ni jalada") : t("Add a clear cover photo", "Ongeza picha wazi ya jalada")} title={t(`Photos · ${property.images.length}/${MAX_PROPERTY_PHOTOS}`, `Picha · ${property.images.length}/${MAX_PROPERTY_PHOTOS}`)} />
               <PropertySettingLink description={t("Control whether the property is active and visible to booking flows", "Dhibiti kama biashara inatumika na inaonekana kwenye utaratibu wa uhifadhi")} href={capabilities.changeVisibility ? "/settings/property/visibility" : undefined} icon={<PublicOutlinedIcon />} meta={property.isActive ? t("Active", "Inatumika") : t("Hidden", "Imefichwa")} title={t("Status and visibility", "Hali na mwonekano")} />
             </Stack>
           </SettingsSection>
@@ -111,15 +133,17 @@ export function PropertySettingsScreen() {
         </Stack>
 
         <Stack spacing={2.5}>
-          <SettingsSection description={t("The operational contact card for this workspace.", "Kadi ya mawasiliano ya uendeshaji wa biashara hii.")} title={t("At a glance", "Kwa muhtasari")}>
-            <Stack divider={<Divider flexItem />}>
-              <SummaryLine icon={<PhoneOutlinedIcon />} label={t("Phone", "Simu")} value={property.phone} />
-              <SummaryLine icon={<EmailOutlinedIcon />} label={t("Email", "Barua pepe")} value={property.email} />
-              <SummaryLine icon={<PlaceOutlinedIcon />} label={t("Address", "Anwani")} value={address} />
-              <SummaryLine icon={<ScheduleOutlinedIcon />} label={t("Timezone", "Saa za eneo")} value={property.timezone} />
-              <SummaryLine icon={<BusinessRoundedIcon />} label={t("Role", "Jukumu")} value={titleCase(role)} />
-            </Stack>
-          </SettingsSection>
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>
+            <SettingsSection description={t("The operational contact card for this workspace.", "Kadi ya mawasiliano ya uendeshaji wa biashara hii.")} title={t("At a glance", "Kwa muhtasari")}>
+              <Stack divider={<Divider flexItem />}>
+                <SummaryLine icon={<PhoneOutlinedIcon />} label={t("Phone", "Simu")} value={property.phone} />
+                <SummaryLine icon={<EmailOutlinedIcon />} label={t("Email", "Barua pepe")} value={property.email} />
+                <SummaryLine icon={<PlaceOutlinedIcon />} label={t("Address", "Anwani")} value={address} />
+                <SummaryLine icon={<ScheduleOutlinedIcon />} label={t("Timezone", "Saa za eneo")} value={property.timezone} />
+                <SummaryLine icon={<BusinessRoundedIcon />} label={t("Role", "Jukumu")} value={titleCase(role)} />
+              </Stack>
+            </SettingsSection>
+          </Box>
 
           <Surface>
             <Stack direction="row" spacing={1.25} sx={{ alignItems: "flex-start" }}>

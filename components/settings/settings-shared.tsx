@@ -62,7 +62,17 @@ export function SettingsPageHeader({
           </Typography>
         </Box>
       </Stack>
-      {action ? <Box sx={{ flexShrink: 0 }}>{action}</Box> : null}
+      {action ? (
+        <Box
+          sx={{
+            alignSelf: { xs: "stretch", sm: "auto" },
+            flexShrink: 0,
+            "& .MuiButton-root": { width: { xs: "100%", sm: "auto" } },
+          }}
+        >
+          {action}
+        </Box>
+      ) : null}
     </Stack>
   );
 }

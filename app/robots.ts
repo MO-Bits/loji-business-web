@@ -19,6 +19,7 @@ export default function robots(): MetadataRoute.Robots {
         '/rooms',
         '/more',
         '/onboarding',
+        '/properties',
         '/inactive',
         '/auth',
         '/api',

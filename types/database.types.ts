@@ -356,6 +356,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_additional_hospitality_property: {
+        Args: {
+          p_request_key: string;
+          p_business: Json;
+          p_rooms: Json;
+          p_staff?: Json;
+        };
+        Returns: Json;
+      };
       create_property_basic_info: {
         Args: { p_name: string; p_type: string; p_phone: string; p_email: string | null; p_amenities: Json; p_request_key?: string | null };
         Returns: string;
@@ -496,11 +505,10 @@ export type Database = {
       update_property_payment_methods: { Args: { p_property_id: string; p_payment_methods: string[] }; Returns: Json };
       update_property_amenities: { Args: { p_property_id: string; p_amenities: string[] }; Returns: Json };
       update_property_location: { Args: { p_property_id: string; p_country?: string | null; p_region?: string | null; p_district?: string | null; p_ward?: string | null; p_street?: string | null; p_formatted_address?: string | null; p_place_id?: string | null; p_latitude?: number | null; p_longitude?: number | null }; Returns: Json };
-      update_property_gallery: { Args: { p_property_id: string; p_images: string[] }; Returns: Json };
+      update_property_gallery_versioned: { Args: { p_property_id: string; p_images: string[]; p_expected_updated_at: string | null }; Returns: Json };
       update_property_visibility: { Args: { p_property_id: string; p_is_active: boolean }; Returns: Json };
       get_my_profile: { Args: Record<PropertyKey, never>; Returns: Json };
       update_my_profile: { Args: { p_display_name: string; p_phone?: string | null; p_bio?: string | null }; Returns: Json };
-      save_property_images: { Args: { p_property_id: string; p_images: string[] }; Returns: undefined };
       update_property_address: { Args: { p_owner_id: string; p_country: string; p_region: string; p_district: string; p_ward: string; p_street: string; p_formatted_address: string; p_place_id: string; p_latitude: number; p_longitude: number }; Returns: undefined };
       get_property_operations_report: { Args: { p_property_id: string; p_from: string; p_to: string }; Returns: Json };
     };

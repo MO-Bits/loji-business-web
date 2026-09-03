@@ -191,7 +191,28 @@ export async function createPropertyBooking(
   return {
     bookingId: String(result.booking_id ?? booking.id ?? ""),
     bookingNumber: String(result.booking_number ?? booking.booking_number ?? ""),
+    status: String(result.status ?? booking.status ?? ""),
   };
+}
+
+export async function sendBookingSms(
+  client: SupabaseClient<Database>,
+  propertyId: string,
+  bookingId: string,
+) {
+  const { data, error } = await client.functions.invoke("send-booking-sms", {
+    body: {
+      propertyId,
+      bookingId,
+    },
+  });
+
+  if (error) throw new Error(error.message || "Unable to send booking SMS.");
+  if (!data || data.success !== true) {
+    throw new Error(String(data?.error ?? "Unable to send booking SMS."));
+  }
+
+  return data as { success: true; alreadySent?: boolean; phone?: string };
 }
 
 export type BookingLifecycleAction =

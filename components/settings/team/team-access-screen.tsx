@@ -422,7 +422,7 @@ export function TeamAccessScreen() {
       spacing={{ xs: 2.25, sm: 3 }}
       sx={{ pb: canAddAccess ? { xs: 9, sm: 0 } : 0 }}
     >
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between" }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
         <BackToSettingsButton />
         <Button component={Link} href="/activity" startIcon={<HistoryRoundedIcon />} variant="text">
           {t("View activity", "Tazama historia")}
@@ -454,7 +454,7 @@ export function TeamAccessScreen() {
 
       <Box
         sx={{
-          display: "grid",
+          display: { xs: "none", sm: "grid" },
           gap: { xs: 1.25, sm: 1.5 },
           gridTemplateColumns: {
             xs: "repeat(2, minmax(0, 1fr))",

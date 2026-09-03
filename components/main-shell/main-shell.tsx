@@ -367,7 +367,14 @@ export function MainShell({ children }: { children: React.ReactNode }) {
                 aria-label={homePath === "/settings/profile"
                   ? t("Open my account", "Fungua akaunti yangu")
                   : t("Loji Business home", "Nyumbani Loji Business")}
-                sx={{ display: "inline-flex", flexShrink: 0 }}
+                sx={{
+                  alignItems: "center",
+                  display: "inline-flex",
+                  flexShrink: 0,
+                  justifyContent: "center",
+                  minHeight: 44,
+                  minWidth: 44,
+                }}
               >
                 <BrandSymbol priority size={30} />
               </Box>

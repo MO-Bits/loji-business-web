@@ -2,6 +2,7 @@
 
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import {
   Box,
@@ -26,6 +27,7 @@ export function SetupShell({
   nextDisabled = false,
   nextLabel,
   onBack,
+  onCancel,
   onNext,
   onSignOut,
   step,
@@ -39,8 +41,9 @@ export function SetupShell({
   nextDisabled?: boolean;
   nextLabel?: ReactNode;
   onBack?: () => void;
+  onCancel?: () => void;
   onNext: () => void;
-  onSignOut: () => void;
+  onSignOut?: () => void;
   step: number;
   title: ReactNode;
   totalSteps: number;
@@ -80,17 +83,48 @@ export function SetupShell({
           >
             <BrandLockup priority symbolSize={30} textSize=".9375rem" />
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-              <Typography color="text.secondary" variant="caption">
+              <Typography
+                color="text.secondary"
+                sx={{
+                  display: "none",
+                  "@media (min-width: 360px)": { display: "block" },
+                }}
+                variant="caption"
+              >
                 {t(`Step ${step} of ${totalSteps}`, `Hatua ${step} kati ya ${totalSteps}`)}
               </Typography>
-              <IconButton
-                aria-label={t("Sign out", "Toka")}
-                disabled={loading}
-                onClick={onSignOut}
-                size="small"
-              >
-                <LogoutRoundedIcon fontSize="small" />
-              </IconButton>
+              {onCancel ? (
+                <>
+                  <IconButton
+                    aria-label={t("Close setup", "Funga mpangilio")}
+                    disabled={loading}
+                    onClick={onCancel}
+                    size="small"
+                    sx={{ display: { xs: "inline-flex", sm: "none" } }}
+                  >
+                    <CloseRoundedIcon fontSize="small" />
+                  </IconButton>
+                  <Button
+                    color="inherit"
+                    disabled={loading}
+                    onClick={onCancel}
+                    size="small"
+                    startIcon={<CloseRoundedIcon fontSize="small" />}
+                    sx={{ display: { xs: "none", sm: "inline-flex" } }}
+                  >
+                    {t("Close", "Funga")}
+                  </Button>
+                </>
+              ) : onSignOut ? (
+                <IconButton
+                  aria-label={t("Sign out", "Toka")}
+                  disabled={loading}
+                  onClick={onSignOut}
+                  size="small"
+                >
+                  <LogoutRoundedIcon fontSize="small" />
+                </IconButton>
+              ) : null}
             </Stack>
           </Stack>
         </Container>

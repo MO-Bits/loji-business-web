@@ -38,7 +38,11 @@ import {
   type BusinessSetupDraft,
   type SetupStepSlug,
 } from "@/features/onboarding/models/business-setup";
-import { completeBusinessRegistration } from "@/features/onboarding/services/business-registration-service";
+import {
+  completeBusinessRegistration,
+  createAdditionalBusinessProperty,
+} from "@/features/onboarding/services/business-registration-service";
+import { savePreferredPropertyId } from "@/features/session/services/property-switch-service";
 import { createClient } from "@/lib/supabase/client";
 
 import {
@@ -175,13 +179,22 @@ const stepContent: ReadonlyArray<{
   },
 ];
 
-export function BusinessSetupFlow() {
+type BusinessSetupMode = "additional" | "onboarding";
+
+export function BusinessSetupFlow({
+  mode = "onboarding",
+}: {
+  mode?: BusinessSetupMode;
+}) {
   const router = useRouter();
   const sessionState = useAppSession();
   const session = sessionState.session;
-  const propertySetupAllowed = session?.status === AppStatus.Onboarding &&
-    (session.step === AppStep.PropertyBasic || session.step === AppStep.PropertyAddress) &&
-    Boolean(session.user);
+  const role = normalizeWorkspaceRole(session?.activeRole);
+  const propertySetupAllowed = mode === "additional"
+    ? session?.status === AppStatus.Ready && role === "owner" && Boolean(session.user)
+    : session?.status === AppStatus.Onboarding &&
+      (session.step === AppStep.PropertyBasic || session.step === AppStep.PropertyAddress) &&
+      Boolean(session.user);
 
   useEffect(() => {
     if (sessionState.loading || sessionState.error || propertySetupAllowed) return;
@@ -194,12 +207,17 @@ export function BusinessSetupFlow() {
       return;
     }
     if (session.status === AppStatus.Ready) {
-      const role = normalizeWorkspaceRole(session.activeRole);
       router.replace(role === "owner" ? "/dashboard" : role === "manager" || role === "receptionist" ? "/front-desk" : "/settings/profile");
       return;
     }
-    router.replace(session.step === AppStep.Profile ? "/onboarding/profile" : "/");
-  }, [propertySetupAllowed, router, session, sessionState.error, sessionState.loading]);
+    router.replace(
+      session.step === AppStep.Profile
+        ? "/onboarding/profile"
+        : mode === "additional"
+          ? "/onboarding/property"
+          : "/",
+    );
+  }, [mode, propertySetupAllowed, role, router, session, sessionState.error, sessionState.loading]);
 
   if (sessionState.error) {
     return <SessionErrorScreen error={sessionState.error} onRetry={() => void sessionState.refresh()} />;
@@ -210,7 +228,8 @@ export function BusinessSetupFlow() {
 
   return (
     <ReadyBusinessSetupFlow
-      key={user.id}
+      key={`${user.id}:${mode}`}
+      mode={mode}
       ownerEmail={user.email ?? ""}
       ownerId={user.id}
       refreshSession={sessionState.refresh}
@@ -219,10 +238,12 @@ export function BusinessSetupFlow() {
 }
 
 function ReadyBusinessSetupFlow({
+  mode,
   ownerEmail,
   ownerId,
   refreshSession,
 }: {
+  mode: BusinessSetupMode;
   ownerEmail: string;
   ownerId: string;
   refreshSession: () => Promise<void>;
@@ -233,12 +254,14 @@ function ReadyBusinessSetupFlow({
   const [draft, setDraft] = useState<BusinessSetupDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const draftStorageKey = setupDraftStorageKey(ownerId, mode);
+  const setupPath = mode === "additional" ? "/properties/new" : "/onboarding/property";
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
         const saved = JSON.parse(
-          window.localStorage.getItem(setupDraftStorageKey(ownerId)) ?? "null",
+          window.localStorage.getItem(draftStorageKey) ?? "null",
         ) as unknown;
         setDraft(restoreBusinessSetupDraft(saved, ownerEmail));
       } catch {
@@ -246,7 +269,7 @@ function ReadyBusinessSetupFlow({
       }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [ownerEmail, ownerId]);
+  }, [draftStorageKey, ownerEmail]);
 
   if (!draft) return <FullPageLoader />;
 
@@ -260,7 +283,7 @@ function ReadyBusinessSetupFlow({
     setDraft(next);
     setError(null);
     try {
-      window.localStorage.setItem(setupDraftStorageKey(ownerId), JSON.stringify(next));
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(next));
     } catch {
       // The database request key still protects completion if storage is unavailable.
     }
@@ -271,7 +294,7 @@ function ReadyBusinessSetupFlow({
     setError(null);
     const params = new URLSearchParams({ step: stepContent[nextIndex].slug });
     if (returnAfterEdit && nextIndex < stepContent.length - 1) params.set("return", "review");
-    router.replace(`/onboarding/property?${params.toString()}`, {
+    router.replace(`${setupPath}?${params.toString()}`, {
       scroll: false,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -396,9 +419,15 @@ function ReadyBusinessSetupFlow({
     setSaving(true);
     setError(null);
     try {
-      await completeBusinessRegistration(createClient(), draft);
-      window.localStorage.removeItem(setupDraftStorageKey(ownerId));
-      clearLegacyPropertySetupDrafts(ownerId);
+      const result = mode === "additional"
+        ? await createAdditionalBusinessProperty(createClient(), draft)
+        : await completeBusinessRegistration(createClient(), draft);
+      window.localStorage.removeItem(draftStorageKey);
+      if (mode === "additional") {
+        savePreferredPropertyId(result.propertyId);
+      } else {
+        clearLegacyPropertySetupDrafts(ownerId);
+      }
       await refreshSession();
       window.location.replace("/dashboard");
     } catch (caught) {
@@ -520,7 +549,9 @@ function ReadyBusinessSetupFlow({
       loading={saving}
       nextLabel={
         step.slug === "review"
-          ? t("Create my business", "Unda biashara yangu")
+          ? mode === "additional"
+            ? t("Create property", "Unda biashara")
+            : t("Create my business", "Unda biashara yangu")
           : undefined
       }
       onBack={returnToReview
@@ -529,10 +560,11 @@ function ReadyBusinessSetupFlow({
           ? () => goToStep(stepIndex - 1)
           : undefined}
       onNext={() => void continueSetup()}
-      onSignOut={() => void signOut()}
-      step={stepIndex + 2}
+      onCancel={mode === "additional" ? () => router.replace("/dashboard") : undefined}
+      onSignOut={mode === "onboarding" ? () => void signOut() : undefined}
+      step={mode === "additional" ? stepIndex + 1 : stepIndex + 2}
       title={t(step.title[0], step.title[1])}
-      totalSteps={stepContent.length + 1}
+      totalSteps={mode === "additional" ? stepContent.length : stepContent.length + 1}
     >
       <Box
         component="form"

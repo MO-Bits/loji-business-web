@@ -390,8 +390,13 @@ export function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
-export function setupDraftStorageKey(ownerId: string) {
-  return `loji-hospitality-registration:v1:${ownerId}`;
+export function setupDraftStorageKey(
+  ownerId: string,
+  scope: "onboarding" | "additional" = "onboarding",
+) {
+  return scope === "additional"
+    ? `loji-hospitality-registration:v1:additional:${ownerId}`
+    : `loji-hospitality-registration:v1:${ownerId}`;
 }
 
 export function clearLegacyPropertySetupDrafts(ownerId: string) {

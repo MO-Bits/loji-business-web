@@ -40,8 +40,8 @@ export function StaffAccessStep({
     <Stack spacing={2}>
       <Alert icon={<EmailRoundedIcon />} severity="info" variant="outlined">
         {t(
-          "Existing Loji accounts receive access immediately. Otherwise access stays pending for 30 days while the teammate signs in with this email.",
-          "Akaunti zilizopo za Loji hupata ruhusa mara moja. Vinginevyo ruhusa husubiri kwa siku 30 ili mfanyakazi aingie kwa barua pepe hii.",
+          "Each staff email can belong to one property. Existing Loji accounts receive access immediately; otherwise access stays pending for 30 days.",
+          "Kila barua pepe ya mfanyakazi inaweza kuwa ya biashara moja tu. Akaunti zilizopo za Loji hupata ruhusa mara moja; nyingine husubiri kwa siku 30.",
         )}
       </Alert>
 

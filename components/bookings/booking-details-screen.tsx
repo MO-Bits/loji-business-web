@@ -18,6 +18,7 @@ import PhoneRoundedIcon from "@mui/icons-material/PhoneRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import SmsRoundedIcon from "@mui/icons-material/SmsRounded";
 import {
   Alert,
   Avatar,
@@ -50,6 +51,7 @@ import {
   getBookingWorkspace,
   getAvailableRooms,
   recordBookingPayment,
+  sendBookingSms,
   updateBookingLifecycle,
   updatePropertyBooking,
   type BookingLifecycleAction,
@@ -129,6 +131,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
   const [allowBalance, setAllowBalance] = useState(false);
   const [amendOpen, setAmendOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [smsWorking, setSmsWorking] = useState(false);
   const requestId = useRef(0);
   const handledRequestedAction = useRef<string | null>(null);
   const activePropertyId = useRef<string | undefined>(undefined);
@@ -291,6 +294,19 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
     }
   };
 
+  const resendBookingSms = async () => {
+    if (smsWorking || !booking.phone) return;
+    setSmsWorking(true);
+    try {
+      await sendBookingSms(client, propertyId, booking.id);
+      feedback.success(t("Booking SMS sent.", "SMS ya uhifadhi imetumwa."));
+    } catch (cause) {
+      feedback.error(cause instanceof Error ? cause.message : t("Unable to send booking SMS.", "Imeshindikana kutuma SMS ya uhifadhi."));
+    } finally {
+      setSmsWorking(false);
+    }
+  };
+
   return (
     <Box sx={{ pb: { xs: primaryAction ? 14 : 4, md: 5 } }}>
       <Container maxWidth="xl" sx={{ py: { xs: 1.5, sm: 2.5, lg: 3 } }}>
@@ -325,6 +341,7 @@ export function BookingDetailsScreen({ bookingId }: { bookingId: string }) {
                 title={t("Guest profile")}
                 action={
                   <Stack direction="row" spacing={0.5}>
+                    {booking.phone ? <IconButton aria-label={t("Send booking SMS", "Tuma SMS ya uhifadhi")} disabled={smsWorking} onClick={() => void resendBookingSms()} size="small"><SmsRoundedIcon fontSize="small" /></IconButton> : null}
                     {booking.phone ? <IconButton component="a" href={`tel:${booking.phone}`} aria-label={t("Call guest")} size="small"><PhoneRoundedIcon fontSize="small" /></IconButton> : null}
                     {booking.email ? <IconButton component="a" href={`mailto:${booking.email}`} aria-label={t("Email guest")} size="small"><EmailRoundedIcon fontSize="small" /></IconButton> : null}
                   </Stack>
@@ -437,28 +454,30 @@ function BookingHeader({ booking, primaryAction, secondaryActions, canAmend, onB
 function LifecycleStrip({ booking }: { booking: Booking }) {
   const { t } = useLanguage();
   const closed = ["cancelled", "no_show"].includes(booking.status);
-  const current = booking.status === "pending" || booking.status === "reserved"
+  const current = booking.status === "pending" || booking.status === "reserved" || booking.status === "confirmed"
     ? 0
-    : booking.status === "confirmed"
+    : booking.status === "checked_in"
       ? 1
-      : booking.status === "checked_in"
+      : booking.status === "checked_out" || closed
         ? 2
-        : booking.status === "checked_out" || closed
-          ? 3
-          : 0;
-  const finalLabel = booking.status === "cancelled"
-    ? "Cancelled"
+        : 0;
+  const finalStage = booking.status === "cancelled"
+    ? { label: "Cancelled", swahili: "Imeghairiwa" }
     : booking.status === "no_show"
-      ? "No-show"
-      : "Checked out";
-  const stages = ["Reserved", "Confirmed", "Checked in", finalLabel];
+      ? { label: "No-show", swahili: "Hakufika" }
+      : { label: "Completed", swahili: "Imekamilika" };
+  const stages = [
+    { label: "Booked", swahili: "Imehifadhiwa" },
+    { label: "In house", swahili: "Waliopo" },
+    finalStage,
+  ];
   return (
     <Paper variant="outlined" sx={{ overflowX: "auto", p: { xs: 1.25, sm: 1.5 } }}>
-      <Stack direction="row" sx={{ minWidth: 540 }}>
-        {stages.map((label, index) => {
-          const done = closed ? index === 3 : index <= current;
+      <Stack direction="row" sx={{ minWidth: 0 }}>
+        {stages.map((stage, index) => {
+          const done = closed ? index === 0 || index === stages.length - 1 : index <= current;
           const active = index === current;
-          return <Stack key={label} direction="row" sx={{ alignItems: "center", flex: index < 3 ? 1 : "initial" }}><Box sx={{ bgcolor: done ? "primary.main" : "background.paper", border: "2px solid", borderColor: done ? "primary.main" : "divider", borderRadius: "50%", height: 14, width: 14 }} /><Typography color={active ? "text.primary" : "text.secondary"} variant="caption" sx={{ fontWeight: active ? 700 : 500, ml: 0.75 }}>{t(label)}</Typography>{index < 3 ? <Box sx={{ bgcolor: done && index < current ? "primary.main" : "divider", height: 2, flex: 1, mx: 1 }} /> : null}</Stack>;
+          return <Stack key={stage.label} direction="row" sx={{ alignItems: "center", flex: index < stages.length - 1 ? 1 : "initial", minWidth: 0 }}><Box sx={{ bgcolor: done ? "primary.main" : "background.paper", border: "2px solid", borderColor: done ? "primary.main" : "divider", borderRadius: "50%", flexShrink: 0, height: 14, width: 14 }} /><Typography color={active ? "text.primary" : "text.secondary"} variant="caption" sx={{ fontWeight: active ? 700 : 500, ml: 0.75, whiteSpace: "nowrap" }}>{t(stage.label, stage.swahili)}</Typography>{index < stages.length - 1 ? <Box sx={{ bgcolor: !closed && index < current ? "primary.main" : "divider", height: 2, flex: 1, minWidth: { xs: 8, sm: 24 }, mx: { xs: 0.75, sm: 1 } }} /> : null}</Stack>;
         })}
       </Stack>
       {closed ? <Alert severity="warning" sx={{ mt: 1.25 }}>{t("This reservation is", "Uhifadhi huu")} {t(bookingStatusLabel(booking.status)).toLowerCase()}.</Alert> : null}

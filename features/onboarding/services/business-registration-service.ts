@@ -24,38 +24,33 @@ function number(value: Json | undefined) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export async function completeBusinessRegistration(
-  client: SupabaseClient<Database>,
-  draft: BusinessSetupDraft,
-): Promise<RegistrationResult> {
-  const { data, error } = await client.rpc(
-    "complete_hospitality_registration",
-    {
-      p_request_key: draft.requestKey,
-      p_business: {
-        type: draft.businessType,
-        name: draft.businessName.trim(),
-        phone: draft.businessPhone.trim(),
-        email: draft.businessEmail.trim() || null,
-        description: draft.description.trim() || null,
-        region: draft.region.trim(),
-        district: draft.district.trim(),
-        ward: draft.ward.trim() || null,
-        street: draft.street.trim() || null,
-        amenities: draft.amenities,
-        payment_methods: draft.paymentMethods,
-        checkin_time: draft.checkinTime,
-        checkout_time: draft.checkoutTime,
-      },
-      p_rooms: materializeRooms(draft),
-      p_staff: draft.staff.map((staff) => ({
-        email: staff.email.trim().toLowerCase(),
-        role: staff.role,
-      })),
+function registrationArgs(draft: BusinessSetupDraft) {
+  return {
+    p_request_key: draft.requestKey,
+    p_business: {
+      type: draft.businessType,
+      name: draft.businessName.trim(),
+      phone: draft.businessPhone.trim(),
+      email: draft.businessEmail.trim() || null,
+      description: draft.description.trim() || null,
+      region: draft.region.trim(),
+      district: draft.district.trim(),
+      ward: draft.ward.trim() || null,
+      street: draft.street.trim() || null,
+      amenities: draft.amenities,
+      payment_methods: draft.paymentMethods,
+      checkin_time: draft.checkinTime,
+      checkout_time: draft.checkoutTime,
     },
-  );
-  if (error) throw new Error(error.message);
+    p_rooms: materializeRooms(draft),
+    p_staff: draft.staff.map((staff) => ({
+      email: staff.email.trim().toLowerCase(),
+      role: staff.role,
+    })),
+  };
+}
 
+function parseRegistrationResult(data: Json): RegistrationResult {
   const result = object(data);
   if (result.success !== true || typeof result.property_id !== "string") {
     throw new Error("The business registration returned an invalid response.");
@@ -67,4 +62,34 @@ export async function completeBusinessRegistration(
     pendingStaffCount: number(result.pending_staff_count),
     replayed: result.replayed === true,
   };
+}
+
+async function runRegistration(
+  client: SupabaseClient<Database>,
+  rpcName:
+    | "complete_hospitality_registration"
+    | "create_additional_hospitality_property",
+  draft: BusinessSetupDraft,
+): Promise<RegistrationResult> {
+  const { data, error } = await client.rpc(rpcName, registrationArgs(draft));
+  if (error) throw new Error(error.message);
+  return parseRegistrationResult(data);
+}
+
+export function completeBusinessRegistration(
+  client: SupabaseClient<Database>,
+  draft: BusinessSetupDraft,
+) {
+  return runRegistration(client, "complete_hospitality_registration", draft);
+}
+
+export function createAdditionalBusinessProperty(
+  client: SupabaseClient<Database>,
+  draft: BusinessSetupDraft,
+) {
+  return runRegistration(
+    client,
+    "create_additional_hospitality_property",
+    draft,
+  );
 }

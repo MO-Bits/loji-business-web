@@ -172,7 +172,7 @@ export function TeamAccessRoles({ currentRole }: { currentRole: TeamRole }) {
         ))}
       </Box>
 
-      <Surface padding={false}>
+      <Surface padding={false} sx={{ display: { xs: "none", md: "block" } }}>
         <Box
           sx={{
             borderBottom: 1,

@@ -17,7 +17,6 @@ import {
   Alert,
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -37,6 +36,7 @@ import { useLanguage } from "@/components/providers/language-provider";
 import { CashierClosePanel } from "@/components/finance/cashier-close-panel";
 import { housekeepingOptions, RoomStatusPill } from "@/components/rooms/room-status";
 import { PageHeader } from "@/components/shared/page-header";
+import { ResponsiveModal } from "@/components/shared/responsive-modal";
 import {
   EmptyState,
   LoadingRows,
@@ -222,7 +222,21 @@ export function OperationsScreen() {
           title={t("Front Desk", "Mapokezi")}
         />
 
-        <Box sx={{ display: "grid", gap: { xs: 1.25, sm: 1.5 }, gridTemplateColumns: { xs: "repeat(2,minmax(0,1fr))", lg: "repeat(6,minmax(0,1fr))" } }}>
+        <Box
+          sx={{
+            display: "grid",
+            gap: { xs: 1.25, sm: 1.5 },
+            gridTemplateColumns: {
+              xs: "repeat(6,minmax(180px,72vw))",
+              sm: "repeat(3,minmax(0,1fr))",
+              lg: "repeat(6,minmax(0,1fr))",
+            },
+            overflowX: { xs: "auto", sm: "visible" },
+            pb: { xs: 0.5, sm: 0 },
+            scrollSnapType: { xs: "x proximity", sm: "none" },
+            "& > *": { scrollSnapAlign: "start" },
+          }}
+        >
           <MetricCell caption={summary?.overdueArrivals ? t(`${summary.overdueArrivals} overdue`, `${summary.overdueArrivals} wamechelewa`) : t("Expected today", "Wanatarajiwa leo")} icon={<FlightLandRoundedIcon />} label={t("Arrivals", "Wanaowasili")} tone={summary?.overdueArrivals ? "warning" : "info"} value={summary?.arrivalsDue ?? 0} />
           <MetricCell caption={summary?.overdueDepartures ? t(`${summary.overdueDepartures} overdue`, `${summary.overdueDepartures} wamechelewa`) : t("Expected today", "Wanatarajiwa leo")} icon={<FlightTakeoffRoundedIcon />} label={t("Departures", "Wanaotoka")} tone={summary?.overdueDepartures ? "warning" : "neutral"} value={summary?.departuresDue ?? 0} />
           <MetricCell caption={t(`${summary?.inHouseGuests ?? 0} guests`, `Wageni ${summary?.inHouseGuests ?? 0}`)} icon={<PeopleRoundedIcon />} label={t("In house", "Waliopo")} tone="info" value={summary?.inHouse ?? 0} />
@@ -232,8 +246,8 @@ export function OperationsScreen() {
         </Box>
 
         <Surface padding={false}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={1} sx={{ alignItems: { md: "center" }, justifyContent: "space-between", p: 1.25 }}>
-            <Box sx={{ overflowX: "auto", width: "100%" }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between", p: 1.25 }}>
+            <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto" }}>
               <ToggleButtonGroup exclusive onChange={(_, value: Lane | null) => value && setLane(value)} size="small" sx={{ minWidth: "max-content" }} value={lane}>
                 <ToggleButton value="arrivals">{t("Arrivals", "Wanaowasili")} · {board?.arrivals.length ?? 0}</ToggleButton>
                 <ToggleButton value="departures">{t("Departures", "Wanaotoka")} · {board?.departures.length ?? 0}</ToggleButton>
@@ -243,7 +257,23 @@ export function OperationsScreen() {
                 {canCloseCashier ? <ToggleButton value="cashier">{t("Cashier close", "Funga kaunta")}</ToggleButton> : null}
               </ToggleButtonGroup>
             </Box>
-            <Button disabled={loading} onClick={() => void refresh()} startIcon={<RefreshRoundedIcon />} sx={{ flexShrink: 0 }} variant="text">{t("Refresh", "Pakua upya")}</Button>
+            <Button
+              aria-label={t("Refresh Front Desk", "Pakua upya Mapokezi")}
+              disabled={loading}
+              onClick={() => void refresh()}
+              startIcon={<RefreshRoundedIcon />}
+              sx={{
+                flexShrink: 0,
+                minWidth: { xs: 44, sm: "auto" },
+                px: { xs: 0, sm: 2 },
+                "& .MuiButton-startIcon": { mr: { xs: 0, sm: 1 } },
+              }}
+              variant="text"
+            >
+              <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+                {t("Refresh", "Pakua upya")}
+              </Box>
+            </Button>
           </Stack>
         </Surface>
 
@@ -261,11 +291,11 @@ export function OperationsScreen() {
         )}
       </Stack>
 
-      <Dialog fullWidth maxWidth="xs" onClose={() => setCheckInTarget(null)} open={Boolean(checkInTarget && board)}>
+      <ResponsiveModal maxWidth="xs" onClose={() => setCheckInTarget(null)} open={Boolean(checkInTarget && board)}>
         <DialogTitle>{t("Confirm guest check-in", "Thibitisha kuingia kwa mgeni")}</DialogTitle>
         <DialogContent><Typography color="text.secondary" variant="body2">{t(`Check in ${checkInTarget?.guestName ?? "this guest"} to ${checkInTarget?.roomName ?? `the assigned ${inventorySingular}`}?`, `Mwingize ${checkInTarget?.guestName ?? "mgeni huyu"} kwenye ${checkInTarget?.roomName ?? inventorySingular} aliyopangiwa?`)}</Typography></DialogContent>
         <DialogActions><Button onClick={() => setCheckInTarget(null)}>{t("Cancel", "Ghairi")}</Button><Button onClick={() => void confirmCheckIn()} variant="contained">{t("Confirm check-in", "Thibitisha kuingia")}</Button></DialogActions>
-      </Dialog>
+      </ResponsiveModal>
     </WorkspacePage>
   );
 }
@@ -300,9 +330,11 @@ function BookingLane({ action, bookings, emptyDescription, emptyTitle, icon, tit
                 {booking.blockedReason ? <Typography color="warning.main" sx={{ display: "block", mt: 0.35 }} variant="caption">{t(booking.blockedReason)}</Typography> : null}
               </Box>
             </Stack>
-            <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: { xs: "space-between", sm: "flex-end" }, minWidth: { sm: 250 } }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { xs: "stretch", sm: "center" }, justifyContent: { sm: "flex-end" }, minWidth: { sm: 250 }, width: { xs: "100%", sm: "auto" } }}>
               <Box sx={{ textAlign: { sm: "right" } }}>{booking.balanceDue > 0 ? <Typography color="warning.main" sx={{ fontWeight: 700 }} variant="body2">{money.format(booking.balanceDue)}</Typography> : <Typography color="success.main" sx={{ fontWeight: 700 }} variant="body2">{t("Paid", "Imelipwa")}</Typography>}<Button component={Link} href={`/bookings/${booking.id}`} size="small" variant="text">{booking.bookingNumber || t("Booking", "Uhifadhi")}</Button></Box>
-              {action(booking)}
+              <Box sx={{ "& > .MuiButton-root": { width: { xs: "100%", sm: "auto" } } }}>
+                {action(booking)}
+              </Box>
             </Stack>
           </Stack>
         </Box>

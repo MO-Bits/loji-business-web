@@ -67,6 +67,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { t } = useLanguage();
   const { session } = useAppSession();
+  const isOverview = pathname === "/settings";
   const capabilities = getWorkspaceCapabilities(session?.activeRole);
   const visibleDestinations = destinations.filter(
     (destination) =>
@@ -77,40 +78,42 @@ export function SettingsShell({ children }: { children: ReactNode }) {
   return (
     <WorkspacePage maxWidth={1240}>
       <Stack spacing={{ xs: 2.5, sm: 3, lg: 3.5 }}>
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-          <Box
-            aria-hidden="true"
-            sx={{
-              alignItems: "center",
-              bgcolor: "primary.main",
-              borderRadius: 2.25,
-              boxShadow: "0 8px 22px rgba(0,122,255,.2)",
-              color: "primary.contrastText",
-              display: "flex",
-              flexShrink: 0,
-              height: 48,
-              justifyContent: "center",
-              mt: 0.15,
-              width: 48,
-            }}
-          >
-            <SettingsRoundedIcon />
-          </Box>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography color="primary.main" variant="overline">
-              {t("Personal preferences", "Mapendeleo binafsi")}
-            </Typography>
-            <Typography component="h1" variant="h2">
-              {t("Settings", "Mipangilio")}
-            </Typography>
-            <Typography color="text.secondary" sx={{ maxWidth: 680, mt: 0.5 }} variant="body1">
-              {t(
-                "Manage your profile, experience, and account security in one place.",
-                "Dhibiti wasifu, matumizi ya mfumo na usalama wa akaunti yako sehemu moja.",
-              )}
-            </Typography>
-          </Box>
-        </Stack>
+        {isOverview ? (
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
+            <Box
+              aria-hidden="true"
+              sx={{
+                alignItems: "center",
+                bgcolor: "primary.main",
+                borderRadius: 2.25,
+                boxShadow: "0 8px 22px rgba(0,122,255,.2)",
+                color: "primary.contrastText",
+                display: "flex",
+                flexShrink: 0,
+                height: 48,
+                justifyContent: "center",
+                mt: 0.15,
+                width: 48,
+              }}
+            >
+              <SettingsRoundedIcon />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography color="primary.main" variant="overline">
+                {t("Personal preferences", "Mapendeleo binafsi")}
+              </Typography>
+              <Typography component="h1" variant="h2">
+                {t("Settings", "Mipangilio")}
+              </Typography>
+              <Typography color="text.secondary" sx={{ maxWidth: 680, mt: 0.5 }} variant="body1">
+                {t(
+                  "Manage your profile, experience, and account security in one place.",
+                  "Dhibiti wasifu, matumizi ya mfumo na usalama wa akaunti yako sehemu moja.",
+                )}
+              </Typography>
+            </Box>
+          </Stack>
+        ) : null}
 
         <Box
           sx={{

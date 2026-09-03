@@ -203,7 +203,7 @@ export function SidebarContent({
         <ListItemButton
           aria-expanded={preferencesOpen}
           onClick={() => setPreferencesOpen((open) => !open)}
-          sx={{ borderRadius: 1, minHeight: 40, px: 1.25 }}
+          sx={{ borderRadius: 1, minHeight: { xs: 44, md: 40 }, px: 1.25 }}
         >
           <ListItemIcon sx={{ color: "text.secondary", minWidth: 30 }}>
             <TuneRoundedIcon sx={{ fontSize: 19 }} />
@@ -281,6 +281,7 @@ export function SidebarContent({
               borderRadius: 1,
               color: "inherit",
               flex: 1,
+              minHeight: 44,
               minWidth: 0,
               p: 0.5,
               textDecoration: "none",
@@ -388,7 +389,7 @@ function NavigationList({
               borderRadius: 1,
               columnGap: 1.1,
               mb: 0.2,
-              minHeight: 40,
+              minHeight: { xs: 44, md: 40 },
               px: 1.25,
               "&.Mui-selected": {
                 bgcolor: "action.selected",

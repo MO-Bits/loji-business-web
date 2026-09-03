@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import AddBusinessRoundedIcon from "@mui/icons-material/AddBusinessRounded";
 import BusinessRoundedIcon from "@mui/icons-material/BusinessRounded";
 import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
@@ -9,6 +11,7 @@ import {
   Box,
   ButtonBase,
   CircularProgress,
+  Divider,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -77,6 +80,12 @@ export function PropertySwitcher({
   const propertyName = String(property?.name ?? t("Property", "Biashara"));
   const visibleOptions = options.filter((option) => membershipIds.includes(option.id));
   const canSwitch = visibleOptions.length > 1;
+  const canAddProperty = memberships.some(
+    (membership) =>
+      membership.property_id === activePropertyId &&
+      membership.role?.trim().toLowerCase() === "owner",
+  );
+  const canOpenMenu = canSwitch || canAddProperty;
   const sidebar = placement === "sidebar";
 
   const handleSwitch = async (propertyId: string) => {
@@ -125,7 +134,7 @@ export function PropertySwitcher({
           {propertyName}
         </Typography>
       </Box>
-      {canSwitch ? (
+      {canOpenMenu ? (
         <ExpandMoreRoundedIcon sx={{ color: "text.secondary", flexShrink: 0, fontSize: 18 }} />
       ) : null}
     </Stack>
@@ -133,12 +142,12 @@ export function PropertySwitcher({
 
   return (
     <>
-      {canSwitch ? (
+      {canOpenMenu ? (
         <ButtonBase
           aria-controls={anchorEl ? "property-switcher-menu" : undefined}
           aria-expanded={Boolean(anchorEl)}
           aria-haspopup="menu"
-          aria-label={t("Switch property", "Badili biashara")}
+          aria-label={t("Manage properties", "Simamia biashara")}
           onClick={(event) => setAnchorEl(event.currentTarget)}
           sx={{
             borderRadius: 1,
@@ -225,6 +234,25 @@ export function PropertySwitcher({
             </MenuItem>
           );
         })}
+        {canAddProperty ? (
+          <>
+            <Divider sx={{ my: 0.75 }} />
+            <MenuItem
+              component={Link}
+              href="/properties/new"
+              onClick={() => setAnchorEl(null)}
+              sx={{ minHeight: 48 }}
+            >
+              <ListItemIcon>
+                <AddBusinessRoundedIcon color="primary" fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary={t("Add another property", "Ongeza biashara nyingine")}
+                slotProps={{ primary: { sx: { fontWeight: 700 } } }}
+              />
+            </MenuItem>
+          </>
+        ) : null}
       </Menu>
     </>
   );
