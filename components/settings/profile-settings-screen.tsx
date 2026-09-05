@@ -179,7 +179,7 @@ export function ProfileSettingsScreen() {
   return (
     <Stack spacing={{ xs: 2.5, sm: 3 }}>
       <SettingsPageHeader
-        action={<BackToSettingsButton />}
+        backHref="/settings"
         description={t(
           "Update the identity and contact details your team sees.",
           "Sasisha utambulisho na mawasiliano yanayoonekana kwa timu yako.",
