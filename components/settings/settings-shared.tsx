@@ -3,65 +3,108 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import { Alert, Box, Button, Skeleton, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, IconButton, Skeleton, Stack, Typography } from "@mui/material";
 
 import { Surface } from "@/components/shared/workspace-ui";
 import { useLanguage } from "@/components/providers/language-provider";
 
 export function SettingsPageHeader({
   action,
+  backHref = "/settings",
   description,
   eyebrow,
   icon,
   title,
 }: {
   action?: ReactNode;
+  backHref?: string;
   description: ReactNode;
   eyebrow?: ReactNode;
   icon?: ReactNode;
   title: ReactNode;
 }) {
+  const { t } = useLanguage();
+
   return (
     <Stack
       direction={{ xs: "column", sm: "row" }}
-      spacing={2}
+      spacing={{ xs: 1.25, sm: 2 }}
       sx={{ alignItems: { sm: "flex-start" }, justifyContent: "space-between" }}
     >
-      <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start", display: { xs: "none", sm: "flex" }, minWidth: 0 }}>
-        {icon ? (
-          <Box
-            aria-hidden="true"
-            sx={{
-              alignItems: "center",
-              bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 11%, transparent)",
-              borderRadius: 2,
-              color: "primary.main",
-              display: "flex",
-              flexShrink: 0,
-              height: 44,
-              justifyContent: "center",
-              mt: 0.25,
-              width: 44,
-              "& .MuiSvgIcon-root": { fontSize: 22 },
-            }}
-          >
-            {icon}
-          </Box>
-        ) : null}
-        <Box sx={{ minWidth: 0 }}>
-          {eyebrow ? (
-            <Typography color="primary.main" variant="overline">
-              {eyebrow}
-            </Typography>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{
+            alignItems: "flex-start",
+            display: { xs: "none", sm: "flex" },
+            minWidth: 0,
+          }}
+        >
+          {icon ? (
+            <Box
+              aria-hidden="true"
+              sx={{
+                alignItems: "center",
+                bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 11%, transparent)",
+                borderRadius: 2,
+                color: "primary.main",
+                display: "flex",
+                flexShrink: 0,
+                height: 44,
+                justifyContent: "center",
+                mt: 0.25,
+                width: 44,
+                "& .MuiSvgIcon-root": { fontSize: 22 },
+              }}
+            >
+              {icon}
+            </Box>
           ) : null}
-          <Typography component="h2" variant="h3">
+          <Box sx={{ minWidth: 0 }}>
+            {eyebrow ? (
+              <Typography color="primary.main" variant="overline">
+                {eyebrow}
+              </Typography>
+            ) : null}
+            <Typography component="h2" variant="h3">
+              {title}
+            </Typography>
+            <Typography color="text.secondary" sx={{ maxWidth: 640, mt: 0.65 }} variant="body1">
+              {description}
+            </Typography>
+          </Box>
+        </Stack>
+
+        <Stack
+          direction="row"
+          spacing={0.5}
+          sx={{
+            alignItems: "center",
+            display: { xs: "flex", sm: "none" },
+            minHeight: 40,
+            minWidth: 0,
+          }}
+        >
+          <IconButton
+            aria-label={t("Back to settings", "Rudi kwenye mipangilio")}
+            component={Link}
+            href={backHref}
+            size="small"
+            sx={{ flexShrink: 0, ml: -0.5 }}
+          >
+            <ArrowBackRoundedIcon />
+          </IconButton>
+          <Typography
+            component="h1"
+            noWrap
+            sx={{ fontSize: "1.05rem", fontWeight: 750, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}
+          >
             {title}
           </Typography>
-          <Typography color="text.secondary" sx={{ maxWidth: 640, mt: 0.65 }} variant="body1">
-            {description}
-          </Typography>
-        </Box>
-      </Stack>
+        </Stack>
+      </Box>
+
       {action ? (
         <Box
           sx={{
@@ -99,11 +142,15 @@ export function SettingsSection({
           borderColor: "divider",
           justifyContent: "space-between",
           px: { xs: 2, sm: 2.5 },
-          py: { xs: 1.75, sm: 2 },
+          py: { xs: 1.5, sm: 2 },
         }}
       >
         <Box sx={{ minWidth: 0 }}>
-          <Typography component="h3" variant="h5">
+          <Typography
+            component="h3"
+            sx={{ fontSize: { xs: "0.98rem", sm: "1.08rem" }, fontWeight: 750 }}
+            variant="h5"
+          >
             {title}
           </Typography>
           {description ? (

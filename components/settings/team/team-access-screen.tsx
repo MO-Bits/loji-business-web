@@ -37,7 +37,6 @@ import {
   Surface,
 } from "@/components/shared/workspace-ui";
 import {
-  BackToSettingsButton,
   SettingsPageHeader,
 } from "@/components/settings/settings-shared";
 import {
@@ -79,6 +78,9 @@ export function TeamAccessScreen() {
     defaultMatches: false,
   });
   const showHeaderAddAccess = useMediaQuery(theme.breakpoints.up("sm"), {
+    defaultMatches: false,
+  });
+  const isTabMobile = useMediaQuery(theme.breakpoints.down("sm"), {
     defaultMatches: false,
   });
   const feedback = useAppFeedback();
@@ -422,8 +424,7 @@ export function TeamAccessScreen() {
       spacing={{ xs: 2.25, sm: 3 }}
       sx={{ pb: canAddAccess ? { xs: 9, sm: 0 } : 0 }}
     >
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
-        <BackToSettingsButton />
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "flex-end" }}>
         <Button component={Link} href="/activity" startIcon={<HistoryRoundedIcon />} variant="text">
           {t("View activity", "Tazama historia")}
         </Button>
@@ -440,6 +441,7 @@ export function TeamAccessScreen() {
             </Button>
           ) : undefined
         }
+        backHref="/settings"
         description={t(
           "Give every teammate the access they need, and nothing they do not.",
           "Mpe kila mshiriki ruhusa anazohitaji pekee.",
@@ -507,10 +509,26 @@ export function TeamAccessScreen() {
             setMemberPage(0);
             setPendingAccessPage(0);
           }}
-          scrollButtons="auto"
-          sx={{ px: { xs: 0.75, sm: 1.25 } }}
+          scrollButtons={false}
+          sx={{
+            minHeight: { xs: 56, sm: 48 },
+            px: { xs: 0.5, sm: 1.25 },
+            "& .MuiTabs-flexContainer": { gap: { xs: 0.25, sm: 0.5 } },
+            "& .MuiTabs-indicator": { borderRadius: 999, height: 3 },
+            "& .MuiTab-root": {
+              borderRadius: 1.5,
+              fontSize: { xs: ".73rem", sm: ".875rem" },
+              fontWeight: 650,
+              lineHeight: 1.2,
+              minHeight: { xs: 56, sm: 48 },
+              minWidth: { xs: 0, sm: 120 },
+              px: { xs: 0.75, sm: 2 },
+              textTransform: "none",
+              whiteSpace: { xs: "normal", sm: "nowrap" },
+            },
+          }}
           value={tab}
-          variant="scrollable"
+          variant={isTabMobile ? "fullWidth" : "standard"}
         >
           <Tab
             label={`${t("Members", "Washiriki")} · ${workspace?.members.length ?? 0}`}

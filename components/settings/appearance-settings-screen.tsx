@@ -26,7 +26,6 @@ import {
 } from "@/components/providers/language-provider";
 
 import {
-  BackToSettingsButton,
   SettingsPageHeader,
   SettingsSection,
 } from "./settings-shared";
@@ -106,7 +105,7 @@ export function AppearanceSettingsScreen() {
   return (
     <Stack spacing={{ xs: 2.5, sm: 3 }}>
       <SettingsPageHeader
-        action={<BackToSettingsButton />}
+        backHref="/settings"
         description={t(
           "Choose a comfortable theme and the language used across the application.",
           "Chagua mandhari unayoipenda na lugha inayotumika kwenye programu nzima.",

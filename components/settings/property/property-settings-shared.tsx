@@ -24,10 +24,11 @@ export function PropertyEditorHeader({
   return (
     <SettingsPageHeader
       action={(
-        <Button component={Link} href="/settings/property" startIcon={<ArrowBackRoundedIcon />} variant="outlined">
+        <Button component={Link} href="/settings/property" startIcon={<ArrowBackRoundedIcon />} sx={{ display: { xs: "none", sm: "inline-flex" } }} variant="outlined">
           {t("Property overview", "Muhtasari wa biashara")}
         </Button>
       )}
+      backHref="/settings/property"
       description={description}
       eyebrow={t("Property settings", "Mipangilio ya biashara")}
       icon={icon}

@@ -27,7 +27,6 @@ import { useAppSession } from "@/features/session/hooks/use-app-session";
 import { createClient } from "@/lib/supabase/client";
 
 import {
-  BackToSettingsButton,
   SettingsError,
   SettingsPageHeader,
   SettingsSection,
@@ -138,7 +137,7 @@ export function SecuritySettingsScreen() {
   return (
     <Stack spacing={{ xs: 2.5, sm: 3 }}>
       <SettingsPageHeader
-        action={<BackToSettingsButton />}
+        backHref="/settings"
         description={t(
           "Protect access to your account and manage where you are signed in.",
           "Linda akaunti yako na dhibiti vifaa ambavyo umeingia.",

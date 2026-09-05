@@ -11,11 +11,13 @@ import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import {
   Box,
+  Divider,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Paper,
+  Typography,
 } from "@mui/material";
 
 import { useLanguage } from "@/components/providers/language-provider";
@@ -86,7 +88,7 @@ export function SettingsShell({ children }: { children: ReactNode }) {
       <Box
         sx={{
           display: "grid",
-          gap: { xs: 2, lg: 3 },
+          gap: { xs: 0, lg: 3 },
           gridTemplateColumns: {
             xs: "minmax(0, 1fr)",
             lg: "208px minmax(0, 1fr)",
@@ -99,20 +101,14 @@ export function SettingsShell({ children }: { children: ReactNode }) {
           variant="outlined"
           sx={{
             alignSelf: "start",
-            borderRadius: 1,
-            overflow: { xs: "auto", lg: "hidden" },
-            position: { lg: "sticky" },
-            top: { lg: 84 },
+            borderRadius: 2,
+            display: { xs: "none", lg: "block" },
+            overflow: "hidden",
+            position: "sticky",
+            top: 84,
           }}
         >
-          <List
-            disablePadding
-            sx={{
-              display: { xs: "flex", lg: "block" },
-              minWidth: "max-content",
-              p: { xs: 0.75, lg: 1 },
-            }}
-          >
+          <List disablePadding sx={{ p: 1 }}>
             <ListItemButton
               component={Link}
               href="/settings"
@@ -120,8 +116,15 @@ export function SettingsShell({ children }: { children: ReactNode }) {
               sx={{
                 borderRadius: 1.5,
                 minHeight: 44,
-                minWidth: { xs: 116, lg: 0 },
                 px: 1.25,
+                "&.Mui-selected": {
+                  bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+                  color: "primary.main",
+                  "& .MuiListItemIcon-root": { color: "inherit" },
+                },
+                "&.Mui-selected:hover": {
+                  bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)",
+                },
               }}
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
@@ -130,40 +133,55 @@ export function SettingsShell({ children }: { children: ReactNode }) {
               <ListItemText
                 primary={t("Overview", "Muhtasari")}
                 slotProps={{
-                  primary: { sx: { fontSize: ".8125rem", fontWeight: 500 } },
+                  primary: { sx: { fontSize: ".8125rem", fontWeight: 600 } },
                 }}
               />
             </ListItemButton>
-            {visibleDestinations.map((destination) => (
-              <ListItemButton
-                component={Link}
-                href={destination.href}
-                key={destination.href}
-                selected={destination.match(pathname)}
-                sx={{
-                  borderRadius: 1.5,
-                  minHeight: 44,
-                  minWidth: { xs: 116, lg: 0 },
-                  px: 1.25,
-                }}
-              >
-                <ListItemIcon
+            <Divider sx={{ my: 0.75 }} />
+            {visibleDestinations.map((destination, index) => (
+              <Box key={destination.href}>
+                {index === 3 ? <Divider sx={{ my: 0.75 }} /> : null}
+                <ListItemButton
+                  component={Link}
+                  href={destination.href}
+                  selected={destination.match(pathname)}
                   sx={{
-                    minWidth: 32,
-                    "& .MuiSvgIcon-root": { fontSize: 20 },
+                    borderRadius: 1.5,
+                    minHeight: 44,
+                    px: 1.25,
+                    "&.Mui-selected": {
+                      bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 10%, transparent)",
+                      color: "primary.main",
+                      "& .MuiListItemIcon-root": { color: "inherit" },
+                    },
+                    "&.Mui-selected:hover": {
+                      bgcolor: "color-mix(in srgb, var(--mui-palette-primary-main) 14%, transparent)",
+                    },
                   }}
                 >
-                  {destination.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={t(destination.label[0], destination.label[1])}
-                  slotProps={{
-                    primary: { sx: { fontSize: ".8125rem", fontWeight: 500 } },
-                  }}
-                />
-              </ListItemButton>
+                  <ListItemIcon
+                    sx={{
+                      minWidth: 32,
+                      "& .MuiSvgIcon-root": { fontSize: 20 },
+                    }}
+                  >
+                    {destination.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t(destination.label[0], destination.label[1])}
+                    slotProps={{
+                      primary: { sx: { fontSize: ".8125rem", fontWeight: 600 } },
+                    }}
+                  />
+                </ListItemButton>
+              </Box>
             ))}
           </List>
+          <Box sx={{ borderTop: 1, borderColor: "divider", px: 1.5, py: 1 }}>
+            <Typography color="text.secondary" variant="caption">
+              {t("Settings", "Mipangilio")}
+            </Typography>
+          </Box>
         </Paper>
         <Box sx={{ minWidth: 0 }}>{children}</Box>
       </Box>

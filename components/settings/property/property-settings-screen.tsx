@@ -72,6 +72,7 @@ export function PropertySettingsScreen() {
         description={t("Control the business identity, photos, local address, services, accepted payments and operating rules for this workspace.", "Dhibiti utambulisho wa biashara, picha, anwani, huduma, njia za malipo na kanuni za uendeshaji.")}
         eyebrow={t("Workspace administration", "Usimamizi wa biashara")}
         icon={<BusinessRoundedIcon />}
+        backHref="/settings"
         title={t("Property settings", "Mipangilio ya biashara")}
       />
 
@@ -95,14 +96,10 @@ export function PropertySettingsScreen() {
           display: "grid",
           gap: 1.5,
           gridTemplateColumns: {
-            xs: "repeat(4,minmax(220px,78vw))",
+            xs: "repeat(2, minmax(0, 1fr))",
             sm: "repeat(2,minmax(0,1fr))",
             lg: "repeat(4,minmax(0,1fr))",
           },
-          overflowX: { xs: "auto", sm: "visible" },
-          pb: { xs: 0.5, sm: 0 },
-          scrollSnapType: { xs: "x proximity", sm: "none" },
-          "& > *": { scrollSnapAlign: "start" },
         }}
       >
         <MetricCell caption={t(`${completed} of ${setupChecks.length} areas complete`, `Sehemu ${completed} kati ya ${setupChecks.length} zimekamilika`)} icon={<TuneRoundedIcon />} label={t("Profile readiness", "Utayari wa wasifu")} tone={progress === 100 ? "success" : "info"} value={`${progress}%`} />
@@ -113,13 +110,41 @@ export function PropertySettingsScreen() {
 
       <Box sx={{ alignItems: "start", display: "grid", gap: { xs: 2.5, lg: 3 }, gridTemplateColumns: { xs: "minmax(0,1fr)", lg: "minmax(0,1.2fr) minmax(320px,.8fr)" } }}>
         <Stack spacing={2.5}>
-          <SettingsSection description={t("Every section opens a focused editor and saves independently.", "Kila sehemu hufungua ukurasa wake na kuhifadhi kivyake.")} title={t("Business configuration", "Mpangilio wa biashara")}>
+          <SettingsSection
+            description={t(
+              "Name, address and contact details for this property.",
+              "Jina, anwani na mawasiliano ya biashara hii.",
+            )}
+            title={t("Property details", "Maelezo ya biashara")}
+          >
             <Stack divider={<Divider flexItem />}>
               <PropertySettingLink description={t("Name, description, property type, phone and email", "Jina, maelezo, aina, simu na barua pepe")} href={canUpdate ? "/settings/property/profile" : undefined} icon={<BadgeOutlinedIcon />} meta={property.phone || t("Phone required", "Simu inahitajika")} title={t("Identity and contact", "Utambulisho na mawasiliano")} />
               <PropertySettingLink description={t("Tanzania region, district, ward and local street or landmark", "Mkoa, wilaya, kata na mtaa au alama ya karibu Tanzania")} href={canUpdate ? "/settings/property/location" : undefined} icon={<PlaceOutlinedIcon />} meta={address || t("Not configured", "Haijawekwa")} title={t("Location", "Eneo")} />
+            </Stack>
+          </SettingsSection>
+
+          <SettingsSection
+            description={t(
+              "Guest-facing services, arrival rules and property photos.",
+              "Huduma za wageni, kanuni za kuwasili na picha za biashara.",
+            )}
+            title={t("Guest experience", "Uzoefu wa mgeni")}
+          >
+            <Stack divider={<Divider flexItem />}>
               <PropertySettingLink description={t("Guest arrival/departure times and accepted payment methods", "Muda wa wageni kuingia/kutoka na njia za malipo")} href={canUpdate ? "/settings/property/operations" : undefined} icon={<ScheduleOutlinedIcon />} meta={`${property.checkinTime} ${t("check-in", "kuingia")} · ${property.checkoutTime} ${t("checkout", "kutoka")}`} title={t("Operations and payments", "Uendeshaji na malipo")} />
               <PropertySettingLink description={t("Facilities and services shown across the business workspace", "Huduma zinazoonyeshwa katika mfumo wa biashara")} href={canUpdate ? "/settings/property/amenities" : undefined} icon={<LocalOfferOutlinedIcon />} meta={t(`${property.amenities.length} selected`, `${property.amenities.length} zimechaguliwa`)} title={t("Amenities", "Huduma")} />
               <PropertySettingLink description={t("Cover and property photos used across the workspace", "Jalada na picha za biashara zinazotumika kwenye mfumo")} href={canUpdate ? "/settings/property/photos" : undefined} icon={<PhotoLibraryOutlinedIcon />} meta={property.images.length ? t("The first photo is the cover", "Picha ya kwanza ni jalada") : t("Add a clear cover photo", "Ongeza picha wazi ya jalada")} title={t(`Photos · ${property.images.length}/${MAX_PROPERTY_PHOTOS}`, `Picha · ${property.images.length}/${MAX_PROPERTY_PHOTOS}`)} />
+            </Stack>
+          </SettingsSection>
+
+          <SettingsSection
+            description={t(
+              "Control whether guests can see and book this property.",
+              "Dhibiti kama wageni wanaweza kuona na kuweka nafasi.",
+            )}
+            title={t("Visibility", "Mwonekano")}
+          >
+            <Stack divider={<Divider flexItem />}>
               <PropertySettingLink description={t("Control whether the property is active and visible to booking flows", "Dhibiti kama biashara inatumika na inaonekana kwenye utaratibu wa uhifadhi")} href={capabilities.changeVisibility ? "/settings/property/visibility" : undefined} icon={<PublicOutlinedIcon />} meta={property.isActive ? t("Active", "Inatumika") : t("Hidden", "Imefichwa")} title={t("Status and visibility", "Hali na mwonekano")} />
             </Stack>
           </SettingsSection>
