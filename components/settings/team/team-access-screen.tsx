@@ -379,8 +379,8 @@ export function TeamAccessScreen() {
   if (!localCapabilities.canManageStaff) {
     return (
       <Stack spacing={2.5}>
-        <BackToSettingsButton />
         <SettingsPageHeader
+          backHref="/settings"
           description={t(
             "Team access is limited to property owners and managers.",
             "Ruhusa za timu zinapatikana kwa wamiliki na mameneja wa biashara pekee.",
